@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gym Tracker</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111318">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gym Tracker">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --ink:#111318;
+  --ink2:#3a3d47;
+  --muted:#8a8d9a;
+  --line:#e4e2dc;
+  --bg:#f5f3ee;
+  --paper:#faf9f6;
+  --white:#ffffff;
+  --gold:#c8a96e;
+  --A:#1e3a5f;
+  --A-bg:#eef2f8;
+  --B:#2d5a8e;
+  --B-bg:#edf4fb;
+  --C:#1a5c3a;
+  --C-bg:#eef7f2;
+  --danger:#c0392b;
+}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ── INSTALL BANNER ── */
+.install-banner{
+  background:#1e3a5f;
+  color:#f5f3ee;
+  padding:10px 16px;
+  display:flex;align-items:center;gap:10px;
+  font-size:12px;line-height:1.4;
+}
+.install-banner .ib-icon{font-size:20px;flex-shrink:0;}
+.install-banner .ib-text{flex:1;}
+.install-banner .ib-close{
+  background:none;border:none;color:rgba(245,243,238,.5);
+  font-size:18px;cursor:pointer;flex-shrink:0;padding:0 4px;
+}
+
+/* ── HEADER ── */
+.header{
+  background:var(--ink);
+  padding:18px 20px 0;
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 16px rgba(0,0,0,.2);
+}
+
+.header-top{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:16px;
+}
+
+.logo{
+  font-family:'DM Serif Display',serif;
+  font-size:22px;color:#f5f3ee;letter-spacing:-.3px;
+}
+.logo em{color:var(--gold);font-style:italic;}
+
+.header-stats{display:flex;gap:20px;}
+.hstat .hv{
+  font-family:'DM Mono',monospace;font-size:22px;
+  color:var(--gold);line-height:1;font-weight:600;
+}
+.hstat .hk{font-size:9px;color:rgba(245,243,238,.3);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+
+/* Session tabs */
+.session-tabs{display:flex;gap:0;margin-top:4px;}
+.stab{
+  background:none;border:none;cursor:pointer;
+  padding:11px 20px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;
+  color:rgba(245,243,238,.4);
+  border-bottom:2px solid transparent;
+  transition:all .15s;white-space:nowrap;
+}
+.stab.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:700;}
+.stab:hover:not(.active){color:rgba(245,243,238,.7);}
+
+/* ── VIEW TABS ── */
+.view-tabs{
+  background:var(--white);border-bottom:1px solid var(--line);
+  padding:0 20px;display:flex;gap:0;
+  position:sticky;top:88px;z-index:199;
+}
+.vtab{
+  background:none;border:none;cursor:pointer;
+  padding:12px 14px;font-size:12px;font-weight:500;
+  color:var(--muted);border-bottom:2px solid transparent;
+  transition:all .15s;font-family:'DM Sans',sans-serif;
+}
+.vtab.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:700;}
+
+/* ── CONTENT ── */
+.content{padding:18px 16px 100px;}
+
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── SESSION BANNER ── */
+.session-banner{
+  border-radius:8px;padding:14px 16px;
+  margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:center;
+  color:#fff;
+}
+.sb-title{font-size:15px;font-weight:700;}
+.sb-sub{font-size:11px;opacity:.6;margin-top:2px;}
+.sb-badge{
+  background:rgba(255,255,255,.12);border-radius:4px;
+  padding:4px 10px;font-size:11px;opacity:.8;
+}
+
+/* ── DATE ROW ── */
+.date-row{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+  flex-wrap:wrap;
+}
+.date-row label{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.date-input{
+  border:1px solid var(--line);border-radius:5px;padding:7px 11px;
+  font-size:13px;background:var(--white);color:var(--ink);
+  font-family:'DM Mono',monospace;
+}
+.saved-badge{
+  font-size:11px;color:#2e8b57;font-weight:700;
+  background:#f0fdf4;border:1px solid #bbf7d0;
+  padding:3px 10px;border-radius:3px;
+}
+.draft-badge{
+  font-size:11px;color:#a06b00;font-weight:700;
+  background:#fefce8;border:1px solid #fde68a;
+  padding:3px 10px;border-radius:3px;display:none;
+}
+
+/* ── EXERCISE CARDS ── */
+.ex-card{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-left:3px solid var(--line);
+  border-radius:7px;overflow:hidden;
+  margin-bottom:10px;
+  transition:border-color .2s;
+}
+.ex-card.has-data{border-left-color:var(--sess-color);}
+
+.ex-head{
+  padding:12px 14px 10px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.ex-name{font-size:13px;font-weight:600;color:var(--ink);}
+.ex-meta{display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;}
+.ex-target{
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:700;
+  padding:2px 8px;border-radius:3px;
+}
+.ex-ref{font-size:11px;color:var(--muted);}
+
+.col-heads{
+  display:grid;grid-template-columns:26px 1fr 1fr 26px;
+  gap:5px;padding:0 14px 6px;
+  border-bottom:1px solid var(--bg);
+}
+.col-head{font-size:9px;color:#ccc;text-transform:uppercase;letter-spacing:1px;text-align:center;}
+
+.sets-body{padding:6px 14px;}
+.set-row{
+  display:grid;grid-template-columns:26px 1fr 1fr 26px;
+  gap:5px;align-items:center;margin-bottom:6px;
+}
+.set-num{
+  width:22px;height:22px;border-radius:50%;
+  font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:background .2s,color .2s;
+  background:var(--line);color:var(--muted);
+}
+.set-num.filled{background:var(--sess-color);color:#fff;}
+
+.set-input{
+  width:100%;border:1px solid var(--line);border-radius:5px;
+  padding:7px 6px;font-size:15px;font-weight:700;
+  font-family:'DM Mono',monospace;text-align:center;
+  background:var(--bg);transition:border-color .15s,background .15s;
+  -moz-appearance:textfield;
+}
+.set-input::-webkit-outer-spin-button,.set-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.set-input:focus{outline:none;border-color:var(--sess-color);background:var(--white);}
+.set-input.weight-input{color:var(--sess-color);}
+.set-input.reps-input{color:var(--ink);}
+
+.rm-btn{
+  background:none;border:none;cursor:pointer;
+  color:#ddd;font-size:18px;line-height:1;
+  padding:0;transition:color .15s;
+  display:flex;align-items:center;justify-content:center;
+  width:22px;height:22px;
+}
+.rm-btn:hover:not(:disabled){color:var(--danger);}
+.rm-btn:disabled{cursor:default;color:#eee;}
+
+.add-set-btn{
+  width:100%;background:none;
+  border:1px dashed var(--sess-color);
+  border-radius:5px;padding:6px;
+  font-size:11px;font-weight:700;color:var(--sess-color);
+  cursor:pointer;margin-top:2px;
+  font-family:'DM Sans',sans-serif;
+  transition:background .15s;
+}
+.add-set-btn:hover{background:var(--sess-bg);}
+
+.notes-input{
+  width:100%;border:1px solid var(--line);border-radius:5px;
+  padding:7px 10px;font-size:12px;color:var(--ink2);
+  background:#fafaf8;font-family:'DM Sans',sans-serif;
+  margin:6px 0 12px;
+}
+.notes-input:focus{outline:none;border-color:var(--muted);}
+.notes-input::placeholder{color:#ccc;}
+
+/* ── SAVE BAR ── */
+.save-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--white);border-top:1px solid var(--line);
+  padding:12px 16px;z-index:300;
+  padding-bottom:max(12px, env(safe-area-inset-bottom));
+}
+.save-btn{
+  width:100%;border:none;border-radius:7px;
+  padding:14px;font-size:14px;font-weight:700;
+  cursor:pointer;transition:background .3s,transform .1s;
+  font-family:'DM Sans',sans-serif;color:#fff;
+}
+.save-btn:active{transform:scale(.98);}
+
+/* ── HISTORY ── */
+.hist-item{
+  background:var(--white);border:1px solid var(--line);
+  border-left:3px solid var(--sess-color);
+  border-radius:7px;overflow:hidden;margin-bottom:10px;
+}
+.hist-toggle{
+  width:100%;background:none;border:none;cursor:pointer;
+  padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+  font-family:'DM Sans',sans-serif;
+}
+.hist-date{font-size:14px;font-weight:600;color:var(--ink);}
+.hist-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.hist-arrow{font-size:14px;color:var(--muted);}
+.hist-body{border-top:1px solid var(--bg);padding:0 16px 12px;}
+.hist-ex{padding:8px 0;border-bottom:1px solid var(--bg);}
+.hist-ex:last-child{border-bottom:none;}
+.hist-ex-name{font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:3px;}
+.hist-sets{font-family:'DM Mono',monospace;font-size:12px;color:var(--sess-color);font-weight:600;}
+.hist-notes{font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;}
+
+/* Delete button in history */
+.hist-del-btn{
+  background:none;border:1px solid #fbd5d0;border-radius:5px;
+  color:var(--danger);font-size:11px;font-weight:600;
+  padding:5px 10px;cursor:pointer;margin-top:10px;
+  font-family:'DM Sans',sans-serif;
+}
+
+/* ── CHARTS ── */
+.ex-selector{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.ex-chip{
+  border-radius:4px;padding:6px 12px;
+  font-size:12px;font-weight:500;cursor:pointer;
+  border:1px solid var(--line);background:var(--white);color:var(--ink2);
+  font-family:'DM Sans',sans-serif;transition:all .15s;
+}
+.ex-chip.active{color:#fff;font-weight:700;}
+.ex-chip .chip-count{font-size:10px;opacity:.6;margin-left:4px;}
+
+.chart-stats{
+  border-radius:8px;padding:16px;margin-bottom:14px;
+  display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;
+}
+.cs-item{text-align:center;}
+.cs-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:#fff;line-height:1;}
+.cs-key{font-size:9px;color:rgba(255,255,255,.45);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+
+.chart-box{
+  background:var(--white);border:1px solid var(--line);
+  border-radius:8px;padding:14px 8px 8px;margin-bottom:12px;
+}
+.chart-title{font-size:12px;font-weight:600;color:var(--ink2);padding-left:8px;margin-bottom:10px;}
+
+.chart-svg{width:100%;overflow:visible;}
+.chart-line{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.chart-dot{stroke:none;}
+.chart-grid{stroke:#f0ede8;stroke-width:1;}
+.chart-label{font-family:'DM Mono',monospace;font-size:9px;fill:#ccc;}
+
+.empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:12px;}
+.empty-title{font-size:15px;font-weight:600;color:var(--ink2);margin-bottom:6px;}
+.empty-sub{font-size:12px;}
+
+/* ── DATA PAGE ── */
+.data-section{
+  background:var(--white);border:1px solid var(--line);
+  border-radius:8px;padding:20px;margin-bottom:14px;
+}
+.data-section h3{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.data-section p{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.data-btn{
+  width:100%;border:none;border-radius:7px;
+  padding:13px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:opacity .15s;
+}
+.data-btn:hover{opacity:.88;}
+.data-btn.export{background:var(--ink);color:#f5f3ee;}
+.data-btn.import{background:var(--white);color:var(--ink);border:2px solid var(--line);}
+.data-btn.danger{background:#fdf2f1;color:var(--danger);border:2px solid #fbd5d0;}
+.data-stats{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  margin-bottom:14px;
+}
+.ds-item{
+  background:var(--bg);border-radius:6px;
+  padding:12px;text-align:center;
+}
+.ds-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:var(--ink);}
+.ds-key{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+.import-area{
+  width:100%;border:2px dashed var(--line);border-radius:7px;
+  padding:12px;font-size:12px;color:var(--ink2);
+  background:var(--bg);font-family:'DM Mono',monospace;
+  resize:vertical;min-height:100px;
+  margin-bottom:10px;
+}
+.import-area:focus{outline:none;border-color:var(--ink);}
+.msg{
+  border-radius:5px;padding:10px 14px;font-size:12px;font-weight:600;
+  margin-top:10px;display:none;
+}
+.msg.ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.msg.err{background:#fdf2f1;color:var(--danger);border:1px solid #fbd5d0;}
+
+/* Install steps */
+.install-steps{
+  display:flex;flex-direction:column;gap:8px;margin-bottom:14px;
+}
+.install-step{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg);border-radius:6px;padding:10px 12px;
+}
+.install-step .step-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--ink);color:#fff;
+  font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.install-step .step-text{font-size:12px;color:var(--ink2);}
+.install-step .step-text b{color:var(--ink);font-weight:700;}
+
+/* Tooltip */
+.tooltip{
+  position:fixed;background:var(--ink);color:#fff;
+  border-radius:6px;padding:8px 12px;font-size:12px;
+  pointer-events:none;z-index:1000;
+  font-family:'DM Mono',monospace;
+  transform:translate(-50%,-110%);
+  box-shadow:0 4px 12px rgba(0,0,0,.2);
+  white-space:nowrap;
+}
+.tooltip::after{
+  content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--ink);border-bottom:none;
+}
+</style>
+</head>
+<body>
+
+<!-- iOS install prompt (hidden by default, shown only on iOS non-standalone) -->
+<div class="install-banner" id="install-banner" style="display:none">
+  <div class="ib-icon">⬆️</div>
+  <div class="ib-text">
+    <b>Instala la app en tu iPhone:</b> toca <b>Compartir</b> → <b>Añadir a pantalla de inicio</b>
+  </div>
+  <button class="ib-close" onclick="dismissInstallBanner()">×</button>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Gym <em>Tracker</em></div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hv" id="total-count">0</div><div class="hk">sesiones</div></div>
+      <div class="hstat"><div class="hv" id="week-count">0</div><div class="hk">esta semana</div></div>
+    </div>
+  </div>
+  <div class="session-tabs">
+    <button class="stab active" onclick="setSession('A')">Sesión A</button>
+    <button class="stab" onclick="setSession('B')">Sesión B</button>
+    <button class="stab" onclick="setSession('C')">Sesión C</button>
+  </div>
+</div>
+
+<!-- VIEW TABS -->
+<div class="view-tabs">
+  <button class="vtab active" onclick="setView('log',event)">📝 Registrar</button>
+  <button class="vtab" onclick="setView('history',event)">📋 Historial</button>
+  <button class="vtab" onclick="setView('charts',event)">📈 Progreso</button>
+  <button class="vtab" onclick="setView('data',event)">⚙️ Datos</button>
+</div>
+
+<div class="content">
+  <div class="page active" id="page-log"></div>
+  <div class="page" id="page-history"></div>
+  <div class="page" id="page-charts"></div>
+  <div class="page" id="page-data"></div>
+</div>
+
+<div class="save-bar" id="save-bar" style="display:none">
+  <button class="save-btn" id="save-btn" onclick="saveSession()">Guardar sesión</button>
+</div>
+
+<div class="tooltip" id="tooltip" style="display:none"></div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────
+const SESSIONS = {
+  A: {
+    label:'Sesión A', sub:'Full body compuesto', color:'#1e3a5f', bg:'#eef2f8',
+    exercises:[
+      {id:'run_start', name:'Carrera inicio', sets:'1 × 1 km', note:'14 km/h · Calentamiento', unit:'km/h'},
+      {id:'squat',     name:'Sentadilla goblet / Front squat', sets:'4 × 8–10', note:'Ref: 28–36 kg KB', unit:'kg'},
+      {id:'rdl',       name:'Peso muerto rumano', sets:'3 × 10', note:'Ref: 60–80 kg barra', unit:'kg'},
+      {id:'bench',     name:'Press banca / Máquina pecho', sets:'4 × 8–10', note:'Ref: 70–85 kg', unit:'kg'},
+      {id:'row',       name:'Remo barra / Mancuerna', sets:'4 × 8–10', note:'Ref: 60–80 kg', unit:'kg'},
+      {id:'ohp',       name:'Press militar mancuernas', sets:'3 × 10–12', note:'Ref: 2 × 16–22 kg', unit:'kg'},
+      {id:'lateral_a', name:'Elevaciones laterales', sets:'3 × 12–15', note:'Ref: 8–14 kg', unit:'kg'},
+      {id:'curl_a',    name:'Curl bíceps', sets:'3 × 12', note:'Ref: 2 × 14–18 kg', unit:'kg'},
+      {id:'tricep_a',  name:'Extensión tríceps polea', sets:'3 × 12', note:'Ref: 20–30 kg', unit:'kg'},
+      {id:'run_end',   name:'Carrera final', sets:'1 × 1 km', note:'14 km/h · Enfriamiento', unit:'km/h'},
+    ]
+  },
+  B: {
+    label:'Sesión B', sub:'Upper énfasis + cardio', color:'#2d5a8e', bg:'#edf4fb',
+    exercises:[
+      {id:'incline',   name:'Press inclinado mancuernas', sets:'4 × 8–10', note:'Ref: 2 × 20–28 kg', unit:'kg'},
+      {id:'lateral_b', name:'Elevaciones laterales', sets:'3 × 12–15', note:'Ref: 8–14 kg', unit:'kg'},
+      {id:'pulldown',  name:'Dominadas / Lat pulldown neutro', sets:'4 × 6–8', note:'Ref: 55–70 kg', unit:'kg'},
+      {id:'bulgarian', name:'Sentadilla búlgara', sets:'3 × 10 c/l', note:'Ref: 2 × 14–20 kg', unit:'kg'},
+      {id:'hammer',    name:'Curl martillo', sets:'3 × 12', note:'Ref: 2 × 16–20 kg', unit:'kg'},
+      {id:'dips',      name:'Fondos / Press francés', sets:'3 × 10–12', note:'Ref: EZ 20–30 kg', unit:'kg'},
+      {id:'cardio_b',  name:'Cardio final zona 2', sets:'20 min', note:'Remo o carrera suave', unit:'min'},
+    ]
+  },
+  C: {
+    label:'Sesión C', sub:'Lower énfasis + cardio', color:'#1a5c3a', bg:'#eef7f2',
+    exercises:[
+      {id:'deadlift',  name:'Peso muerto convencional', sets:'4 × 6–8', note:'Ref: 80–110 kg barra', unit:'kg'},
+      {id:'hip',       name:'Hip thrust / Puente glúteo', sets:'3 × 12', note:'Ref: 50–80 kg barra', unit:'kg'},
+      {id:'chest_c',   name:'Press pecho máquina', sets:'3 × 10–12', note:'Mantenimiento upper', unit:'kg'},
+      {id:'lunges',    name:'Lunges con mancuernas', sets:'3 × 12 c/l', note:'Ref: 2 × 14–20 kg', unit:'kg'},
+      {id:'lat_c',     name:'Lat pulldown agarre neutro', sets:'3 × 10–12', note:'Mantenimiento espalda', unit:'kg'},
+      {id:'superset',  name:'Curl + Tríceps superserie', sets:'2 × 12 c/u', note:'Curl 12–16 / Tríceps 18–25 kg', unit:'kg'},
+      {id:'cardio_c',  name:'Cardio final zona 2–3', sets:'20 min', note:'Carrera o bici', unit:'min'},
+    ]
+  }
+};
+
+// ── STATE ─────────────────────────────────────────────────────────
+let currentSession = 'A';
+let currentView = 'log';
+let currentDate = today();
+let formData = {};
+let allLogs = {};
+let expandedLog = null;
+let selectedChartEx = null;
+let draftTimer = null;
+
+// ── STORAGE ───────────────────────────────────────────────────────
+const STORAGE_KEY = 'gymtracker_v2';
+const DRAFT_KEY   = 'gymtracker_draft';
+const BANNER_KEY  = 'gymtracker_banner_dismissed';
+
+function loadAll() {
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : {}; }
+  catch(e) { return {}; }
+}
+
+function saveAll() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(allLogs)); }
+  catch(e) { alert('Error guardando datos: ' + e.message); }
+}
+
+function saveDraft() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    try {
+      const draft = { session: currentSession, date: currentDate, data: formData };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      const el = document.getElementById('draft-badge');
+      if (el) el.style.display = 'inline-block';
+    } catch(e) {}
+  }, 400);
+}
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function fmtDate(d) {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('es-ES', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function fmtShort(d) {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('es-ES', { day:'numeric', month:'short' });
+}
+
+function logKey() { return `${currentSession}_${currentDate}`; }
+function sessColor() { return SESSIONS[currentSession].color; }
+function sessBg() { return SESSIONS[currentSession].bg; }
+
+function updateStats() {
+  const logs = Object.values(allLogs);
+  document.getElementById('total-count').textContent = logs.length;
+  const weekAgo = new Date(Date.now() - 7*86400000);
+  const wk = logs.filter(l => new Date(l.date+'T12:00:00') >= weekAgo).length;
+  document.getElementById('week-count').textContent = wk;
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────
+function setSession(s) {
+  currentSession = s;
+  selectedChartEx = null;
+  document.querySelectorAll('.stab').forEach((t,i) => t.classList.toggle('active', ['A','B','C'][i]===s));
+  loadFormFromLogs();
+  render();
+}
+
+function setView(v, e) {
+  currentView = v;
+  document.querySelectorAll('.vtab').forEach(t => t.classList.remove('active'));
+  if (e && e.target) e.target.classList.add('active');
+  else document.querySelectorAll('.vtab')[['log','history','charts','data'].indexOf(v)]?.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+v).classList.add('active');
+  document.getElementById('save-bar').style.display = v==='log' ? 'block' : 'none';
+  render();
+}
+
+// ── FORM ─────────────────────────────────────────────────────────
+function loadFormFromLogs() {
+  const key = logKey();
+  if (allLogs[key]) {
+    formData = JSON.parse(JSON.stringify(allLogs[key].data));
+    clearDraft();
+    return;
+  }
+  // Check for a matching draft
+  const draft = loadDraft();
+  if (draft && draft.session === currentSession && draft.date === currentDate) {
+    formData = draft.data;
+    return;
+  }
+  formData = {};
+}
+
+function getExData(exId) {
+  if (!formData[exId]) formData[exId] = { sets:[{weight:'',reps:''}], notes:'' };
+  if (!formData[exId].sets || !formData[exId].sets.length) formData[exId].sets = [{weight:'',reps:''}];
+  return formData[exId];
+}
+
+function updateWeight(exId, idx, val) {
+  getExData(exId).sets[idx].weight = val;
+  const num = document.querySelector(`[data-num="${exId}-${idx}"]`);
+  if (num) num.className = 'set-num' + (val ? ' filled' : '');
+  const card = document.querySelector(`[data-card="${exId}"]`);
+  if (card) card.classList.toggle('has-data', hasData(exId));
+  saveDraft();
+}
+
+function updateReps(exId, idx, val) {
+  getExData(exId).sets[idx].reps = val;
+  saveDraft();
+}
+
+function updateNotes(exId, val) {
+  getExData(exId).notes = val;
+  saveDraft();
+}
+
+function addSet(exId) {
+  const d = getExData(exId);
+  const last = d.sets[d.sets.length-1] || {};
+  d.sets.push({weight:last.weight||'', reps:last.reps||''});
+  renderSetsFor(exId);
+  saveDraft();
+}
+
+function removeSet(exId, idx) {
+  const d = getExData(exId);
+  if (d.sets.length <= 1) return;
+  d.sets.splice(idx, 1);
+  renderSetsFor(exId);
+  saveDraft();
+}
+
+function hasData(exId) {
+  const d = formData[exId];
+  return d && d.sets && d.sets.some(s => s.weight || s.reps);
+}
+
+// ── SAVE ─────────────────────────────────────────────────────────
+function saveSession() {
+  const key = logKey();
+  allLogs[key] = { session: currentSession, date: currentDate, data: JSON.parse(JSON.stringify(formData)) };
+  saveAll();
+  clearDraft();
+  updateStats();
+
+  const btn = document.getElementById('save-btn');
+  btn.textContent = '✓ Sesión guardada';
+  btn.style.background = '#2e8b57';
+  setTimeout(() => {
+    btn.textContent = 'Guardar sesión';
+    btn.style.background = sessColor();
+  }, 2000);
+
+  const badge = document.getElementById('saved-badge');
+  if (badge) badge.style.display = 'inline-block';
+  const draft = document.getElementById('draft-badge');
+  if (draft) draft.style.display = 'none';
+}
+
+// ── RENDER LOG ───────────────────────────────────────────────────
+function renderLog() {
+  const sess = SESSIONS[currentSession];
+  const color = sess.color;
+  const bg = sess.bg;
+
+  const btn = document.getElementById('save-btn');
+  btn.style.background = color;
+
+  const isSaved = !!allLogs[logKey()];
+  const draft = loadDraft();
+  const hasDraft = draft && draft.session === currentSession && draft.date === currentDate && !isSaved;
+
+  let html = `
+    <div class="session-banner" style="background:${color}">
+      <div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div>
+      <div class="sb-badge">${sess.exercises.length} ejercicios</div>
+    </div>
+    <div class="date-row">
+      <label>Fecha</label>
+      <input type="date" class="date-input" value="${currentDate}" onchange="onDateChange(this.value)">
+      <span class="saved-badge" id="saved-badge" style="display:${isSaved?'inline-block':'none'}">✓ Registrada</span>
+      <span class="draft-badge" id="draft-badge" style="display:${hasDraft?'inline-block':'none'}">✎ Borrador</span>
+    </div>
+    <div id="ex-list">
+  `;
+
+  for (const ex of sess.exercises) {
+    html += renderExCard(ex, color, bg);
+  }
+  html += `</div>`;
+  document.getElementById('page-log').innerHTML = html;
+}
+
+function renderExCard(ex, color, bg) {
+  const d = getExData(ex.id);
+  const filled = hasData(ex.id);
+  const wLabel = ex.unit==='min'?'Duración':ex.unit==='km/h'?'km/h':'kg';
+
+  return `
+    <div class="ex-card${filled?' has-data':''}" data-card="${ex.id}" style="--sess-color:${color};--sess-bg:${bg}">
+      <div class="ex-head">
+        <div>
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-meta">
+            <span class="ex-target" style="color:${color};background:${bg};border:1px solid ${color}33">${ex.sets}</span>
+            <span class="ex-ref">${ex.note}</span>
+          </div>
+        </div>
+        ${filled?'<span style="font-size:14px">✅</span>':''}
+      </div>
+      <div class="col-heads">
+        <div class="col-head">#</div>
+        <div class="col-head">${wLabel}</div>
+        <div class="col-head">Reps</div>
+        <div class="col-head"></div>
+      </div>
+      <div class="sets-body" id="sets-${ex.id}">
+        ${renderSetRows(ex.id, d.sets, color)}
+      </div>
+      <div style="padding:0 14px">
+        <button class="add-set-btn" style="--sess-color:${color}" onclick="addSet('${ex.id}')">+ Añadir serie</button>
+        <input class="notes-input" type="text" value="${d.notes||''}" placeholder="Notas (sensaciones, RIR, ajustes...)" oninput="updateNotes('${ex.id}',this.value)">
+      </div>
+    </div>
+  `;
+}
+
+function renderSetRows(exId, sets, color) {
+  return sets.map((s,i) => `
+    <div class="set-row" id="setrow-${exId}-${i}">
+      <div class="set-num${s.weight||s.reps?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color}">${i+1}</div>
+      <input type="number" step="0.5" class="set-input weight-input" style="--sess-color:${color}"
+        value="${s.weight||''}" placeholder="—"
+        oninput="updateWeight('${exId}',${i},this.value)"
+        onchange="updateWeight('${exId}',${i},this.value)">
+      <input type="number" class="set-input reps-input"
+        value="${s.reps||''}" placeholder="—"
+        oninput="updateReps('${exId}',${i},this.value)">
+      <button class="rm-btn" onclick="removeSet('${exId}',${i})" ${sets.length<=1?'disabled':''}>×</button>
+    </div>
+  `).join('');
+}
+
+function renderSetsFor(exId) {
+  const d = getExData(exId);
+  const color = SESSIONS[currentSession].color;
+  const container = document.getElementById('sets-'+exId);
+  if (container) container.innerHTML = renderSetRows(exId, d.sets, color);
+}
+
+function onDateChange(val) {
+  currentDate = val;
+  loadFormFromLogs();
+  renderLog();
+}
+
+// ── RENDER HISTORY ───────────────────────────────────────────────
+function renderHistory() {
+  const sess = SESSIONS[currentSession];
+  const color = sess.color;
+
+  const logs = Object.values(allLogs)
+    .filter(l => l.session === currentSession)
+    .sort((a,b) => b.date.localeCompare(a.date));
+
+  if (!logs.length) {
+    document.getElementById('page-history').innerHTML = `
+      <div class="session-banner" style="background:${color}">
+        <div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div>
+      </div>
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">Sin sesiones registradas</div>
+        <div class="empty-sub">Ve a "Registrar" para añadir tu primera sesión</div>
+      </div>`;
+    return;
+  }
+
+  let html = `
+    <div class="session-banner" style="background:${color}">
+      <div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div>
+      <div class="sb-badge">${logs.length} sesiones</div>
+    </div>
+  `;
+
+  for (const log of logs) {
+    const exWithData = sess.exercises.filter(ex => {
+      const d = log.data[ex.id];
+      return d && d.sets && d.sets.some(s => s.weight||s.reps);
+    });
+    const isOpen = expandedLog === log.date;
+
+    html += `
+      <div class="hist-item" style="--sess-color:${color}">
+        <button class="hist-toggle" onclick="toggleLog('${log.date}')">
+          <div>
+            <div class="hist-date">${fmtDate(log.date)}</div>
+            <div class="hist-sub">${exWithData.length} ejercicios registrados</div>
+          </div>
+          <div class="hist-arrow">${isOpen?'▲':'▼'}</div>
+        </button>
+        ${isOpen ? `<div class="hist-body">${renderHistBody(log, sess, color)}</div>` : ''}
+      </div>
+    `;
+  }
+
+  document.getElementById('page-history').innerHTML = html;
+}
+
+function renderHistBody(log, sess, color) {
+  let html = '';
+  for (const ex of sess.exercises) {
+    const d = log.data[ex.id];
+    if (!d || !d.sets || !d.sets.some(s => s.weight||s.reps)) continue;
+    const filled = d.sets.filter(s => s.weight||s.reps);
+    const setsStr = filled.map((s,i) =>
+      `S${i+1}: ${s.weight?`<b>${s.weight}${ex.unit}</b>`:'—'}${s.reps?` × ${s.reps}`:''}`
+    ).join('  ·  ');
+    html += `
+      <div class="hist-ex">
+        <div class="hist-ex-name">${ex.name} <span style="font-family:'DM Mono',monospace;font-size:10px;color:${color};font-weight:700">${ex.sets}</span></div>
+        <div class="hist-sets">${setsStr}</div>
+        ${d.notes?`<div class="hist-notes">${d.notes}</div>`:''}
+      </div>
+    `;
+  }
+  html += `<button class="hist-del-btn" onclick="deleteLog('${log.date}')">🗑 Eliminar esta sesión</button>`;
+  return html;
+}
+
+function toggleLog(date) {
+  expandedLog = expandedLog === date ? null : date;
+  renderHistory();
+}
+
+function deleteLog(date) {
+  if (!confirm(`¿Eliminar la sesión del ${fmtDate(date)}?`)) return;
+  delete allLogs[`${currentSession}_${date}`];
+  saveAll();
+  updateStats();
+  expandedLog = null;
+  renderHistory();
+}
+
+// ── RENDER CHARTS ────────────────────────────────────────────────
+function getChartData(exId) {
+  const logs = Object.values(allLogs)
+    .filter(l => l.session === currentSession && l.data[exId]?.sets?.some(s => s.weight))
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  return logs.map(l => {
+    const sets = l.data[exId].sets || [];
+    const weights = sets.map(s => parseFloat(s.weight)||0).filter(w => w>0);
+    const reps = sets.map(s => parseInt(s.reps)||0).filter(r => r>0);
+    const maxW = weights.length ? Math.max(...weights) : 0;
+    const avgR = reps.length ? Math.round(reps.reduce((a,b)=>a+b,0)/reps.length) : 0;
+    const ex = SESSIONS[currentSession].exercises.find(e => e.id===exId);
+    return { date: l.date, weight: maxW, reps: avgR, unit: ex?.unit||'kg', totalSets: sets.filter(s=>s.weight).length };
+  });
+}
+
+function renderCharts() {
+  const sess = SESSIONS[currentSession];
+  const color = sess.color;
+
+  let html = `
+    <div class="session-banner" style="background:${color}">
+      <div><div class="sb-title">${sess.label}</div><div class="sb-sub">Progreso por ejercicio</div></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Selecciona ejercicio</div>
+    <div class="ex-selector">
+  `;
+
+  for (const ex of sess.exercises) {
+    const data = getChartData(ex.id);
+    const isActive = selectedChartEx === ex.id;
+    html += `
+      <button class="ex-chip${isActive?' active':''}"
+        style="${isActive?`background:${color};border-color:${color};color:#fff`:''}"
+        onclick="selectChartEx('${ex.id}')">
+        ${ex.name}
+        ${data.length?`<span class="chip-count">(${data.length})</span>`:''}
+      </button>
+    `;
+  }
+  html += `</div>`;
+
+  if (!selectedChartEx) {
+    html += `<div class="empty"><div class="empty-icon">👆</div><div class="empty-title">Selecciona un ejercicio</div><div class="empty-sub">Para ver su evolución de peso y reps</div></div>`;
+    document.getElementById('page-charts').innerHTML = html;
+    return;
+  }
+
+  const data = getChartData(selectedChartEx);
+  const ex = sess.exercises.find(e => e.id===selectedChartEx);
+
+  if (!data.length) {
+    html += `<div class="empty"><div class="empty-icon">📈</div><div class="empty-title">Sin datos para ${ex.name}</div><div class="empty-sub">Registra al menos una sesión para ver el gráfico</div></div>`;
+    document.getElementById('page-charts').innerHTML = html;
+    return;
+  }
+
+  const maxW = Math.max(...data.map(d=>d.weight));
+  const minW = Math.min(...data.map(d=>d.weight));
+  const lastW = data[data.length-1].weight;
+  const firstW = data[0].weight;
+  const pct = firstW>0 ? (((lastW-firstW)/firstW)*100).toFixed(1) : 0;
+
+  html += `
+    <div class="chart-stats" style="background:${color}">
+      <div class="cs-item"><div class="cs-val">${lastW}${ex.unit}</div><div class="cs-key">Actual</div></div>
+      <div class="cs-item"><div class="cs-val">${maxW}${ex.unit}</div><div class="cs-key">Máximo</div></div>
+      <div class="cs-item"><div class="cs-val">${minW}${ex.unit}</div><div class="cs-key">Mínimo</div></div>
+      <div class="cs-item"><div class="cs-val">${pct>0?'+':''}${pct}%</div><div class="cs-key">Progreso</div></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">${ex.name} — Peso máximo por sesión</div>
+      ${renderSVGChart(data, 'weight', ex.unit, color)}
+    </div>
+  `;
+
+  if (data.some(d=>d.reps>0)) {
+    html += `
+      <div class="chart-box">
+        <div class="chart-title">${ex.name} — Reps medias por sesión</div>
+        ${renderSVGChart(data, 'reps', 'reps', '#c8a96e')}
+      </div>
+    `;
+  }
+
+  document.getElementById('page-charts').innerHTML = html;
+}
+
+function renderSVGChart(data, key, unit, color) {
+  const W=340, H=160, PL=36, PR=16, PT=10, PB=28;
+  const cW=W-PL-PR, cH=H-PT-PB;
+  const vals = data.map(d=>d[key]);
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
+  const range = maxV-minV || 1;
+  const xs = data.map((_,i) => PL + (i/(Math.max(data.length-1,1)))*cW);
+  const ys = vals.map(v => PT + cH - ((v-minV)/range)*cH);
+  const yLabels = [minV, minV+range/2, maxV].map(v => Math.round(v*10)/10);
+
+  let svg = `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" style="height:${H}px">`;
+
+  [0, 0.5, 1].forEach(t => {
+    const y = PT + cH - t*cH;
+    svg += `<line class="chart-grid" x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}"/>`;
+    svg += `<text class="chart-label" x="${PL-4}" y="${y+3}" text-anchor="end">${yLabels[t===0?0:t===0.5?1:2]}</text>`;
+  });
+
+  const step = Math.max(1, Math.floor(data.length/5));
+  data.forEach((d,i) => {
+    if (i % step === 0 || i === data.length-1) {
+      svg += `<text class="chart-label" x="${xs[i]}" y="${H-4}" text-anchor="middle">${fmtShort(d.date)}</text>`;
+    }
+  });
+
+  if (data.length > 1) {
+    const pts = xs.map((x,i)=>`${x},${ys[i]}`).join(' ');
+    svg += `<polyline class="chart-line" points="${pts}" stroke="${color}"/>`;
+    const apts = [`${xs[0]},${PT+cH}`, ...xs.map((x,i)=>`${x},${ys[i]}`), `${xs[xs.length-1]},${PT+cH}`].join(' ');
+    svg += `<polygon points="${apts}" fill="${color}" opacity=".08"/>`;
+  }
+
+  data.forEach((d,i) => {
+    const tip = `${fmtDate(d.date)}: ${d[key]}${unit}`;
+    svg += `
+      <circle class="chart-dot" cx="${xs[i]}" cy="${ys[i]}" r="5" fill="${color}"
+        onmouseenter="showTip(event,'${tip}')" onmouseleave="hideTip()"
+        ontouchstart="showTip(event,'${tip}')"/>
+      <circle class="chart-dot" cx="${xs[i]}" cy="${ys[i]}" r="9" fill="transparent"
+        onmouseenter="showTip(event,'${tip}')" onmouseleave="hideTip()"/>
+    `;
+  });
+  svg += `</svg>`;
+  return svg;
+}
+
+function selectChartEx(id) {
+  selectedChartEx = selectedChartEx===id ? null : id;
+  renderCharts();
+}
+
+// ── TOOLTIP ──────────────────────────────────────────────────────
+function showTip(e, text) {
+  const tip = document.getElementById('tooltip');
+  tip.textContent = text;
+  tip.style.display = 'block';
+  const src = e.touches ? e.touches[0] : e;
+  tip.style.left = src.clientX+'px';
+  tip.style.top = src.clientY+'px';
+}
+function hideTip() { document.getElementById('tooltip').style.display='none'; }
+
+// ── EXPORT / IMPORT ──────────────────────────────────────────────
+function exportData() {
+  const json = JSON.stringify(allLogs, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gymtracker_backup_${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importFromText() {
+  const text = document.getElementById('import-text').value.trim();
+  const msg = document.getElementById('import-msg');
+  if (!text) { showMsg(msg, 'Pega el contenido JSON antes de importar', 'err'); return; }
+  try {
+    const parsed = JSON.parse(text);
+    const count = Object.keys(parsed).length;
+    if (count === 0) { showMsg(msg, 'El JSON está vacío o no tiene el formato correcto', 'err'); return; }
+    allLogs = { ...allLogs, ...parsed };
+    saveAll();
+    updateStats();
+    document.getElementById('import-text').value = '';
+    showMsg(msg, `✓ ${count} sesiones importadas correctamente`, 'ok');
+    renderData();
+  } catch(e) {
+    showMsg(msg, 'JSON inválido. Comprueba que el archivo no está corrupto.', 'err');
+  }
+}
+
+function importFromFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { document.getElementById('import-text').value = ev.target.result; };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function clearAllData() {
+  if (!confirm('¿Eliminar TODOS los datos? Esta acción no se puede deshacer.')) return;
+  allLogs = {};
+  saveAll();
+  clearDraft();
+  updateStats();
+  renderData();
+}
+
+function showMsg(el, text, type) {
+  el.textContent = text;
+  el.className = `msg ${type}`;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+function renderData() {
+  const total = Object.keys(allLogs).length;
+  const sessA = Object.values(allLogs).filter(l=>l.session==='A').length;
+  const sessB = Object.values(allLogs).filter(l=>l.session==='B').length;
+  const sessC = Object.values(allLogs).filter(l=>l.session==='C').length;
+  const sizeKb = (JSON.stringify(allLogs).length / 1024).toFixed(1);
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+  document.getElementById('page-data').innerHTML = `
+    <div class="data-section">
+      <h3>Resumen de datos</h3>
+      <div class="data-stats">
+        <div class="ds-item"><div class="ds-val">${total}</div><div class="ds-key">Sesiones</div></div>
+        <div class="ds-item"><div class="ds-val">${sessA}/${sessB}/${sessC}</div><div class="ds-key">A / B / C</div></div>
+        <div class="ds-item"><div class="ds-val">${sizeKb} KB</div><div class="ds-key">Tamaño</div></div>
+      </div>
+    </div>
+
+    ${!isStandalone ? `
+    <div class="data-section">
+      <h3>📱 Instalar en tu iPhone</h3>
+      <p>Añade la app a la pantalla de inicio para abrirla sin navegador, a pantalla completa, como una app nativa.</p>
+      <div class="install-steps">
+        <div class="install-step"><div class="step-num">1</div><div class="step-text">Toca el botón <b>Compartir</b> (⬆️) en la barra de Safari</div></div>
+        <div class="install-step"><div class="step-num">2</div><div class="step-text">Selecciona <b>Añadir a pantalla de inicio</b></div></div>
+        <div class="install-step"><div class="step-num">3</div><div class="step-text">Toca <b>Añadir</b> — ¡listo! El icono aparece en tu pantalla</div></div>
+      </div>
+    </div>` : `
+    <div class="data-section">
+      <h3>✅ App instalada</h3>
+      <p>Estás usando Gym Tracker como app instalada. Los datos se guardan localmente en este dispositivo.</p>
+    </div>`}
+
+    <div class="data-section">
+      <h3>📤 Exportar datos</h3>
+      <p>Descarga un archivo JSON con todas tus sesiones. Úsalo como backup o para transferirlo a otro dispositivo.</p>
+      <button class="data-btn export" onclick="exportData()">Descargar backup (.json)</button>
+    </div>
+
+    <div class="data-section">
+      <h3>📥 Importar datos</h3>
+      <p>Pega el contenido de un backup JSON o selecciona el archivo directamente. Los datos importados se fusionan con los existentes.</p>
+      <button class="data-btn import" onclick="importFromFile()" style="margin-bottom:10px">Seleccionar archivo .json</button>
+      <textarea class="import-area" id="import-text" placeholder='O pega aquí el contenido JSON del backup...'></textarea>
+      <button class="data-btn export" onclick="importFromText()">Importar datos</button>
+      <div class="msg" id="import-msg"></div>
+    </div>
+
+    <div class="data-section">
+      <h3>🗑️ Borrar todos los datos</h3>
+      <p>Elimina permanentemente todas las sesiones guardadas. Exporta primero si quieres conservar un backup.</p>
+      <button class="data-btn danger" onclick="clearAllData()">Borrar todos los datos</button>
+    </div>
+  `;
+}
+
+// ── INSTALL BANNER ───────────────────────────────────────────────
+function maybeShowInstallBanner() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  const dismissed = localStorage.getItem(BANNER_KEY);
+  if (isIOS && !isStandalone && !dismissed) {
+    document.getElementById('install-banner').style.display = 'flex';
+  }
+}
+
+function dismissInstallBanner() {
+  document.getElementById('install-banner').style.display = 'none';
+  localStorage.setItem(BANNER_KEY, '1');
+}
+
+// ── MAIN RENDER ──────────────────────────────────────────────────
+function render() {
+  if (currentView==='log') renderLog();
+  else if (currentView==='history') renderHistory();
+  else if (currentView==='charts') renderCharts();
+  else if (currentView==='data') renderData();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+allLogs = loadAll();
+loadFormFromLogs();
+updateStats();
+render();
+document.getElementById('save-bar').style.display = 'block';
+maybeShowInstallBanner();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err));
+  });
+}
+</script>
+</body>
+</html>
