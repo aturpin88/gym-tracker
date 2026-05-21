@@ -443,8 +443,17 @@ let lastSyncTime = null;
 function initFirebase() {
   try {
     firebase.initializeApp(FB_CONFIG);
-    fbDb  = firebase.firestore();
+    fbDb   = firebase.firestore();
     fbAuth = firebase.auth();
+
+    // Handle the result when coming back from signInWithRedirect
+    fbAuth.getRedirectResult().catch(e => {
+      if (e.code && e.code !== 'auth/no-auth-event') {
+        console.error('Redirect result error:', e);
+        setCloudStatus('error');
+      }
+    });
+
     fbAuth.onAuthStateChanged(async user => {
       currentUser = user;
       if (user) {
@@ -517,7 +526,9 @@ async function signInWithGoogle() {
   if (!fbAuth) return;
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    await fbAuth.signInWithPopup(provider);
+    // signInWithRedirect works on all platforms including iOS PWA
+    // (signInWithPopup is blocked in iOS standalone mode)
+    await fbAuth.signInWithRedirect(provider);
   } catch(e) {
     alert('Error al iniciar sesión: ' + e.message);
   }
