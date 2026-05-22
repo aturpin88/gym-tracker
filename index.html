@@ -252,6 +252,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .sub-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:14px;}
 .subtab{background:none;border:none;cursor:pointer;padding:9px 14px;font-size:12px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;font-family:'DM Sans',sans-serif;}
 .subtab.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:700;}
+
+/* ── EXERCISE ALTERNATIVES ── */
+.alt-trigger{font-size:10px;color:var(--gold);font-weight:700;cursor:pointer;letter-spacing:.4px;text-transform:uppercase;border:none;background:none;font-family:'DM Sans',sans-serif;padding:0;transition:color .15s;text-decoration:underline dotted;}
+.alt-trigger:hover{color:var(--ink);}
+.alt-box{background:#fffbf0;border:1px solid #edd97a;border-radius:6px;padding:8px 12px;margin-top:5px;display:none;}
+.alt-box.open{display:block;}
+.alt-box-label{font-size:9px;color:#a07b00;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;font-weight:700;}
+.alt-item{font-size:12px;color:var(--ink2);padding:4px 0;display:flex;align-items:center;gap:6px;}
+.alt-item::before{content:'↔';color:var(--gold);font-size:11px;}
+.alt-item:not(:last-child){border-bottom:1px solid #fde68a;}
+
+/* ── EXERCISE SEARCH (Editor) ── */
+.ex-search-wrap{position:relative;flex:1;}
+.ex-dropdown{position:absolute;left:0;right:0;top:calc(100% + 2px);background:var(--white);border:1.5px solid var(--ink);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:400;max-height:180px;overflow-y:auto;display:none;}
+.ex-dropdown.open{display:block;}
+.ex-drop-item{padding:8px 12px;font-size:12px;color:var(--ink2);cursor:pointer;border-bottom:1px solid var(--bg);font-family:'DM Sans',sans-serif;}
+.ex-drop-item:last-child{border-bottom:none;}
+.ex-drop-item:hover{background:var(--bg);color:var(--ink);}
+.ex-drop-item .cat-tag{font-size:9px;color:var(--muted);margin-left:5px;text-transform:uppercase;letter-spacing:.8px;}
+
+/* ── MUSCLE SVG THUMBNAIL ── */
+.lib-muscle-svg{width:72px;height:72px;border-radius:6px;background:#f8f6f3;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.muscle-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-top:3px;}
 </style>
 </head>
 <body>
@@ -762,7 +785,14 @@ function renderExCard(ex,color,bg){
     <div class="ex-footer">
       <button class="add-set-btn" style="--sess-color:${color}" onclick="addSet('${ex.id}')">+ Serie</button>
       <input class="notes-input" type="text" value="${escHtml(d.notes||'')}" placeholder="Notas…" oninput="updateNotes('${ex.id}',this.value)">
-      <div class="ex-volume" data-vol="${ex.id}">${vol>0?`Vol: <span>${fmtVol(vol)}</span>`:''}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
+        <div class="ex-volume" data-vol="${ex.id}">${vol>0?`Vol: <span>${fmtVol(vol)}</span>`:''}</div>
+        <button class="alt-trigger" onclick="toggleAlts('${ex.id}')">Alternativas</button>
+      </div>
+      <div class="alt-box" id="alts-${ex.id}">
+        <div class="alt-box-label">💡 Si está ocupado, prueba:</div>
+        ${getAlternatives(ex.name,2).map(a=>`<div class="alt-item">${escHtml(a)}</div>`).join('')}
+      </div>
     </div>
   </div>`;
 }
@@ -944,6 +974,73 @@ const MUSCLE_CATS=[
   {id:9, name:'Piernas',emoji:'🦵',color:'#7a4b00'},
   {id:10,name:'Core',   emoji:'⚡',color:'#555'},
 ];
+// ── MUSCLE BODY SVG ──
+function muscleSVG(catId,color){
+  const g='#dedad6'; // inactive
+  const s='#ecdece'; // skin
+  const H={
+    11:{chest:1},             // Pecho
+    12:{lats:1,traps:1},      // Espalda
+    13:{shoulders:1},         // Hombros
+    8: {arms:1},              // Brazos
+    9: {legs:1},              // Piernas
+    10:{core:1},              // Core
+  }[catId]||{};
+  const c=k=>H[k]?color:g;
+  const lat=H.lats;
+  return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 86" style="display:block;width:100%;height:100%">
+    <circle cx="25" cy="7.5" r="5.8" fill="${s}" stroke="#c8b8a8" stroke-width="0.5"/>
+    <path d="M22.5 13 L27.5 13 L27 17.5 L23 17.5 Z" fill="${s}"/>
+    <path d="M17 17.5 L33 17.5 L35 22.5 L15 22.5 Z" fill="${c('traps')}"/>
+    <path d="M10 21 Q8 23 7 27.5 L12 28.5 L15 23 Z" fill="${c('shoulders')}"/>
+    <path d="M40 21 Q42 23 43 27.5 L38 28.5 L35 23 Z" fill="${c('shoulders')}"/>
+    <path d="M15 22.5 Q25 20 35 22.5 L33.5 34 Q25 32 16.5 34 Z" fill="${c('chest')}"/>
+    ${lat?`<path d="M9 27 L16 23 L16.5 37 L8 41 Z" fill="${color}" opacity=".85"/>
+           <path d="M41 27 L34 23 L33.5 37 L42 41 Z" fill="${color}" opacity=".85"/>`:''}
+    <path d="M6 26 L12 26 L12.5 41.5 L5.5 40.5 Z" fill="${c('arms')}"/>
+    <path d="M38 26 L44 26 L44.5 40.5 L37.5 41.5 Z" fill="${c('arms')}"/>
+    <path d="M5.5 40.5 L11.5 41.5 L11 55 L4.5 54 Z" fill="${H.arms?color:'#cdc8c4'}"/>
+    <path d="M38.5 41.5 L44.5 40.5 L45.5 54 L39 55 Z" fill="${H.arms?color:'#cdc8c4'}"/>
+    <path d="M16.5 34 Q25 32 33.5 34 L32.5 52.5 L17.5 52.5 Z" fill="${c('core')}"/>
+    <path d="M17 52.5 Q25 50.5 33 52.5 L35 59 Q25 61 15 59 Z" fill="${g}"/>
+    <path d="M14 59 L25.5 59 L25 75.5 L12 74.5 Z" fill="${c('legs')}"/>
+    <path d="M24.5 59 L36 59 L38 74.5 L25 75.5 Z" fill="${c('legs')}"/>
+    <path d="M12 74.5 L24 75.5 L23 85 L13 84 Z" fill="${H.legs?color:'#c4c0bc'}"/>
+    <path d="M26 75.5 L38 74.5 L37 84 L27 85 Z" fill="${H.legs?color:'#c4c0bc'}"/>
+  </svg>`;
+}
+
+// ── EXERCISE ALTERNATIVES ──
+const CATEGORY_ALTS={
+  11:['Press inclinado mancuernas','Aperturas pec-deck','Cable crossover','Flexiones lastradas','Press Hammer Strength'],
+  12:['Remo en máquina','Pullover cable','Face pull','Remo con mancuerna','Dominadas con agarre neutro'],
+  13:['Press Arnold','Face pull','Elevaciones frontales','Upright row cable','Reverse flyes'],
+  8: ['Curl predicador','Curl en máquina','Press francés EZ','Kickbacks tríceps','Tríceps en cable cuerda'],
+  9: ['Prensa de piernas','Hack squat','Step-up mancuernas','Extensión de cuádriceps','Curl femoral tumbado'],
+  10:['Plancha (plank)','Russian twist','Crunch en máquina','Elevación de piernas colgado','Ab wheel'],
+};
+function guessExCat(name){
+  const n=(name||'').toLowerCase();
+  if(/pecho|banca|inclinado|push.?up|fly|apertura|crossover|press.*pech|chest/.test(n))return 11;
+  if(/espalda|remo|lat\b|pulldown|dominada|jal[oó]n|pull.*up|back|row/.test(n))return 12;
+  if(/hombro|militar|shoulder|elevaci|arnold|face.?pull|deltoid|upright/.test(n))return 13;
+  if(/curl|b[ií]cep|tríc|tric|martillo|hammer|predicador|fondo|dip/.test(n))return 8;
+  if(/pierna|leg|squat|sentadil|lunge|prensa|muerto|deadlift|hip.?thrust|glute|femoral|b[úu]lgar/.test(n))return 9;
+  if(/core|abs|plancha|plank|crunch|abdomen|russian|rueda|ab.?wheel/.test(n))return 10;
+  return null;
+}
+function getAlternatives(exName,count=2){
+  const catId=guessExCat(exName);
+  const pool=catId&&CATEGORY_ALTS[catId]?CATEGORY_ALTS[catId]:['Ejercicio equivalente en máquina','Versión con mancuernas'];
+  const nl=exName.toLowerCase();
+  const filtered=pool.filter(a=>!nl.includes(a.toLowerCase().split(' ')[0].replace(/[^\w]/g,'')));
+  return filtered.slice(0,count).length>=count?filtered.slice(0,count):pool.slice(0,count);
+}
+function toggleAlts(exId){
+  const box=document.getElementById('alts-'+exId);
+  if(box)box.classList.toggle('open');
+}
+
 let libCat=11;
 let libData={};   // {catId: exercises[]}
 let libExpanded={}; // {exId: bool}
@@ -983,20 +1080,24 @@ function renderLibrary(){
       const isOpen=libExpanded[ex.id];
       // instructions
       const steps=ex.description?ex.description.replace(/<[^>]+>/g,'').split(/\.\s+/).filter(s=>s.length>10).slice(0,6):'';
+      const svgThumb=muscleSVG(libCat,cat.color);
       html+=`<div class="lib-card">
         <div class="lib-card-head" onclick="toggleLibEx(${ex.id})">
           ${imgUrl
-            ?`<img class="lib-thumb" src="${imgUrl}" alt="${escHtml(name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+            ?`<img class="lib-thumb" src="${imgUrl}" alt="${escHtml(name)}" loading="lazy"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
             :''}
-          <div class="lib-thumb-placeholder" style="${imgUrl?'display:none':''}">🏋️</div>
+          <div class="lib-muscle-svg" style="${imgUrl?'display:none':'display:flex'}">${svgThumb}</div>
           <div class="lib-info">
             <div class="lib-name">${escHtml(name)}</div>
-            <div class="lib-muscle">${cat.name}</div>
-            <div class="lib-desc">${escHtml(desc)||'Toca para ver instrucciones'}</div>
+            <span class="muscle-pill" style="background:${cat.color}22;color:${cat.color}">${cat.emoji} ${cat.name}</span>
+            <div class="lib-desc" style="margin-top:4px">${escHtml(desc)||'Toca para ver instrucciones'}</div>
           </div>
         </div>
         <div class="lib-expand${isOpen?' open':''}" id="lib-ex-${ex.id}">
-          ${imgUrl?`<img src="${imgUrl}" alt="${escHtml(name)}" style="border-radius:6px;width:100%;max-height:200px;object-fit:cover;margin-bottom:10px" loading="lazy">`:''}
+          ${imgUrl
+            ?`<img src="${imgUrl}" alt="${escHtml(name)}" style="border-radius:6px;width:100%;max-height:220px;object-fit:cover;margin-bottom:10px" loading="lazy">`
+            :`<div style="border-radius:6px;background:#f8f6f3;height:100px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden">${muscleSVG(libCat,cat.color)}</div>`}
           ${steps.length?`<ul class="lib-steps">${steps.map(s=>`<li>${escHtml(s.trim()+'.')}</li>`).join('')}</ul>`:`<p style="font-size:12px;color:var(--muted)">${escHtml(rawDesc||'Sin descripción disponible.')}</p>`}
         </div>
       </div>`;
@@ -1062,10 +1163,48 @@ function toggleLibEx(id){
   if(el)el.classList.toggle('open',libExpanded[id]);
 }
 
+// ── EXERCISE SEARCH DROPDOWN ──
+function filterExDropdown(inputEl,idx){
+  const q=inputEl.value.toLowerCase().trim();
+  const drop=document.getElementById('ex-drop-'+idx);
+  if(!drop)return;
+  if(q.length<2){drop.classList.remove('open');return;}
+  // gather all cached exercises
+  const all=[];
+  MUSCLE_CATS.forEach(mc=>{
+    if(libData[mc.id]){
+      libData[mc.id].forEach(ex=>{
+        if(ex.name)all.push({name:ex.name,catName:mc.name,catColor:mc.color});
+      });
+    }
+  });
+  const matches=all.filter(e=>e.name.toLowerCase().includes(q)).slice(0,8);
+  if(!matches.length){drop.classList.remove('open');return;}
+  drop.innerHTML=matches.map(e=>
+    `<div class="ex-drop-item" onclick="selectLibEx(${idx},'${e.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
+      ${escHtml(e.name)}<span class="cat-tag" style="color:${e.catColor}">${e.catName}</span>
+    </div>`
+  ).join('');
+  drop.classList.add('open');
+}
+function selectLibEx(idx,name){
+  const inp=document.querySelector(`.ed-input[data-field="name"][data-idx="${idx}"]`);
+  if(inp)inp.value=name;
+  const drop=document.getElementById('ex-drop-'+idx);
+  if(drop)drop.classList.remove('open');
+}
+// Close dropdowns on outside click
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.ex-search-wrap'))
+    document.querySelectorAll('.ex-dropdown').forEach(d=>d.classList.remove('open'));
+});
+
 // ── WORKOUT EDITOR ──
 function renderEditor(){
   const cont=document.getElementById('ej-sub-content');if(!cont)return;
   const sess=workoutDefs[currentSession];if(!sess)return;
+  // Pre-load all library categories for the search dropdown (fire & forget)
+  MUSCLE_CATS.forEach(mc=>{if(!libData[mc.id]&&!libLoading[mc.id])fetchLibCat(mc.id);});
 
   let html=`<div class="editor-section">
     <h3>Sesión ${currentSession} — Información básica</h3>
@@ -1096,7 +1235,15 @@ function renderEditorRow(ex,idx,total){
       <button class="ed-mv-btn" onclick="moveEditorEx(${idx},+1)" ${idx===total-1?'disabled':''}>▼</button>
     </div>
     <div class="ed-ex-fields">
-      <div class="ed-field"><label>Nombre</label><input class="ed-input" data-field="name" data-idx="${idx}" value="${escHtml(ex.name)}" placeholder="Nombre del ejercicio"></div>
+      <div class="ed-field"><label>Nombre</label>
+        <div class="ex-search-wrap">
+          <input class="ed-input" data-field="name" data-idx="${idx}" value="${escHtml(ex.name)}"
+            placeholder="Nombre o busca…"
+            oninput="filterExDropdown(this,${idx})"
+            autocomplete="off">
+          <div class="ex-dropdown" id="ex-drop-${idx}"></div>
+        </div>
+      </div>
       <div class="ed-field"><label>Series</label><input class="ed-input" data-field="sets" data-idx="${idx}" value="${escHtml(ex.sets)}" placeholder="ej: 4 × 8–10"></div>
       <div class="ed-field"><label>Ref.</label><input class="ed-input" data-field="note" data-idx="${idx}" value="${escHtml(ex.note)}" placeholder="Referencia / peso"></div>
       <div class="ed-field"><label>Unidad</label>
@@ -1313,8 +1460,15 @@ function initFirebase(){
   try{
     firebase.initializeApp(FB_CONFIG);
     fbDb=firebase.firestore();fbAuth=firebase.auth();
-    fbAuth.getRedirectResult().catch(e=>{
-      if(e.code&&e.code!=='auth/no-auth-event'){console.error('Redirect error:',e);setCloudStatus('error');}
+    // Handle redirect result (needed for iOS standalone flow)
+    fbAuth.getRedirectResult().then(result=>{
+      if(result&&result.user)console.log('Redirect sign-in OK:',result.user.email);
+    }).catch(e=>{
+      if(e.code&&e.code!=='auth/no-auth-event'){
+        console.error('Redirect error:',e);
+        setCloudStatus('error');
+        showToast('⚠️ Error de autenticación: '+e.code);
+      }
     });
     fbAuth.onAuthStateChanged(async user=>{
       currentUser=user;
@@ -1364,10 +1518,31 @@ async function deleteFromCloud(key){
   if(!currentUser||!fbDb)return;
   try{await sessionsRef().doc(key).delete();}catch(e){console.error('Cloud delete:',e);}
 }
+function _isIOSStandalone(){
+  return(/iphone|ipad|ipod/i.test(navigator.userAgent))&&
+    (window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches);
+}
 async function signInWithGoogle(){
   if(!fbAuth)return;
-  try{await fbAuth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());}
-  catch(e){alert('Error al iniciar sesión: '+e.message);}
+  const provider=new firebase.auth.GoogleAuthProvider();
+  try{
+    if(_isIOSStandalone()){
+      // Popup is blocked in iOS PWA — must use redirect
+      showToast('Redirigiendo a Google…');
+      await fbAuth.signInWithRedirect(provider);
+    } else {
+      // Regular browser: popup is smoother
+      await fbAuth.signInWithPopup(provider);
+    }
+  }catch(e){
+    console.error('Sign-in error:',e);
+    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-cancelled-by-user'){
+      showToast('Popup bloqueado — redirigiendo…');
+      setTimeout(()=>fbAuth.signInWithRedirect(provider),800);
+    } else if(e.code!=='auth/cancelled-popup-request'&&e.code!=='auth/user-cancelled'){
+      showToast('⚠️ '+( e.message||'Error al iniciar sesión'));
+    }
+  }
 }
 async function signOutUser(){
   if(!fbAuth)return;
