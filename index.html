@@ -2126,22 +2126,33 @@ async function genPKCE(){
   const arr = new Uint8Array(32); crypto.getRandomValues(arr);
   const enc = v => btoa(String.fromCharCode(...v)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
   const verifier = enc(arr);
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-  return { verifier, challenge: enc(new Uint8Array(digest)) };
+  if(crypto.subtle){
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+    return { verifier, challenge: enc(new Uint8Array(digest)) };
+  }
+  // Fallback: no PKCE challenge (still uses state for CSRF)
+  return { verifier, challenge: null };
 }
 
 // ── OAuth flow ──────────────────────────────────────────────────
 async function whoopConnect(){
-  if(!wls('client_id')){ showToast('Introduce primero el Client ID'); return; }
-  const {verifier,challenge} = await genPKCE();
-  wsave('pkce', verifier);
-  const p = new URLSearchParams({
-    response_type:'code', client_id:wls('client_id'),
-    redirect_uri: location.origin+location.pathname,
-    scope: WHOOP_SCOPE, state:'whoop_oauth',
-    code_challenge: challenge, code_challenge_method:'S256',
-  });
-  location.href = WHOOP_AUTH+'?'+p;
+  try{
+    if(!wls('client_id')){ showToast('Introduce primero el Client ID'); return; }
+    const {verifier,challenge} = await genPKCE();
+    wsave('pkce', verifier);
+    const params = {
+      response_type:'code', client_id:wls('client_id'),
+      redirect_uri: location.origin+location.pathname,
+      scope: WHOOP_SCOPE, state:'whoop_oauth',
+    };
+    if(challenge){ params.code_challenge=challenge; params.code_challenge_method='S256'; }
+    const url = WHOOP_AUTH+'?'+new URLSearchParams(params);
+    console.log('[WHOOP] Redirecting to:', url);
+    window.location.href = url;
+  }catch(err){
+    console.error('[WHOOP] Connect error:', err);
+    showToast('⚠️ Error al conectar WHOOP: '+(err.message||err));
+  }
 }
 
 async function handleWhoopCallback(){
@@ -2262,13 +2273,12 @@ async function syncWhoopAll(quiet=false){
   }
 }
 
-function saveWhoopCreds(){
+async function saveWhoopCreds(){
   const cid=(document.getElementById('whoop-cid')?.value||'').trim();
   const cs =(document.getElementById('whoop-cs')?.value||'').trim();
   if(!cid){ showToast('Client ID requerido'); return; }
   wsave('client_id', cid); wsave('client_secret', cs);
-  showToast('Credenciales guardadas — conectando…');
-  whoopConnect();
+  await whoopConnect();
 }
 
 function whoopDisconnect(){
