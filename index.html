@@ -1875,49 +1875,25 @@ function _isStandalone(){
 async function signInWithGoogle(){
   if(!fbAuth)return;
   const provider=new firebase.auth.GoogleAuthProvider();
-
-  if(_isStandalone()){
-    // ── PWA context (Chrome iOS / Safari iOS installed app) ──────────────
-    // signInWithRedirect from a PWA on iOS leaves the app and Google
-    // redirects back to Chrome *browser*, not back to the PWA. Auth lands
-    // in Chrome's storage; the PWA never sees it.
-    //
-    // Better: open the app URL in a normal browser tab via window.open.
-    // In that tab signInWithPopup works (browser context + user gesture).
-    // Chrome iOS PWA and Chrome browser share the same WKWebView storage,
-    // so Firebase's BroadcastChannel notifies onAuthStateChanged in the
-    // PWA automatically. The visibilitychange listener is a manual fallback.
-    const appUrl = location.origin + location.pathname;
-    const tab = window.open(appUrl, '_blank');
-    if(tab){
-      showToast('Inicia sesión en la pestaña que se abrió — luego vuelve aquí 👆');
-      // Update chip to "waiting" state so user knows what to do
-      const chip=document.getElementById('sync-chip');
-      if(chip){chip.textContent='⏳ Esperando sesión…';chip.className='sync-chip';}
-      return;
-    }
-    // window.open was blocked (rare, but possible on Safari standalone):
-    // fall back to redirect — not ideal but better than nothing
-    showToast('Redirigiendo a Google…');
-    await fbAuth.signInWithRedirect(provider);
-    return;
-  }
-
-  // ── Regular browser (Chrome desktop, Chrome iOS browser, etc.) ──────────
-  // signInWithPopup works perfectly here.
+  // ── signInWithPopup for ALL contexts ─────────────────────────────────────
+  // Why this works even in Chrome iOS PWA:
+  //   window.open(sameOriginPwaUrl) → Chrome intercepts → redirects to PWA → tab closes instantly ✗
+  //   signInWithPopup internally opens firebaseapp.com/__/auth/handler (DIFFERENT domain)
+  //   → Chrome does NOT intercept → popup stays open → user signs in → postMessage back → done ✓
+  //
+  // If popup is genuinely blocked (auth/popup-blocked error), fall back to redirect.
   try{
     await fbAuth.signInWithPopup(provider);
   }catch(e){
     if(e.code==='auth/popup-blocked'){
-      showToast('Popup bloqueado — redirigiendo…');
-      setTimeout(()=>fbAuth.signInWithRedirect(provider),800);
+      showToast('Popup bloqueado — redirigiendo a Google…');
+      setTimeout(()=>fbAuth.signInWithRedirect(provider),400);
     } else if(!['auth/cancelled-popup-request','auth/popup-closed-by-user','auth/user-cancelled'].includes(e.code)){
       showToast('⚠️ '+(e.message||'Error al iniciar sesión'));
     }
   }
 }
-// Called manually (button in data tab) or via visibilitychange when user
-// returns to the PWA after signing in through a Chrome browser tab.
+// Fallback for edge cases: manually re-check Firebase auth state.
 async function recheckAuth(){
   if(!fbAuth||currentUser)return;
   const user=fbAuth.currentUser;
@@ -1928,7 +1904,7 @@ async function recheckAuth(){
     render();
     showToast('✓ Sesión iniciada: '+user.email);
   } else {
-    showToast('Sin sesión activa — inténtalo de nuevo');
+    showToast('Sin sesión detectada — inténtalo de nuevo');
   }
 }
 async function signOutUser(){
