@@ -122,13 +122,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .timer-ring .bg{stroke:rgba(255,255,255,.1);}
 .timer-ring .fg{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset .9s linear;}
 .timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:#fff;}
-.timer-info{flex:1;}
-.timer-label{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;}
-.timer-ex{font-size:13px;font-weight:600;color:#f5f3ee;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.timer-actions{display:flex;gap:6px;}
+.timer-info{flex:1;min-width:0;}
+.timer-label{font-size:9px;color:rgba(255,255,255,.35);letter-spacing:2px;text-transform:uppercase;}
+.timer-ex{font-size:12px;font-weight:600;color:#f5f3ee;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.timer-goal-tag{display:inline-block;font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-top:2px;}
+.timer-actions{display:flex;gap:6px;flex-shrink:0;}
 .timer-btn{background:rgba(255,255,255,.1);border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;padding:5px 8px;font-family:'DM Sans',sans-serif;}
 .timer-btn.dismiss{background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);}
 .timer-btn:active{opacity:.7;}
+
+/* ── REST CHIP (manual trigger in log) ── */
+.rest-chip-row{padding:8px 16px 0;}
+.rest-chip{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
+.rest-chip:active{opacity:.65;}
+.rest-chip-emoji{font-size:20px;flex-shrink:0;}
+.rest-chip-info{flex:1;min-width:0;}
+.rest-chip-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+.rest-chip-detail{font-size:13px;font-weight:700;color:var(--ink);margin-top:1px;}
+.rest-chip-cta{font-size:11px;font-weight:600;color:var(--white);background:var(--ink);border-radius:6px;padding:4px 10px;flex-shrink:0;}
+
+/* ── GOAL SELECTOR in editor ── */
+.goal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 4px;}
+.goal-card{border:2px solid var(--line);border-radius:10px;padding:11px 10px;cursor:pointer;transition:all .15s;background:var(--white);text-align:center;-webkit-tap-highlight-color:transparent;}
+.goal-card:active{opacity:.8;}
+.goal-card.sel{color:#fff;}
+.goal-card-emoji{font-size:22px;margin-bottom:3px;}
+.goal-card-name{font-size:12px;font-weight:700;line-height:1.2;}
+.goal-card-rest{font-size:11px;margin-top:2px;opacity:.75;font-family:'DM Mono',monospace;}
+.goal-card-desc{font-size:10px;margin-top:3px;opacity:.55;line-height:1.3;}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;z-index:600;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);}
@@ -327,12 +348,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="timer-num" id="timer-num">1:30</div>
   </div>
   <div class="timer-info">
-    <div class="timer-label">Descanso</div>
+    <div class="timer-label">DESCANSO</div>
     <div class="timer-ex" id="timer-ex-name">–</div>
+    <div class="timer-goal-tag" id="timer-goal-tag"></div>
   </div>
   <div class="timer-actions">
-    <button class="timer-btn" onclick="adjustTimer(-15)">−15</button>
-    <button class="timer-btn" onclick="adjustTimer(+15)">+15</button>
+    <button class="timer-btn" onclick="adjustTimer(-30)">−30</button>
+    <button class="timer-btn" onclick="adjustTimer(+30)">+30</button>
     <button class="timer-btn dismiss" onclick="stopTimer()">✕</button>
   </div>
 </div>
@@ -431,6 +453,25 @@ const DEFAULT_SESSIONS = {
 };
 
 // ─────────────────────────────────────────────────────────────────
+// REST GOALS
+// ─────────────────────────────────────────────────────────────────
+const REST_BY_GOAL={
+  strength:    {label:'Fuerza',      emoji:'🏋️', rest:240, desc:'Cargas máximas'},
+  hypertrophy: {label:'Hipertrofia', emoji:'💪', rest:90,  desc:'Crecimiento muscular'},
+  definition:  {label:'Definición',  emoji:'🔥', rest:45,  desc:'Quema de grasa'},
+  cardio:      {label:'Cardio',      emoji:'🫀', rest:30,  desc:'Alta intensidad'},
+};
+function getRestGoal(){
+  const g=workoutDefs[currentSession]?.goal||'hypertrophy';
+  return REST_BY_GOAL[g]||REST_BY_GOAL.hypertrophy;
+}
+function getRestDuration(){return getRestGoal().rest;}
+function fmtRestTime(s){
+  const m=Math.floor(s/60),sec=s%60;
+  return m>0?(sec>0?`${m}:${sec.toString().padStart(2,'0')} min`:`${m} min`):`${s}s`;
+}
+
+// ─────────────────────────────────────────────────────────────────
 // APP STATE
 // ─────────────────────────────────────────────────────────────────
 let workoutDefs = {};         // mutable, loaded from localStorage
@@ -506,9 +547,11 @@ const ARC_CIRC=2*Math.PI*19; // r=19
 
 function startTimer(exName){
   if(timerState.interval)clearInterval(timerState.interval);
+  const dur=getRestDuration(); // dynamic — based on session goal
   timerState.active=true;
-  timerState.remaining=timerState.duration;
-  timerState.total=timerState.duration;
+  timerState.duration=dur;
+  timerState.remaining=dur;
+  timerState.total=dur;
   timerState.exName=exName;
   renderTimerOverlay();
   timerState.interval=setInterval(tickTimer,1000);
@@ -538,6 +581,7 @@ function renderTimerOverlay(){
   const numEl=document.getElementById('timer-num');
   const arcEl=document.getElementById('timer-arc');
   const exEl=document.getElementById('timer-ex-name');
+  const goalEl=document.getElementById('timer-goal-tag');
   if(!overlay)return;
   if(!timerState.active&&timerState.remaining===0){overlay.classList.remove('visible');return;}
   overlay.classList.add('visible');
@@ -549,6 +593,11 @@ function renderTimerOverlay(){
   arcEl.style.strokeDasharray=ARC_CIRC;
   arcEl.style.strokeDashoffset=offset;
   exEl.textContent=timerState.exName||'–';
+  if(goalEl){const g=getRestGoal();goalEl.textContent=`${g.emoji} ${g.label}`;}
+  // Arc color: gold → red as time runs out
+  if(pct<0.25)arcEl.style.stroke='#f87171';
+  else if(pct<0.5)arcEl.style.stroke='#fbbf24';
+  else arcEl.style.stroke='var(--gold)';
 }
 function playBeep(){
   try{
@@ -571,6 +620,29 @@ function checkAutoTimer(exId,idx){
     const ex=sess?.exercises.find(e=>e.id===exId);
     startTimer(ex?.name||exId);
   }
+}
+function renderRestChip(){
+  const g=getRestGoal();
+  return`<div class="rest-chip-row">
+    <div class="rest-chip" onclick="startTimer('Descanso manual')">
+      <span class="rest-chip-emoji">${g.emoji}</span>
+      <div class="rest-chip-info">
+        <div class="rest-chip-label">Objetivo · Descanso recomendado</div>
+        <div class="rest-chip-detail">${g.label} &mdash; ${fmtRestTime(g.rest)}</div>
+      </div>
+      <span class="rest-chip-cta">⏱ Iniciar</span>
+    </div>
+  </div>`;
+}
+function selectGoal(id,el){
+  workoutDefs[currentSession].goal=id;
+  const sess=workoutDefs[currentSession];
+  document.querySelectorAll('.goal-card').forEach(c=>{
+    const on=c.dataset.goal===id;
+    c.classList.toggle('sel',on);
+    c.style.borderColor=on?sess.color:'';
+    c.style.background=on?sess.color:'';
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -775,7 +847,9 @@ function renderLog(){
     <div class="session-volume" id="session-vol">
       <span class="sv-label">Volumen sesión</span>
       <span class="sv-val">${sessVol>0?fmtVol(sessVol)+' total':'—'}</span>
-    </div>`;
+    </div>
+    ${renderRestChip()}`;
+
 
   for(const ex of sess.exercises)html+=renderExCard(ex,color,bg);
   document.getElementById('page-log').innerHTML=html;
@@ -1450,11 +1524,23 @@ function renderEditor(){
   const cont=document.getElementById('ej-sub-content');if(!cont)return;
   const sess=workoutDefs[currentSession];if(!sess)return;
 
+  const curGoal=sess.goal||'hypertrophy';
   let html=`<div class="editor-section">
     <h3>Sesión ${currentSession} — Información básica</h3>
     <p>Nombre y descripción que aparecen en el header.</p>
     <input class="sess-name-input" type="text" id="ed-label" value="${escHtml(sess.label)}" placeholder="Nombre de la sesión">
     <input class="sess-sub-input" type="text" id="ed-sub" value="${escHtml(sess.sub)}" placeholder="Descripción">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px">Objetivo — tiempo de descanso</div>
+    <div class="goal-grid">
+      ${Object.entries(REST_BY_GOAL).map(([id,g])=>`
+        <div class="goal-card${curGoal===id?' sel':''}" data-goal="${id}" onclick="selectGoal('${id}',this)"
+          style="${curGoal===id?`border-color:${sess.color};background:${sess.color};`:''}">
+          <div class="goal-card-emoji">${g.emoji}</div>
+          <div class="goal-card-name">${g.label}</div>
+          <div class="goal-card-rest">${fmtRestTime(g.rest)}</div>
+          <div class="goal-card-desc">${g.desc}</div>
+        </div>`).join('')}
+    </div>
   </div>
   <div class="editor-section">
     <h3>Ejercicios</h3>
@@ -1528,6 +1614,7 @@ function saveEditorChanges(){
   const subEl=document.getElementById('ed-sub');
   if(labelEl)sess.label=labelEl.value.trim()||sess.label;
   if(subEl)sess.sub=subEl.value.trim()||sess.sub;
+  // Goal is already written to workoutDefs by selectGoal() — nothing extra needed
   // Read back exercise fields
   document.querySelectorAll('.ed-input,.ed-select').forEach(el=>{
     const idx=parseInt(el.dataset.idx);
