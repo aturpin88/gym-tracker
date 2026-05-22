@@ -263,7 +263,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .alt-item::before{content:'↔';color:var(--gold);font-size:11px;}
 .alt-item:not(:last-child){border-bottom:1px solid #fde68a;}
 
-/* ── EXERCISE SEARCH (Editor) ── */
+/* ── EXERCISE SEARCH (Editor inline) ── */
 .ex-search-wrap{position:relative;flex:1;}
 .ex-dropdown{position:absolute;left:0;right:0;top:calc(100% + 2px);background:var(--white);border:1.5px solid var(--ink);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:400;max-height:180px;overflow-y:auto;display:none;}
 .ex-dropdown.open{display:block;}
@@ -271,6 +271,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .ex-drop-item:last-child{border-bottom:none;}
 .ex-drop-item:hover{background:var(--bg);color:var(--ink);}
 .ex-drop-item .cat-tag{font-size:9px;color:var(--muted);margin-left:5px;text-transform:uppercase;letter-spacing:.8px;}
+
+/* ── EXERCISE PICKER PANEL ── */
+.ex-picker{background:var(--white);border:1.5px solid var(--ink);border-radius:10px;margin:8px 0 12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.1);}
+.picker-top{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--ink);}
+.picker-search-input{flex:1;border:none;border-radius:6px;padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--ink);}
+.picker-search-input:focus{outline:none;}
+.picker-cancel-btn{background:rgba(255,255,255,.12);border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:700;padding:7px 11px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.picker-scroll{max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.picker-status{padding:24px;text-align:center;color:var(--muted);font-size:13px;}
+.picker-cat-hdr{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 14px 5px;position:sticky;top:0;background:var(--white);z-index:2;border-bottom:1px solid var(--bg);}
+.picker-ex-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--bg);transition:background .1s;}
+.picker-ex-item:active,.picker-ex-item:hover{background:var(--bg);}
+.picker-ex-name{font-size:13px;font-weight:500;color:var(--ink);}
+.picker-add-icon{font-size:16px;color:var(--muted);flex-shrink:0;}
+.picker-free-row{padding:10px 12px;border-top:1.5px solid var(--line);display:flex;gap:8px;align-items:center;}
+.picker-free-btn{flex:1;background:none;border:1.5px dashed var(--line);border-radius:7px;padding:10px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;transition:all .15s;}
+.picker-free-btn:hover{border-color:var(--ink);color:var(--ink);}
+.picker-free-label{font-size:10px;color:var(--muted);}
+.picker-load-bar{height:3px;background:linear-gradient(90deg,var(--gold) 0%,transparent 60%);background-size:200% 100%;animation:loadslide 1.2s linear infinite;}
+@keyframes loadslide{0%{background-position:100% 0}100%{background-position:-100% 0}}
 
 /* ── MUSCLE SVG THUMBNAIL ── */
 .lib-muscle-svg{width:72px;height:72px;border-radius:6px;background:#f8f6f3;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;}
@@ -627,7 +647,7 @@ function setView(v,e){
   render();
 }
 function setEjerciciosSubTab(tab){
-  ejerciciosSubTab=tab;
+  ejerciciosSubTab=tab;pickerVisible=false;
   document.querySelectorAll('.subtab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
   renderEjercicios();
 }
@@ -1042,9 +1062,10 @@ function toggleAlts(exId){
 }
 
 let libCat=11;
-let libData={};   // {catId: exercises[]}
+let libData={};     // {catId: exercises[]}
 let libExpanded={}; // {exId: bool}
 let libLoading={};  // {catId: bool}
+let pickerVisible=false; // exercise picker in editor
 
 function renderEjercicios(){
   const pg=document.getElementById('page-ejercicios');
@@ -1155,6 +1176,8 @@ async function fetchLibCat(catId){
   }
   libLoading[catId]=false;
   renderLibrary();
+  // If picker is open, refresh list with newly loaded data
+  if(pickerVisible)renderPickerList();
 }
 
 function toggleLibEx(id){
@@ -1163,25 +1186,22 @@ function toggleLibEx(id){
   if(el)el.classList.toggle('open',libExpanded[id]);
 }
 
-// ── EXERCISE SEARCH DROPDOWN ──
+// ── EXERCISE SEARCH (inline autocomplete for existing rows) ──
 function filterExDropdown(inputEl,idx){
   const q=inputEl.value.toLowerCase().trim();
   const drop=document.getElementById('ex-drop-'+idx);
   if(!drop)return;
   if(q.length<2){drop.classList.remove('open');return;}
-  // gather all cached exercises
   const all=[];
   MUSCLE_CATS.forEach(mc=>{
-    if(libData[mc.id]){
-      libData[mc.id].forEach(ex=>{
-        if(ex.name)all.push({name:ex.name,catName:mc.name,catColor:mc.color});
-      });
-    }
+    if(libData[mc.id])libData[mc.id].forEach(ex=>{
+      if(ex.name)all.push({name:ex.name,catName:mc.name,catColor:mc.color});
+    });
   });
   const matches=all.filter(e=>e.name.toLowerCase().includes(q)).slice(0,8);
   if(!matches.length){drop.classList.remove('open');return;}
   drop.innerHTML=matches.map(e=>
-    `<div class="ex-drop-item" onclick="selectLibEx(${idx},'${e.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
+    `<div class="ex-drop-item" onclick="selectLibEx(${idx},${JSON.stringify(e.name)})">
       ${escHtml(e.name)}<span class="cat-tag" style="color:${e.catColor}">${e.catName}</span>
     </div>`
   ).join('');
@@ -1193,18 +1213,78 @@ function selectLibEx(idx,name){
   const drop=document.getElementById('ex-drop-'+idx);
   if(drop)drop.classList.remove('open');
 }
-// Close dropdowns on outside click
 document.addEventListener('click',e=>{
   if(!e.target.closest('.ex-search-wrap'))
     document.querySelectorAll('.ex-dropdown').forEach(d=>d.classList.remove('open'));
 });
 
+// ── EXERCISE PICKER (panel for adding new exercises) ──
+function showExPicker(){
+  pickerVisible=true;
+  // Pre-load all categories (fire & forget)
+  MUSCLE_CATS.forEach(mc=>{if(!libData[mc.id]&&!libLoading[mc.id])fetchLibCat(mc.id);});
+  renderEditor();
+  // Focus search after render
+  setTimeout(()=>document.getElementById('picker-search')?.focus(),80);
+}
+function hideExPicker(){pickerVisible=false;renderEditor();}
+
+function renderPickerList(){
+  const listEl=document.getElementById('picker-list');
+  if(!listEl)return;
+  const q=(document.getElementById('picker-search')?.value||'').toLowerCase().trim();
+
+  const anyLoading=MUSCLE_CATS.some(mc=>libLoading[mc.id]);
+  const hasAny=MUSCLE_CATS.some(mc=>libData[mc.id]?.length);
+
+  // Loading bar
+  const bar=document.getElementById('picker-bar');
+  if(bar)bar.style.display=anyLoading?'block':'none';
+
+  if(!hasAny&&anyLoading){
+    listEl.innerHTML='<div class="picker-status">⏳ Cargando ejercicios de la biblioteca…</div>';
+    return;
+  }
+
+  let html='';
+  MUSCLE_CATS.forEach(mc=>{
+    if(!libData[mc.id]?.length)return;
+    const pool=q
+      ?libData[mc.id].filter(e=>e.name.toLowerCase().includes(q))
+      :libData[mc.id];
+    if(!pool.length)return;
+    const shown=pool.slice(0,q?20:5);
+    html+=`<div class="picker-cat-hdr" style="color:${mc.color}">${mc.emoji} ${mc.name}</div>`;
+    shown.forEach(ex=>{
+      html+=`<div class="picker-ex-item" onclick="pickExercise(${JSON.stringify(ex.name)})">
+        <span class="picker-ex-name">${escHtml(ex.name)}</span>
+        <span class="picker-add-icon">＋</span>
+      </div>`;
+    });
+    if(!q&&pool.length>5){
+      html+=`<div style="padding:6px 14px 10px;font-size:11px;color:var(--muted)">+${pool.length-5} más — busca para filtrar</div>`;
+    }
+  });
+
+  listEl.innerHTML=html||'<div class="picker-status">Sin resultados. Añade como ejercicio libre ↓</div>';
+}
+
+function pickExercise(name){
+  const sess=workoutDefs[currentSession];
+  sess.exercises.push({id:`ex_${Date.now()}`,name,sets:'3 × 10',note:'',unit:'kg'});
+  pickerVisible=false;
+  renderEditor();
+  showToast('✓ '+name+' añadido');
+}
+function addFreeExercise(){
+  const q=(document.getElementById('picker-search')?.value||'').trim();
+  pickExercise(q||'Nuevo ejercicio');
+}
+
 // ── WORKOUT EDITOR ──
 function renderEditor(){
   const cont=document.getElementById('ej-sub-content');if(!cont)return;
   const sess=workoutDefs[currentSession];if(!sess)return;
-  // Pre-load all library categories for the search dropdown (fire & forget)
-  MUSCLE_CATS.forEach(mc=>{if(!libData[mc.id]&&!libLoading[mc.id])fetchLibCat(mc.id);});
 
   let html=`<div class="editor-section">
     <h3>Sesión ${currentSession} — Información básica</h3>
@@ -1221,11 +1301,36 @@ function renderEditor(){
     html+=renderEditorRow(ex,idx,sess.exercises.length);
   });
 
-  html+=`</div>
-    <button class="add-ex-btn" onclick="addEditorExercise()">+ Añadir ejercicio</button>
-    <button class="save-plan-btn" onclick="saveEditorChanges()">💾 Guardar cambios</button>
+  html+=`</div>`;
+
+  if(pickerVisible){
+    // Build picker panel inline
+    const freeLabel=(/* will be updated by renderPickerList */'');
+    html+=`<div class="ex-picker">
+      <div class="picker-top">
+        <input class="picker-search-input" id="picker-search" type="text"
+          placeholder="🔍 Buscar ejercicio…"
+          oninput="renderPickerList()" autocomplete="off">
+        <button class="picker-cancel-btn" onclick="hideExPicker()">Cancelar</button>
+      </div>
+      <div id="picker-bar" class="picker-load-bar" style="display:none"></div>
+      <div class="picker-scroll"><div id="picker-list"><div class="picker-status">Cargando…</div></div></div>
+      <div class="picker-free-row">
+        <button class="picker-free-btn" onclick="addFreeExercise()">
+          ✏️ Añadir nombre libre (lo que estés escribiendo arriba)
+        </button>
+      </div>
+    </div>`;
+  } else {
+    html+=`<button class="add-ex-btn" onclick="showExPicker()">＋ Añadir ejercicio</button>`;
+  }
+
+  html+=`<button class="save-plan-btn" onclick="saveEditorChanges()">💾 Guardar cambios</button>
   </div>`;
   cont.innerHTML=html;
+
+  // After render, populate picker list
+  if(pickerVisible)setTimeout(renderPickerList,0);
 }
 
 function renderEditorRow(ex,idx,total){
@@ -1258,14 +1363,7 @@ function renderEditorRow(ex,idx,total){
   </div>`;
 }
 
-function addEditorExercise(){
-  const sess=workoutDefs[currentSession];
-  sess.exercises.push({
-    id:`ex_${Date.now()}`,name:'Nuevo ejercicio',
-    sets:'3 × 10',note:'',unit:'kg'
-  });
-  renderEditor();
-}
+function addEditorExercise(){showExPicker();} // legacy alias
 
 function deleteEditorExercise(idx){
   const sess=workoutDefs[currentSession];
