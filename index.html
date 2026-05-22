@@ -2159,6 +2159,14 @@ async function handleWhoopCallback(){
   const p = new URLSearchParams(location.search);
   if(p.get('state') !== 'whoop_oauth') return false;
   window.history.replaceState({}, '', location.pathname);
+  // WHOOP sends ?error=... when auth fails (e.g. user not a test user, bad redirect_uri)
+  const whoopError = p.get('error');
+  if(whoopError){
+    const desc = decodeURIComponent(p.get('error_description')||whoopError);
+    console.error('[WHOOP] Auth rejected:', whoopError, desc);
+    alert('WHOOP rechazó la autorización:\n\n'+desc+'\n\nAsegúrate de que tu cuenta WHOOP está añadida como Test User en el Developer Portal.');
+    return true;
+  }
   const code = p.get('code');
   if(!code){ showToast('⚠️ WHOOP: autorización cancelada'); return true; }
   try{
@@ -2359,6 +2367,10 @@ function renderWhoopDataSection(){
           value="${wls('client_secret')}" placeholder="••••••••••••••••••••" autocomplete="off">
       </div>
       <button class="data-btn export" onclick="saveWhoopCreds()" style="margin-top:4px">Conectar WHOOP →</button>
+      <p style="font-size:10px;color:var(--muted);margin-top:10px;line-height:1.5">
+        <b>Redirect URI</b> (cópialo exacto en el Developer Portal de WHOOP):<br>
+        <code style="font-size:10px;word-break:break-all;color:var(--ink2)">${location.origin+location.pathname}</code>
+      </p>
     </div>`;
   const c=getWhoopCache(), r=c.recovery||{};
   const lastSync=c.lastSync
