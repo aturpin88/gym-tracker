@@ -933,17 +933,157 @@ function onDateChange(val){currentDate=val;loadFormFromLogs();renderLog();}
 // ─────────────────────────────────────────────────────────────────
 // RENDER HISTORY
 // ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// ACTIVITY HEATMAP (GitHub-style)
+// ─────────────────────────────────────────────────────────────────
+function buildHeatmapData(){
+  const byDate={};
+  Object.values(allLogs).forEach(log=>{
+    const vol=Object.values(log.data||{}).reduce((t,ex)=>
+      t+(ex?.sets||[]).reduce((s,r)=>s+((parseFloat(r.weight)||0)*(parseInt(r.reps)||0)),0),0);
+    if(!byDate[log.date])byDate[log.date]={volume:0,sessions:[]};
+    byDate[log.date].volume+=vol;
+    byDate[log.date].sessions.push(log.session);
+  });
+  // Level 1-4 by volume quartile among training days
+  const vols=Object.values(byDate).map(d=>d.volume).filter(v=>v>0).sort((a,b)=>a-b);
+  const n=vols.length;
+  const q=p=>vols[Math.max(0,Math.floor(n*p)-1)]||0;
+  Object.values(byDate).forEach(d=>{
+    const v=d.volume;
+    d.level=n<2?1:v<=q(.25)?1:v<=q(.5)?2:v<=q(.75)?3:4;
+  });
+  return byDate;
+}
+
+function calcHeatmapStats(byDate){
+  // Week-based streak (consecutive weeks with ≥1 workout)
+  const wk=ds=>{const d=new Date(ds+'T12:00:00'),dw=d.getDay(),dm=dw===0?6:dw-1;
+    d.setDate(d.getDate()-dm);return d.toISOString().split('T')[0];};
+  const weeks=new Set(Object.keys(byDate).map(wk));
+  const sw=[...weeks].sort();
+  let lng=0,streak=0,prev=null;
+  for(const w of sw){
+    streak=prev&&Math.round((new Date(w)-new Date(prev))/604800000)===1?streak+1:1;
+    if(streak>lng)lng=streak;
+    prev=w;
+  }
+  let cur=0;const tw=wk(today());let chk=new Date(tw+'T12:00:00');
+  while(weeks.has(chk.toISOString().split('T')[0])){cur++;chk.setDate(chk.getDate()-7);}
+  const ago28=new Date();ago28.setDate(ago28.getDate()-27);
+  const recent=Object.keys(byDate).filter(d=>d>=ago28.toISOString().split('T')[0]).length;
+  return{cur,lng,total:Object.keys(byDate).length,recent};
+}
+
+function renderHeatmap(){
+  const byDate=buildHeatmapData();
+  const{cur,lng,total,recent}=calcHeatmapStats(byDate);
+  const CELL=11,GAP=2,STEP=CELL+GAP,WEEKS=53;
+  const COLS=['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'];
+  const MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // Grid: start from Monday of the week WEEKS-1 weeks before the current week
+  const now=new Date();
+  const dow=now.getDay(),dm=dow===0?6:dow-1;
+  const curMonday=new Date(now);curMonday.setDate(now.getDate()-dm);
+  const start=new Date(curMonday);start.setDate(curMonday.getDate()-(WEEKS-1)*7);
+
+  // Build columns (each = 1 week Mon→Sun)
+  const weeks=[];const d=new Date(start);
+  while(d<=now||(weeks.length<WEEKS&&d.getDay()!==1)){
+    if(weeks.length===WEEKS)break;
+    const week=[];
+    for(let i=0;i<7;i++){
+      const ds=d.toISOString().split('T')[0];
+      const future=d>now;
+      const info=byDate[ds];
+      week.push({date:ds,level:future?-1:(info?info.level:0),
+        volume:info?.volume||0,sessions:info?.sessions||[],future,isToday:ds===today()});
+      d.setDate(d.getDate()+1);
+    }
+    weeks.push(week);
+  }
+
+  // Month labels (absolute positioned over the scroll container)
+  let mlHtml='',lastM=-1;
+  weeks.forEach((wk,wi)=>{
+    const first=wk.find(c=>!c.future);if(!first)return;
+    const m=new Date(first.date+'T12:00:00').getMonth();
+    if(m!==lastM){mlHtml+=`<span style="position:absolute;left:${wi*STEP}px;font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap">${MN[m]}</span>`;lastM=m;}
+  });
+
+  // Day labels: show L X V (Mon Wed Fri) only
+  const DL=['L','','X','','V','',''];
+  const dlHtml=DL.map(l=>
+    `<div style="height:${CELL}px;font-size:9px;line-height:${CELL}px;color:var(--muted);width:9px;text-align:right;flex-shrink:0">${l}</div>`
+  ).join(`<div style="height:${GAP}px"></div>`);
+
+  // Grid cells
+  const gridHtml=weeks.map(wk=>
+    `<div style="display:flex;flex-direction:column;gap:${GAP}px">
+    ${wk.map(c=>{
+      if(c.future)return`<div style="width:${CELL}px;height:${CELL}px"></div>`;
+      const bg=COLS[Math.max(0,c.level)];
+      const outline=c.isToday?`outline:2px solid var(--ink);outline-offset:1px;`:'';
+      return`<div onclick="heatmapTap('${c.date}')"
+        style="width:${CELL}px;height:${CELL}px;border-radius:2px;background:${bg};${outline}flex-shrink:0;cursor:${c.sessions.length?'pointer':'default'}"></div>`;
+    }).join('')}
+    </div>`
+  ).join('');
+
+  const totalW=weeks.length*STEP+14;
+  return`
+    <div style="background:var(--white);border-radius:14px;margin:12px 16px 4px;padding:16px 16px 12px;border:1px solid var(--line)">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Actividad · Último año</div>
+      <div style="display:flex;gap:0;margin-bottom:16px">
+        ${[
+          [cur, cur===1?'Semana<br>seguida':'Semanas<br>seguidas', cur>0?'🔥':''],
+          [lng, 'Mejor<br>racha', ''],
+          [recent, 'Últimas<br>4 sem.', ''],
+          [total, 'Total<br>sesiones', ''],
+        ].map(([v,l,e])=>`<div style="flex:1;border-right:1px solid var(--line);padding:0 10px;first:padding-left:0">
+          <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);line-height:1">${v}${e?` <span style="font-size:16px">${e}</span>`:''}</div>
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;line-height:1.4">${l}</div>
+        </div>`).join('')}
+      </div>
+      <div id="hm-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;cursor:grab">
+        <div style="min-width:${totalW}px;padding-bottom:2px">
+          <div style="position:relative;height:13px;margin-left:12px;margin-bottom:4px">${mlHtml}</div>
+          <div style="display:flex;gap:3px;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:${GAP}px;padding-top:0;flex-shrink:0">${dlHtml}</div>
+            <div style="display:flex;gap:${GAP}px">${gridHtml}</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-top:10px;font-size:10px;color:var(--muted)">
+        Menos ${COLS.map(c=>`<div style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></div>`).join('')} Más
+      </div>
+    </div>`;
+}
+
+function heatmapTap(date){
+  const d=buildHeatmapData()[date];
+  if(!d||!d.sessions.length)return;
+  const sess=d.sessions.slice().sort().join(' + ');
+  const vol=d.volume>0?` · ${fmtVol(d.volume)}`:'';
+  showToast(`${fmtDate(date)} — Sesión ${sess}${vol}`,3200);
+}
+
 function renderHistory(){
   const sess=workoutDefs[currentSession];if(!sess)return;
   const {color}=sess;
   const logs=Object.values(allLogs).filter(l=>l.session===currentSession).sort((a,b)=>b.date.localeCompare(a.date));
+
+  const heatmap=renderHeatmap();
+
   if(!logs.length){
-    document.getElementById('page-history').innerHTML=`
+    document.getElementById('page-history').innerHTML=heatmap+`
       <div class="session-banner" style="background:${color}"><div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div></div>
       <div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Sin sesiones registradas</div><div class="empty-sub">Ve a "Registrar" para añadir tu primera sesión</div></div>`;
+    setTimeout(()=>{const s=document.getElementById('hm-scroll');if(s)s.scrollLeft=s.scrollWidth;},0);
     return;
   }
-  let html=`<div class="session-banner" style="background:${color}"><div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div><div class="sb-badge">${logs.length} sesiones</div></div>`;
+  let html=heatmap+`<div class="session-banner" style="background:${color}"><div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div><div class="sb-badge">${logs.length} sesiones</div></div>`;
   for(const log of logs){
     const exWithData=sess.exercises.filter(ex=>log.data[ex.id]?.sets?.some(s=>s.weight||s.reps));
     const totalVol=exWithData.reduce((t,ex)=>t+calcExVolume(ex.id,log.data[ex.id]),0);
@@ -960,6 +1100,8 @@ function renderHistory(){
     </div>`;
   }
   document.getElementById('page-history').innerHTML=html;
+  // Auto-scroll heatmap to show most recent weeks (right edge)
+  setTimeout(()=>{const s=document.getElementById('hm-scroll');if(s)s.scrollLeft=s.scrollWidth;},0);
 }
 
 function renderHistBody(log,sess,color){
