@@ -1831,46 +1831,61 @@ function render(){
 // ─────────────────────────────────────────────────────────────────
 if(new URLSearchParams(location.search).has('googleSignIn')){
   // ── iOS PWA SIGN-IN HELPER ──────────────────────────────────────
-  // This window was opened by the PWA via window.open().
-  // We run signInWithPopup here (works in regular Safari), which
-  // writes the auth token to localStorage. The PWA detects it
-  // automatically via Firebase's storage-event listener.
+  // Opened by the PWA via window.open(). Runs in regular Safari.
+  // KEY: Safari blocks any popup NOT triggered by a direct user tap.
+  // A setTimeout of even 1ms is enough to break the gesture chain.
+  // Solution: show a real button — the tap IS the required gesture.
+  // After sign-in, Firebase writes to localStorage (shared origin),
+  // and onAuthStateChanged fires in the PWA automatically.
   document.body.innerHTML=`
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
       min-height:100vh;background:#111318;color:#f5f3ee;
-      font-family:system-ui,sans-serif;padding:40px 24px;text-align:center;gap:16px">
+      font-family:system-ui,-apple-system,sans-serif;padding:40px 24px;text-align:center;gap:20px">
       <div style="font-size:56px">💪</div>
-      <div style="font-size:24px;font-weight:700">Gym Tracker</div>
-      <div id="si-msg" style="color:rgba(255,255,255,.55);font-size:15px">
-        Preparando inicio de sesión…
+      <div style="font-size:26px;font-weight:700;letter-spacing:-.5px">Gym Tracker</div>
+      <div style="color:rgba(255,255,255,.5);font-size:14px;max-width:260px;line-height:1.6">
+        Toca el botón para conectar con Google y volver a la app
       </div>
-      <div id="si-sub" style="color:rgba(255,255,255,.3);font-size:12px;max-width:280px;line-height:1.5"></div>
+      <button id="si-btn" onclick="siDoSignIn()" style="
+        margin-top:8px;background:#fff;color:#3c4043;border:none;border-radius:12px;
+        padding:15px 28px;font-size:16px;font-weight:600;cursor:pointer;
+        display:flex;align-items:center;gap:12px;font-family:inherit;
+        box-shadow:0 4px 20px rgba(0,0,0,.4);-webkit-tap-highlight-color:transparent">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.8 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.7 20-21 0-1.3-.2-2.7-.5-4z"/>
+          <path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3c-7.6 0-14.2 4.2-17.7 10.7z"/>
+          <path fill="#FBBC05" d="M24 45c5.6 0 10.4-1.8 14.1-5l-6.5-5.3C29.6 36.3 27 37 24 37c-5.7 0-10.6-3.1-13.1-7.6l-7 5.4C7.8 40.8 15.3 45 24 45z"/>
+          <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.2-2.1 4-3.9 5.2l6.5 5.3c3.8-3.5 6.1-8.7 6.1-15 0-1.3-.2-2.7-.5-4z"/>
+        </svg>
+        Iniciar sesión con Google
+      </button>
+      <div id="si-msg" style="font-size:13px;color:rgba(255,255,255,.4);min-height:20px"></div>
     </div>`;
-  const siMsg=(t,s='')=>{
-    const m=document.getElementById('si-msg');const sb=document.getElementById('si-sub');
-    if(m)m.textContent=t; if(sb)sb.textContent=s;
-  };
-  (async()=>{
+
+  let _siAuth=null;
+  window.siDoSignIn=async function(){
+    const btn=document.getElementById('si-btn');
+    const msg=document.getElementById('si-msg');
+    if(btn){btn.disabled=true;btn.style.opacity='.5';}
+    if(msg){msg.textContent='Conectando…';msg.style.color='rgba(255,255,255,.6)';}
     try{
-      firebase.initializeApp(FB_CONFIG);
-      const auth=firebase.auth();
-      siMsg('Conectando con Google…','Se abrirá la pantalla de Google a continuación.');
-      // Small delay so the user sees the screen before the popup
-      await new Promise(r=>setTimeout(r,600));
-      await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-      siMsg('✓ ¡Sesión iniciada!','Puedes cerrar esta ventana y volver a la app.');
-      document.getElementById('si-msg').style.color='#4ade80';
-      setTimeout(()=>{ try{window.close();}catch(e){} },2500);
+      if(!_siAuth){
+        try{firebase.initializeApp(FB_CONFIG);}catch(e){/* already init */}
+        _siAuth=firebase.auth();
+      }
+      await _siAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      if(msg){msg.textContent='✓ Sesión iniciada. Cerrando esta ventana…';msg.style.color='#4ade80';}
+      if(btn)btn.style.display='none';
+      setTimeout(()=>{try{window.close();}catch(e){}},2000);
     }catch(e){
       const skip=['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled'];
-      siMsg(
-        skip.includes(e.code)?'Cancelado':'Error al iniciar sesión',
-        skip.includes(e.code)?'Cierra esta ventana e inténtalo de nuevo desde la app.':(e.message||e.code)
-      );
-      document.getElementById('si-msg').style.color='#fca5a5';
-      setTimeout(()=>{ try{window.close();}catch(e){} },5000);
+      if(btn){btn.disabled=false;btn.style.opacity='1';}
+      if(msg){
+        msg.textContent=skip.includes(e.code)?'Cancelado — vuelve a intentarlo.':'Error: '+(e.message||e.code);
+        msg.style.color='#fca5a5';
+      }
     }
-  })();
+  };
 
 } else {
   // ── NORMAL APP INIT ─────────────────────────────────────────────
