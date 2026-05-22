@@ -2102,7 +2102,7 @@ function render(){
 const WHOOP_AUTH  = 'https://api.prod.whoop.com/oauth/oauth2/auth';
 const WHOOP_TOKEN = 'https://api.prod.whoop.com/oauth/oauth2/token';
 const WHOOP_API   = 'https://api.prod.whoop.com/developer/v1';
-const WHOOP_SCOPE = 'read:recovery read:sleep read:workout read:cycles read:body_measurement';
+const WHOOP_SCOPE = 'read:recovery read:sleep read:workout read:profile read:body_measurement';
 
 const wls = k => localStorage.getItem('whoop_'+k)||'';
 const wsave = (k,v) => localStorage.setItem('whoop_'+k, v);
@@ -2222,13 +2222,21 @@ async function whoopFetch(endpoint){
 
 // ── Data sync ───────────────────────────────────────────────────
 async function syncWhoopRecovery(){
-  const now=new Date(), s=new Date(now); s.setHours(0,0,0,0);
+  // Use yesterday+today window — WHOOP processes data with ~24h delay
+  const now=new Date();
+  const s=new Date(now); s.setDate(s.getDate()-1); s.setHours(0,0,0,0);
   const e=new Date(now); e.setHours(23,59,59,999);
-  const data=await whoopFetch(`/cycle?start=${s.toISOString()}&end=${e.toISOString()}&limit=5`);
-  if(!data.records?.length) return;
-  const cycle=data.records[0];
-  const rec=cycle.recovery?.score||{};
-  const sl=cycle.sleep?.score||{};
+  const qs=`start=${s.toISOString()}&end=${e.toISOString()}&limit=2`;
+
+  // /recovery needs read:recovery ✓  |  /sleep needs read:sleep ✓
+  const [recData, sleepData] = await Promise.allSettled([
+    whoopFetch(`/recovery?${qs}`),
+    whoopFetch(`/sleep?${qs}`),
+  ]);
+
+  const rec  = (recData.status==='fulfilled'   ? recData.value.records?.[0]?.score   : null) || {};
+  const sl   = (sleepData.status==='fulfilled' ? sleepData.value.records?.[0]?.score : null) || {};
+
   saveWhoopCache({
     recovery:{
       score: rec.recovery_score??null,
