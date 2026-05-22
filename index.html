@@ -1762,22 +1762,36 @@ function _isIOSStandalone(){
 async function signInWithGoogle(){
   if(!fbAuth)return;
   const provider=new firebase.auth.GoogleAuthProvider();
-  try{
-    if(_isIOSStandalone()){
-      // Popup is blocked in iOS PWA — must use redirect
+
+  if(_isIOSStandalone()){
+    // iOS PWA: signInWithPopup is blocked; signInWithRedirect opens Safari
+    // and never returns to the PWA context.
+    // Fix: open a dedicated sign-in helper tab in Safari (?googleSignIn=1).
+    // That tab calls signInWithPopup successfully, which writes to localStorage.
+    // Firebase in the PWA detects the localStorage change via the 'storage' event
+    // and fires onAuthStateChanged automatically — no polling needed.
+    const url=location.href.split('?')[0]+'?googleSignIn=1';
+    const w=window.open(url,'_blank');
+    if(w){
+      showToast('Completa el inicio de sesión en la ventana que se abrió 👆');
+    } else {
+      // window.open was blocked — fall back to redirect
       showToast('Redirigiendo a Google…');
       await fbAuth.signInWithRedirect(provider);
-    } else {
-      // Regular browser: popup is smoother
-      await fbAuth.signInWithPopup(provider);
     }
+    return;
+  }
+
+  // Desktop / regular browser: popup works fine
+  try{
+    await fbAuth.signInWithPopup(provider);
   }catch(e){
-    console.error('Sign-in error:',e);
-    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-cancelled-by-user'){
+    console.error('Sign-in:',e);
+    if(e.code==='auth/popup-blocked'){
       showToast('Popup bloqueado — redirigiendo…');
       setTimeout(()=>fbAuth.signInWithRedirect(provider),800);
-    } else if(e.code!=='auth/cancelled-popup-request'&&e.code!=='auth/user-cancelled'){
-      showToast('⚠️ '+( e.message||'Error al iniciar sesión'));
+    } else if(!['auth/cancelled-popup-request','auth/popup-closed-by-user','auth/user-cancelled'].includes(e.code)){
+      showToast('⚠️ '+(e.message||'Error al iniciar sesión'));
     }
   }
 }
@@ -1815,32 +1829,76 @@ function render(){
 // ─────────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────────
-loadWorkoutDefs();
-allLogs=loadAll();
-loadFormFromLogs();
-updateStats();
-render();
-document.getElementById('save-bar').style.display='block';
-maybeShowInstallBanner();
-initFirebase();
-// Pre-load the exercise database and all 6 categories silently in background
-setTimeout(async()=>{
-  const ok=await ensureFreeExDb();
-  if(!ok)return;
-  for(const mc of MUSCLE_CATS){
-    if(libData[mc.id])continue; // already loaded
-    // Check per-category cache first (avoid re-processing if cached)
+if(new URLSearchParams(location.search).has('googleSignIn')){
+  // ── iOS PWA SIGN-IN HELPER ──────────────────────────────────────
+  // This window was opened by the PWA via window.open().
+  // We run signInWithPopup here (works in regular Safari), which
+  // writes the auth token to localStorage. The PWA detects it
+  // automatically via Firebase's storage-event listener.
+  document.body.innerHTML=`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+      min-height:100vh;background:#111318;color:#f5f3ee;
+      font-family:system-ui,sans-serif;padding:40px 24px;text-align:center;gap:16px">
+      <div style="font-size:56px">💪</div>
+      <div style="font-size:24px;font-weight:700">Gym Tracker</div>
+      <div id="si-msg" style="color:rgba(255,255,255,.55);font-size:15px">
+        Preparando inicio de sesión…
+      </div>
+      <div id="si-sub" style="color:rgba(255,255,255,.3);font-size:12px;max-width:280px;line-height:1.5"></div>
+    </div>`;
+  const siMsg=(t,s='')=>{
+    const m=document.getElementById('si-msg');const sb=document.getElementById('si-sub');
+    if(m)m.textContent=t; if(sb)sb.textContent=s;
+  };
+  (async()=>{
     try{
-      const c=localStorage.getItem(LIB_CACHE_PRE+mc.id);
-      if(c){const{data,ts}=JSON.parse(c);if(Date.now()-ts<FREE_EX_TTL&&data?.length){libData[mc.id]=data;continue;}}
-    }catch(e){}
-    libData[mc.id]=getFreeExForCat(mc.id).map(freeExToLibEntry);
-    try{localStorage.setItem(LIB_CACHE_PRE+mc.id,JSON.stringify({data:libData[mc.id],ts:Date.now()}));}catch(e){}
-  }
-  // Refresh library view if user is on it
-  if(currentView==='ejercicios'&&ejerciciosSubTab==='biblioteca')renderLibrary();
-  if(pickerVisible)renderPickerList();
-},1500);
+      firebase.initializeApp(FB_CONFIG);
+      const auth=firebase.auth();
+      siMsg('Conectando con Google…','Se abrirá la pantalla de Google a continuación.');
+      // Small delay so the user sees the screen before the popup
+      await new Promise(r=>setTimeout(r,600));
+      await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      siMsg('✓ ¡Sesión iniciada!','Puedes cerrar esta ventana y volver a la app.');
+      document.getElementById('si-msg').style.color='#4ade80';
+      setTimeout(()=>{ try{window.close();}catch(e){} },2500);
+    }catch(e){
+      const skip=['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled'];
+      siMsg(
+        skip.includes(e.code)?'Cancelado':'Error al iniciar sesión',
+        skip.includes(e.code)?'Cierra esta ventana e inténtalo de nuevo desde la app.':(e.message||e.code)
+      );
+      document.getElementById('si-msg').style.color='#fca5a5';
+      setTimeout(()=>{ try{window.close();}catch(e){} },5000);
+    }
+  })();
+
+} else {
+  // ── NORMAL APP INIT ─────────────────────────────────────────────
+  loadWorkoutDefs();
+  allLogs=loadAll();
+  loadFormFromLogs();
+  updateStats();
+  render();
+  document.getElementById('save-bar').style.display='block';
+  maybeShowInstallBanner();
+  initFirebase();
+  // Pre-load the exercise database and all 6 categories silently
+  setTimeout(async()=>{
+    const ok=await ensureFreeExDb();
+    if(!ok)return;
+    for(const mc of MUSCLE_CATS){
+      if(libData[mc.id])continue;
+      try{
+        const c=localStorage.getItem(LIB_CACHE_PRE+mc.id);
+        if(c){const{data,ts}=JSON.parse(c);if(Date.now()-ts<FREE_EX_TTL&&data?.length){libData[mc.id]=data;continue;}}
+      }catch(e){}
+      libData[mc.id]=getFreeExForCat(mc.id).map(freeExToLibEntry);
+      try{localStorage.setItem(LIB_CACHE_PRE+mc.id,JSON.stringify({data:libData[mc.id],ts:Date.now()}));}catch(e){}
+    }
+    if(currentView==='ejercicios'&&ejerciciosSubTab==='biblioteca')renderLibrary();
+    if(pickerVisible)renderPickerList();
+  },1500);
+}
 </script>
 
 <script>
