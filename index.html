@@ -298,6 +298,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 /* ── MUSCLE SVG THUMBNAIL ── */
 .lib-muscle-svg{width:72px;height:72px;border-radius:6px;background:#f8f6f3;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;}
 .muscle-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-top:3px;}
+
+/* ── LIBRARY CARD V2 (free-exercise-db) ── */
+.lib-level{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.3px;text-transform:capitalize;}
+.lib-equip{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--bg);color:var(--muted);letter-spacing:.2px;}
+.lib-muscles{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.4;}
+.lib-muscles b{color:var(--ink2);font-weight:600;}
+.lib-img-row{display:flex;gap:6px;margin-bottom:12px;}
+.lib-img-row img{flex:1;min-width:0;border-radius:8px;object-fit:cover;max-height:170px;background:var(--bg);}
+.lib-steps-ordered{padding-left:18px;margin:0;}
+.lib-steps-ordered li{font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:5px;padding-left:2px;}
+.lib-card-meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.lib-fetch-bar{height:2px;background:linear-gradient(90deg,var(--gold) 0%,transparent 60%);background-size:200%;animation:loadslide 1s linear infinite;margin-bottom:4px;}
 </style>
 </head>
 <body>
@@ -1064,6 +1076,86 @@ function toggleAlts(exId){
   if(box)box.classList.toggle('open');
 }
 
+// ─────────────────────────────────────────────────────────────────
+// FREE EXERCISE DATABASE  github.com/yuhonas/free-exercise-db
+// ─────────────────────────────────────────────────────────────────
+const FREE_EX_URL='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
+const FREE_EX_IMG='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
+const FREE_EX_CACHE_KEY='gymtracker_freeexdb_v1';
+const FREE_EX_TTL=7*86400000; // 7 days
+
+let _freeExAll=null;    // full array in memory (session lifetime)
+let _freeExPromise=null; // deduplication guard
+
+// primaryMuscles strings → our 6 category IDs
+const MUSCLE_TO_CAT={
+  'chest':11,
+  'lats':12,'middle back':12,'lower back':12,'traps':12,
+  'shoulders':13,
+  'biceps':8,'triceps':8,'forearms':8,
+  'quadriceps':9,'hamstrings':9,'glutes':9,'calves':9,
+  'adductors':9,'abductors':9,
+  'abdominals':10,
+};
+
+function exToCatId(ex){
+  for(const m of(ex.primaryMuscles||[])){
+    const id=MUSCLE_TO_CAT[m.toLowerCase()];
+    if(id)return id;
+  }
+  return null;
+}
+
+// Returns a Promise<boolean>; concurrent calls share the same fetch
+function ensureFreeExDb(){
+  if(_freeExAll?.length)return Promise.resolve(true);
+  if(_freeExPromise)return _freeExPromise;
+  _freeExPromise=(async()=>{
+    // 1. Try localStorage cache (full DB, 7-day TTL)
+    try{
+      const c=localStorage.getItem(FREE_EX_CACHE_KEY);
+      if(c){const{data,ts}=JSON.parse(c);if(Date.now()-ts<FREE_EX_TTL){_freeExAll=data;return true;}}
+    }catch(e){}
+    // 2. Fetch from GitHub CDN
+    try{
+      const resp=await fetch(FREE_EX_URL);
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      _freeExAll=await resp.json();
+      // Try to cache full DB; silently ignore if device storage is full
+      try{localStorage.setItem(FREE_EX_CACHE_KEY,JSON.stringify({data:_freeExAll,ts:Date.now()}));}
+      catch(e){/* too large — stays in memory only */}
+      return true;
+    }catch(e){
+      console.error('Free exercise DB:',e);
+      _freeExAll=[];
+      return false;
+    }
+  })();
+  return _freeExPromise;
+}
+
+function getFreeExForCat(catId){
+  return(_freeExAll||[]).filter(ex=>exToCatId(ex)===catId);
+}
+
+// Convert a free-exercise-db entry → our libData entry format
+function freeExToLibEntry(ex){
+  const imgs=(ex.images||[]).map(p=>FREE_EX_IMG+p);
+  return{
+    id:ex.id,
+    name:ex.name,
+    description:(ex.instructions||[]).join(' '),
+    images:imgs.length?[{image:imgs[0]}]:[],
+    allImages:imgs,
+    level:ex.level,
+    equipment:ex.equipment,
+    category:ex.category,
+    primaryMuscles:ex.primaryMuscles||[],
+    secondaryMuscles:ex.secondaryMuscles||[],
+    instructions:ex.instructions||[],
+  };
+}
+
 let libCat=11;
 let libData={};     // {catId: exercises[]}
 let libExpanded={}; // {exId: bool}
@@ -1091,23 +1183,24 @@ function renderLibrary(){
   MUSCLE_CATS.forEach(c=>{
     html+=`<button class="mtab${c.id===libCat?' active':''}" style="${c.id===libCat?`background:${c.color};color:#fff`:''}" onclick="selectLibCat(${c.id})">${c.emoji} ${c.name}</button>`;
   });
-  html+=`</div><div id="lib-content">`;
+  html+=`</div>`;
 
   if(libLoading[libCat]){
-    html+=`<div class="lib-loading"><div class="spin">⏳</div><div>Cargando ejercicios…</div></div>`;
+    html+=`<div class="lib-fetch-bar"></div><div class="lib-loading"><div class="spin">⏳</div><div>Descargando base de datos…</div></div>`;
   } else if(libData[libCat]?.length){
+    const count=libData[libCat].length;
+    html+=`<div style="font-size:10px;color:var(--muted);margin-bottom:10px">${count} ejercicios · ${cat.name}</div>`;
     html+=`<div class="lib-grid">`;
     libData[libCat].forEach(ex=>{
+      const safeId=String(ex.id);
       const name=ex.name||'Ejercicio';
-      const rawDesc=(ex.description||'').replace(/<[^>]+>/g,'').trim();
-      const desc=rawDesc.substring(0,120)+(rawDesc.length>120?'…':'');
       const imgUrl=ex.images?.[0]?.image||'';
-      const isOpen=libExpanded[ex.id];
-      // instructions
-      const steps=ex.description?ex.description.replace(/<[^>]+>/g,'').split(/\.\s+/).filter(s=>s.length>10).slice(0,6):'';
+      const isOpen=!!libExpanded[safeId];
       const svgThumb=muscleSVG(libCat,cat.color);
+      const lvlColor={beginner:'#2e8b57',intermediate:'#1e6ba0',expert:'#c0392b'}[ex.level]||'#888';
+
       html+=`<div class="lib-card">
-        <div class="lib-card-head" onclick="toggleLibEx(${ex.id})">
+        <div class="lib-card-head" data-libid="${escHtml(safeId)}" onclick="toggleLibExEl(this)">
           ${imgUrl
             ?`<img class="lib-thumb" src="${imgUrl}" alt="${escHtml(name)}" loading="lazy"
                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
@@ -1115,79 +1208,79 @@ function renderLibrary(){
           <div class="lib-muscle-svg" style="${imgUrl?'display:none':'display:flex'}">${svgThumb}</div>
           <div class="lib-info">
             <div class="lib-name">${escHtml(name)}</div>
-            <span class="muscle-pill" style="background:${cat.color}22;color:${cat.color}">${cat.emoji} ${cat.name}</span>
-            <div class="lib-desc" style="margin-top:4px">${escHtml(desc)||'Toca para ver instrucciones'}</div>
+            <div class="lib-card-meta">
+              <span class="muscle-pill" style="background:${cat.color}22;color:${cat.color}">${cat.emoji} ${cat.name}</span>
+              ${ex.level?`<span class="lib-level" style="background:${lvlColor}22;color:${lvlColor}">${ex.level}</span>`:''}
+              ${ex.equipment?`<span class="lib-equip">${escHtml(ex.equipment)}</span>`:''}
+            </div>
+            ${ex.primaryMuscles?.length?`<div class="lib-muscles"><b>Primary:</b> ${ex.primaryMuscles.map(m=>escHtml(m)).join(', ')}</div>`:''}
+            ${ex.secondaryMuscles?.length?`<div class="lib-muscles" style="opacity:.65"><b>Secondary:</b> ${ex.secondaryMuscles.map(m=>escHtml(m)).join(', ')}</div>`:''}
           </div>
         </div>
-        <div class="lib-expand${isOpen?' open':''}" id="lib-ex-${ex.id}">
-          ${imgUrl
-            ?`<img src="${imgUrl}" alt="${escHtml(name)}" style="border-radius:6px;width:100%;max-height:220px;object-fit:cover;margin-bottom:10px" loading="lazy">`
-            :`<div style="border-radius:6px;background:#f8f6f3;height:100px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden">${muscleSVG(libCat,cat.color)}</div>`}
-          ${steps.length?`<ul class="lib-steps">${steps.map(s=>`<li>${escHtml(s.trim()+'.')}</li>`).join('')}</ul>`:`<p style="font-size:12px;color:var(--muted)">${escHtml(rawDesc||'Sin descripción disponible.')}</p>`}
+        <div class="lib-expand${isOpen?' open':''}" id="lib-ex-${safeId}">
+          ${ex.allImages?.length
+            ?`<div class="lib-img-row">${ex.allImages.slice(0,2).map(u=>`<img src="${u}" loading="lazy" alt="${escHtml(name)}">`).join('')}</div>`
+            :imgUrl?`<img src="${imgUrl}" style="width:100%;border-radius:8px;margin-bottom:12px;max-height:200px;object-fit:cover" loading="lazy">`
+            :`<div style="border-radius:8px;background:#f8f6f3;height:120px;overflow:hidden;margin-bottom:12px">${muscleSVG(libCat,cat.color)}</div>`}
+          ${ex.instructions?.length
+            ?`<ol class="lib-steps-ordered">${ex.instructions.map(s=>`<li>${escHtml(s)}</li>`).join('')}</ol>`
+            :`<p style="font-size:12px;color:var(--muted)">Sin instrucciones disponibles.</p>`}
         </div>
       </div>`;
     });
     html+=`</div>`;
-  } else if(libData[libCat]){
-    html+=`<div class="lib-error">😕 Sin ejercicios disponibles para este grupo.<br><br><button class="data-btn import" onclick="fetchLibCat(${libCat})">Reintentar</button></div>`;
+  } else if(libData[libCat]!==undefined){
+    html+=`<div class="lib-error">😕 Sin ejercicios para este grupo.<br><br>
+      <button class="data-btn import" onclick="forceFetchLibCat(${libCat})">Reintentar</button></div>`;
   } else {
-    html+=`<div class="lib-loading"><div>Selecciona un grupo para cargar ejercicios</div></div>`;
+    html+=`<div class="lib-loading"><div>Selecciona un grupo muscular</div></div>`;
   }
-  html+=`</div>`;
   cont.innerHTML=html;
 }
 
+function toggleLibExEl(el){
+  const id=el.dataset.libid;
+  libExpanded[id]=!libExpanded[id];
+  const box=document.getElementById('lib-ex-'+id);
+  if(box)box.classList.toggle('open',libExpanded[id]);
+}
+// keep for any legacy calls
+function toggleLibEx(id){libExpanded[id]=!libExpanded[id];document.getElementById('lib-ex-'+id)?.classList.toggle('open',libExpanded[id]);}
+
 async function selectLibCat(catId){
   libCat=catId;
-  if(!libData[catId]&&!libLoading[catId]){
-    await fetchLibCat(catId);
-  } else renderLibrary();
+  if(!libData[catId]&&!libLoading[catId]) await fetchLibCat(catId);
+  else renderLibrary();
 }
 
 async function fetchLibCat(catId){
-  // Check localStorage cache (24h)
-  const cacheKey=LIB_CACHE_PRE+catId;
+  // 1. Check per-category localStorage cache (7 days)
   try{
-    const cached=localStorage.getItem(cacheKey);
-    if(cached){
-      const{data,ts}=JSON.parse(cached);
-      if(Date.now()-ts<86400000){libData[catId]=data;renderLibrary();return;}
-    }
+    const c=localStorage.getItem(LIB_CACHE_PRE+catId);
+    if(c){const{data,ts}=JSON.parse(c);if(Date.now()-ts<FREE_EX_TTL&&data?.length){libData[catId]=data;renderLibrary();if(pickerVisible)renderPickerList();return;}}
   }catch(e){}
 
-  libLoading[catId]=true;renderLibrary();
-  try{
-    const resp=await fetch(`https://wger.de/api/v2/exerciseinfo/?format=json&category=${catId}&language=2&limit=30&offset=0`);
-    const json=await resp.json();
-    // Filter: must have English name and at least one image
-    const results=(json.results||[])
-      .map(e=>{
-        // Try to get English translation
-        const tr=e.translations?.find(t=>t.language===2);
-        return{
-          id:e.id,
-          name:tr?.name||e.name||'',
-          description:tr?.description||e.description||'',
-          images:e.images||[]
-        };
-      })
-      .filter(e=>e.name);
-    libData[catId]=results;
-    try{localStorage.setItem(cacheKey,JSON.stringify({data:results,ts:Date.now()}));}catch(e){}
-  }catch(e){
-    console.error('Library fetch error:',e);
-    libData[catId]=[];
-  }
+  libLoading[catId]=true; renderLibrary();
+
+  // 2. Load the full exercise database (one shared fetch, cached)
+  await ensureFreeExDb();
+
+  // 3. Filter and convert
+  libData[catId]=getFreeExForCat(catId).map(freeExToLibEntry);
+
+  // 4. Cache per-category (smaller subset → fits comfortably in localStorage)
+  try{localStorage.setItem(LIB_CACHE_PRE+catId,JSON.stringify({data:libData[catId],ts:Date.now()}));}catch(e){}
+
   libLoading[catId]=false;
   renderLibrary();
-  // If picker is open, refresh list with newly loaded data
   if(pickerVisible)renderPickerList();
 }
 
-function toggleLibEx(id){
-  libExpanded[id]=!libExpanded[id];
-  const el=document.getElementById('lib-ex-'+id);
-  if(el)el.classList.toggle('open',libExpanded[id]);
+// Force-refresh a category (clears cache first)
+function forceFetchLibCat(catId){
+  localStorage.removeItem(LIB_CACHE_PRE+catId);
+  delete libData[catId];
+  fetchLibCat(catId);
 }
 
 // ── EXERCISE SEARCH (inline autocomplete for existing rows) ──
@@ -1730,8 +1823,24 @@ render();
 document.getElementById('save-bar').style.display='block';
 maybeShowInstallBanner();
 initFirebase();
-// Pre-load first library category silently
-setTimeout(()=>{if(!libData[11]&&!libLoading[11])fetchLibCat(11);},1500);
+// Pre-load the exercise database and all 6 categories silently in background
+setTimeout(async()=>{
+  const ok=await ensureFreeExDb();
+  if(!ok)return;
+  for(const mc of MUSCLE_CATS){
+    if(libData[mc.id])continue; // already loaded
+    // Check per-category cache first (avoid re-processing if cached)
+    try{
+      const c=localStorage.getItem(LIB_CACHE_PRE+mc.id);
+      if(c){const{data,ts}=JSON.parse(c);if(Date.now()-ts<FREE_EX_TTL&&data?.length){libData[mc.id]=data;continue;}}
+    }catch(e){}
+    libData[mc.id]=getFreeExForCat(mc.id).map(freeExToLibEntry);
+    try{localStorage.setItem(LIB_CACHE_PRE+mc.id,JSON.stringify({data:libData[mc.id],ts:Date.now()}));}catch(e){}
+  }
+  // Refresh library view if user is on it
+  if(currentView==='ejercicios'&&ejerciciosSubTab==='biblioteca')renderLibrary();
+  if(pickerVisible)renderPickerList();
+},1500);
 </script>
 
 <script>
