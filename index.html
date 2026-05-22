@@ -151,6 +151,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .goal-card-rest{font-size:11px;margin-top:2px;opacity:.75;font-family:'DM Mono',monospace;}
 .goal-card-desc{font-size:10px;margin-top:3px;opacity:.55;line-height:1.3;}
 
+/* ── WHOOP ── */
+.whoop-card{background:var(--white);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;margin:8px 16px 0;}
+.whoop-card.connected{border-color:#3CE0A070;}
+.whoop-cfg-row{display:flex;flex-direction:column;gap:6px;margin:10px 0;}
+.whoop-cfg-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.whoop-cfg-input{border:1.5px solid var(--line);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Mono',monospace;color:var(--ink);background:var(--bg);width:100%;}
+.whoop-cfg-input:focus{outline:none;border-color:var(--ink);}
+.whoop-strain-badge{display:inline-flex;align-items:center;gap:5px;background:#111318;color:#3CE0A0;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;}
+.whoop-metric{display:flex;flex-direction:column;gap:1px;}
+.whoop-metric-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);}
+.whoop-metric-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;z-index:600;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -848,6 +860,7 @@ function renderLog(){
       <span class="sv-label">Volumen sesión</span>
       <span class="sv-val">${sessVol>0?fmtVol(sessVol)+' total':'—'}</span>
     </div>
+    ${renderWhoopRecoveryCard()}
     ${renderRestChip()}`;
 
 
@@ -1091,7 +1104,9 @@ function renderHistory(){
     html+=`<div class="hist-item" style="--sess-color:${color}">
       <button class="hist-toggle" onclick="toggleLog('${log.date}')">
         <div>
-          <div class="hist-date">${fmtDate(log.date)}</div>
+          <div class="hist-date" style="display:flex;align-items:center;gap:8px">
+            ${fmtDate(log.date)} ${renderWhoopStrainBadge(log.date)}
+          </div>
           <div class="hist-sub">${exWithData.length} ejercicios · ${totalVol>0?fmtVol(totalVol):''}</div>
         </div>
         <div class="hist-arrow">${isOpen?'▲':'▼'}</div>
@@ -1832,6 +1847,7 @@ function renderData(){
       </div>
     </div>
     ${syncSection}
+    ${renderWhoopDataSection()}
     ${!isStandalone?`<div class="data-section"><h3>📱 Instalar en iPhone</h3>
       <div class="install-steps">
         <div class="install-step"><div class="step-num">1</div><div class="step-text">Toca <b>Compartir ⬆️</b> en Safari</div></div>
@@ -2081,6 +2097,280 @@ function render(){
 }
 
 // ─────────────────────────────────────────────────────────────────
+// WHOOP INTEGRATION
+// ─────────────────────────────────────────────────────────────────
+const WHOOP_AUTH  = 'https://api.prod.whoop.com/oauth/oauth2/auth';
+const WHOOP_TOKEN = 'https://api.prod.whoop.com/oauth/oauth2/token';
+const WHOOP_API   = 'https://api.prod.whoop.com/developer/v1';
+const WHOOP_SCOPE = 'read:recovery read:sleep read:workout read:cycles read:body_measurement';
+
+const wls = k => localStorage.getItem('whoop_'+k)||'';
+const wsave = (k,v) => localStorage.setItem('whoop_'+k, v);
+const wclear = (...keys) => keys.forEach(k=>localStorage.removeItem('whoop_'+k));
+
+function isWhoopConnected(){ return !!wls('access_token'); }
+
+let _whoopCache = null;
+function getWhoopCache(){
+  if(_whoopCache) return _whoopCache;
+  try{ _whoopCache = JSON.parse(localStorage.getItem('whoop_cache')||'{}'); }catch(e){ _whoopCache={}; }
+  return _whoopCache;
+}
+function saveWhoopCache(patch){
+  _whoopCache = {...getWhoopCache(), ...patch, lastSync: Date.now()};
+  try{ localStorage.setItem('whoop_cache', JSON.stringify(_whoopCache)); }catch(e){}
+}
+
+// ── PKCE helpers ────────────────────────────────────────────────
+async function genPKCE(){
+  const arr = new Uint8Array(32); crypto.getRandomValues(arr);
+  const enc = v => btoa(String.fromCharCode(...v)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const verifier = enc(arr);
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return { verifier, challenge: enc(new Uint8Array(digest)) };
+}
+
+// ── OAuth flow ──────────────────────────────────────────────────
+async function whoopConnect(){
+  if(!wls('client_id')){ showToast('Introduce primero el Client ID'); return; }
+  const {verifier,challenge} = await genPKCE();
+  wsave('pkce', verifier);
+  const p = new URLSearchParams({
+    response_type:'code', client_id:wls('client_id'),
+    redirect_uri: location.origin+location.pathname,
+    scope: WHOOP_SCOPE, state:'whoop_oauth',
+    code_challenge: challenge, code_challenge_method:'S256',
+  });
+  location.href = WHOOP_AUTH+'?'+p;
+}
+
+async function handleWhoopCallback(){
+  const p = new URLSearchParams(location.search);
+  if(p.get('state') !== 'whoop_oauth') return false;
+  window.history.replaceState({}, '', location.pathname);
+  const code = p.get('code');
+  if(!code){ showToast('⚠️ WHOOP: autorización cancelada'); return true; }
+  try{
+    const body = new URLSearchParams({
+      grant_type:'authorization_code', code,
+      client_id: wls('client_id'), client_secret: wls('client_secret'),
+      redirect_uri: location.origin+location.pathname,
+      code_verifier: wls('pkce'),
+    });
+    wclear('pkce');
+    const r = await fetch(WHOOP_TOKEN, {method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const t = await r.json();
+    wsave('access_token', t.access_token);
+    wsave('refresh_token', t.refresh_token||'');
+    wsave('token_expiry', Date.now()+(t.expires_in||3600)*1000);
+    showToast('✓ WHOOP conectado correctamente');
+    await syncWhoopAll(true);
+  }catch(e){
+    showToast('⚠️ Error conectando WHOOP: '+(e.message||e));
+    console.error('WHOOP token error:', e);
+  }
+  return true;
+}
+
+async function whoopRefresh(){
+  const body = new URLSearchParams({
+    grant_type:'refresh_token', refresh_token: wls('refresh_token'),
+    client_id: wls('client_id'), client_secret: wls('client_secret'),
+  });
+  const r = await fetch(WHOOP_TOKEN, {method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
+  if(!r.ok) throw new Error('Refresh failed '+r.status);
+  const t = await r.json();
+  wsave('access_token', t.access_token);
+  wsave('refresh_token', t.refresh_token||wls('refresh_token'));
+  wsave('token_expiry', Date.now()+(t.expires_in||3600)*1000);
+  return t.access_token;
+}
+
+async function whoopFetch(endpoint){
+  let token = wls('access_token');
+  if(!token) throw new Error('No conectado');
+  if(Date.now() > parseInt(wls('token_expiry'))-60000) token = await whoopRefresh();
+  const r = await fetch(WHOOP_API+endpoint, {headers:{Authorization:'Bearer '+token}});
+  if(r.status===401){ token=await whoopRefresh();
+    const r2=await fetch(WHOOP_API+endpoint,{headers:{Authorization:'Bearer '+token}});
+    if(!r2.ok) throw new Error('API '+r2.status); return r2.json(); }
+  if(!r.ok) throw new Error('API '+r.status);
+  return r.json();
+}
+
+// ── Data sync ───────────────────────────────────────────────────
+async function syncWhoopRecovery(){
+  const now=new Date(), s=new Date(now); s.setHours(0,0,0,0);
+  const e=new Date(now); e.setHours(23,59,59,999);
+  const data=await whoopFetch(`/cycle?start=${s.toISOString()}&end=${e.toISOString()}&limit=5`);
+  if(!data.records?.length) return;
+  const cycle=data.records[0];
+  const rec=cycle.recovery?.score||{};
+  const sl=cycle.sleep?.score||{};
+  saveWhoopCache({
+    recovery:{
+      score: rec.recovery_score??null,
+      hrv:   rec.hrv_rmssd_milli??null,
+      rhr:   rec.resting_heart_rate??null,
+      spo2:  rec.spo2_percentage??null,
+    },
+    sleep:{
+      performance: sl.sleep_performance_percentage??null,
+    },
+  });
+}
+
+async function syncWhoopWorkout(date){
+  const data=await whoopFetch(
+    `/activity/workout?start=${date}T00:00:00.000Z&end=${date}T23:59:59.999Z`);
+  if(!data.records?.length) return;
+  const w=data.records.reduce((mx,r)=>(r.score?.strain??0)>(mx.score?.strain??0)?r:mx);
+  const sc=w.score||{};
+  const cache=getWhoopCache();
+  const workouts=cache.workouts||{};
+  workouts[date]={
+    strain:   sc.strain??null,
+    avgHr:    sc.average_heart_rate??null,
+    maxHr:    sc.max_heart_rate??null,
+    calories: sc.kilojoule ? Math.round(sc.kilojoule*0.239) : null,
+    duration: w.start_time&&w.end_time ?
+      Math.round((new Date(w.end_time)-new Date(w.start_time))/60000) : null,
+  };
+  saveWhoopCache({workouts});
+}
+
+async function syncWhoopAll(quiet=false){
+  if(!isWhoopConnected()) return;
+  try{
+    await syncWhoopRecovery();
+    // Sync yesterday (WHOOP processes with ~24h delay) and today
+    const yest=new Date(); yest.setDate(yest.getDate()-1);
+    await Promise.all([
+      syncWhoopWorkout(yest.toISOString().split('T')[0]),
+      syncWhoopWorkout(today()),
+    ]);
+    if(!quiet) showToast('✓ WHOOP sincronizado');
+    if(currentView==='log')    renderLog();
+    if(currentView==='data')   renderData();
+    if(currentView==='history')renderHistory();
+  }catch(e){
+    console.error('WHOOP sync:', e);
+    if(!quiet) showToast('⚠️ Error sincronizando WHOOP');
+  }
+}
+
+function saveWhoopCreds(){
+  const cid=(document.getElementById('whoop-cid')?.value||'').trim();
+  const cs =(document.getElementById('whoop-cs')?.value||'').trim();
+  if(!cid){ showToast('Client ID requerido'); return; }
+  wsave('client_id', cid); wsave('client_secret', cs);
+  showToast('Credenciales guardadas — conectando…');
+  whoopConnect();
+}
+
+function whoopDisconnect(){
+  if(!confirm('¿Desconectar WHOOP? Se borran los tokens del dispositivo.')) return;
+  wclear('access_token','refresh_token','token_expiry','cache','pkce');
+  _whoopCache=null;
+  showToast('WHOOP desconectado');
+  render();
+}
+
+// ── UI helpers ──────────────────────────────────────────────────
+function recoveryColor(s){
+  if(s==null) return'var(--muted)';
+  return s>=67?'#3CE0A0':s>=34?'#F5C842':'#E84040';
+}
+function fmtStrain(s){ return s!=null?s.toFixed(1):'—'; }
+
+function renderWhoopRecoveryCard(){
+  if(!isWhoopConnected()) return'';
+  const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{};
+  const lastSync=c.lastSync
+    ? new Date(c.lastSync).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) : '';
+  const hasData = r.score != null;
+  return`<div class="whoop-card${hasData?' connected':''}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${hasData?12:0}px">
+      <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">⌚ WHOOP · Hoy</span>
+      <button onclick="syncWhoopAll()" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit">
+        ⟳${lastSync?' '+lastSync:''}
+      </button>
+    </div>
+    ${!hasData
+      ? `<div style="font-size:12px;color:var(--muted)">Sin datos aún — toca ⟳ para sincronizar</div>`
+      : `<div style="display:flex;gap:0;align-items:center">
+          <div style="text-align:center;padding-right:14px;margin-right:14px;border-right:1px solid var(--line);flex-shrink:0">
+            <div style="font-size:38px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;color:${recoveryColor(r.score)}">${Math.round(r.score)}</div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;color:${recoveryColor(r.score)}">Recovery</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;flex:1">
+            ${[
+              ['HRV', r.hrv!=null?Math.round(r.hrv)+'ms':'—'],
+              ['RHR', r.rhr!=null?Math.round(r.rhr)+' bpm':'—'],
+              ['Sueño',sl.performance!=null?Math.round(sl.performance)+'%':'—'],
+              ['SpO₂', r.spo2!=null?Math.round(r.spo2)+'%':'—'],
+            ].map(([l,v])=>`<div class="whoop-metric">
+              <div class="whoop-metric-val">${v}</div>
+              <div class="whoop-metric-lbl">${l}</div>
+            </div>`).join('')}
+          </div>
+        </div>`
+    }
+  </div>`;
+}
+
+function renderWhoopStrainBadge(date){
+  if(!isWhoopConnected()) return'';
+  const w=(getWhoopCache().workouts||{})[date];
+  if(!w||w.strain==null) return'';
+  const parts=[`💥 ${fmtStrain(w.strain)}`];
+  if(w.avgHr) parts.push(`~${Math.round(w.avgHr)}bpm`);
+  if(w.duration) parts.push(`${w.duration}min`);
+  return`<span class="whoop-strain-badge">${parts.join(' · ')}</span>`;
+}
+
+function renderWhoopDataSection(){
+  if(!isWhoopConnected()) return`
+    <div class="data-section">
+      <h3>⌚ WHOOP</h3>
+      <p>Conecta tu cuenta WHOOP para ver recovery, HRV, sueño y strain junto a tus entrenos.<br>
+      Las credenciales se guardan solo en este dispositivo.</p>
+      <div class="whoop-cfg-row">
+        <label class="whoop-cfg-label">Client ID</label>
+        <input id="whoop-cid" class="whoop-cfg-input" type="text"
+          value="${wls('client_id')}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+      </div>
+      <div class="whoop-cfg-row">
+        <label class="whoop-cfg-label">Client Secret</label>
+        <input id="whoop-cs" class="whoop-cfg-input" type="password"
+          value="${wls('client_secret')}" placeholder="••••••••••••••••••••" autocomplete="off">
+      </div>
+      <button class="data-btn export" onclick="saveWhoopCreds()" style="margin-top:4px">Conectar WHOOP →</button>
+    </div>`;
+  const c=getWhoopCache(), r=c.recovery||{};
+  const lastSync=c.lastSync
+    ? new Date(c.lastSync).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+    : 'Nunca';
+  return`
+    <div class="data-section" style="border-color:#3CE0A070">
+      <h3 style="display:flex;align-items:center;justify-content:space-between">
+        ⌚ WHOOP conectado
+        <span style="font-size:10px;color:var(--muted);font-weight:400">última sync: ${lastSync}</span>
+      </h3>
+      ${r.score!=null?`<div style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        Recovery hoy: <b style="color:${recoveryColor(r.score)}">${Math.round(r.score)}%</b>
+        ${r.hrv!=null?` · HRV: <b>${Math.round(r.hrv)}ms</b>`:''}
+        ${r.rhr!=null?` · RHR: <b>${Math.round(r.rhr)}bpm</b>`:''}
+      </div>`:''}
+      <button class="data-btn import" onclick="syncWhoopAll()" style="margin-bottom:8px">⟳ Sincronizar WHOOP</button>
+      <button class="data-btn danger" onclick="whoopDisconnect()">Desconectar WHOOP</button>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────────
 loadWorkoutDefs();
@@ -2091,6 +2381,13 @@ render();
 document.getElementById('save-bar').style.display='block';
 maybeShowInstallBanner();
 initFirebase();
+// Handle WHOOP OAuth callback (returns from whoop.com with ?code=...)
+handleWhoopCallback().then(wasCallback=>{
+  // Auto-sync WHOOP recovery on startup (non-blocking, after 2s)
+  if(!wasCallback && isWhoopConnected()){
+    setTimeout(()=>syncWhoopAll(true), 2000);
+  }
+});
 // Pre-load the exercise database and all 6 categories silently
 setTimeout(async()=>{
   const ok=await ensureFreeExDb();
