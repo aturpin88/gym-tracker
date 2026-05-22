@@ -273,24 +273,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .ex-drop-item .cat-tag{font-size:9px;color:var(--muted);margin-left:5px;text-transform:uppercase;letter-spacing:.8px;}
 
 /* ── EXERCISE PICKER PANEL ── */
-.ex-picker{background:var(--white);border:1.5px solid var(--ink);border-radius:10px;margin:8px 0 12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.1);}
+.ex-picker{background:var(--white);border:1.5px solid var(--ink);border-radius:10px;margin:8px 0 12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.12);}
 .picker-top{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--ink);}
-.picker-search-input{flex:1;border:none;border-radius:6px;padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--ink);}
+.picker-search-input{flex:1;border:none;border-radius:6px;padding:10px 12px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--ink);min-width:0;}
 .picker-search-input:focus{outline:none;}
-.picker-cancel-btn{background:rgba(255,255,255,.12);border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:700;padding:7px 11px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;}
-.picker-scroll{max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.picker-status{padding:24px;text-align:center;color:var(--muted);font-size:13px;}
-.picker-cat-hdr{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 14px 5px;position:sticky;top:0;background:var(--white);z-index:2;border-bottom:1px solid var(--bg);}
-.picker-ex-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--bg);transition:background .1s;}
-.picker-ex-item:active,.picker-ex-item:hover{background:var(--bg);}
-.picker-ex-name{font-size:13px;font-weight:500;color:var(--ink);}
-.picker-add-icon{font-size:16px;color:var(--muted);flex-shrink:0;}
-.picker-free-row{padding:10px 12px;border-top:1.5px solid var(--line);display:flex;gap:8px;align-items:center;}
-.picker-free-btn{flex:1;background:none;border:1.5px dashed var(--line);border-radius:7px;padding:10px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;transition:all .15s;}
-.picker-free-btn:hover{border-color:var(--ink);color:var(--ink);}
-.picker-free-label{font-size:10px;color:var(--muted);}
-.picker-load-bar{height:3px;background:linear-gradient(90deg,var(--gold) 0%,transparent 60%);background-size:200% 100%;animation:loadslide 1.2s linear infinite;}
-@keyframes loadslide{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.picker-cancel-btn{background:rgba(255,255,255,.12);border:none;border-radius:6px;color:rgba(255,255,255,.7);font-size:18px;line-height:1;width:32px;height:32px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.picker-cats{display:flex;gap:6px;padding:8px 10px;overflow-x:auto;border-bottom:1px solid var(--bg);background:#fafaf8;-webkit-overflow-scrolling:touch;}
+.picker-cats::-webkit-scrollbar{display:none;}
+.picker-cat-pill{border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--line);background:var(--white);color:var(--ink2);font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.picker-scroll{max-height:270px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.picker-status{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px;}
+.picker-cat-hdr{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 14px 5px;position:sticky;top:0;background:var(--white);z-index:2;}
+.picker-ex-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--bg);transition:background .1s;-webkit-tap-highlight-color:transparent;}
+.picker-ex-item:active{background:var(--bg);}
+.picker-ex-name{font-size:13px;font-weight:500;color:var(--ink);line-height:1.3;}
+.picker-add-icon{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:300;}
+.picker-see-all{padding:6px 14px 12px;font-size:11px;color:var(--gold);font-weight:700;cursor:pointer;display:block;}
+.picker-free-row{padding:10px 12px;border-top:1.5px solid var(--line);}
+.picker-free-btn{width:100%;background:none;border:1.5px dashed var(--line);border-radius:7px;padding:11px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:center;transition:all .15s;}
+.picker-free-btn:hover,.picker-free-btn:active{border-color:var(--ink);color:var(--ink);}
+.picker-load-bar{height:3px;background:linear-gradient(90deg,var(--gold) 30%,transparent 60%);background-size:200%;animation:loadslide 1s linear infinite;}
+@keyframes loadslide{from{background-position:100%}to{background-position:-100%}}
 
 /* ── MUSCLE SVG THUMBNAIL ── */
 .lib-muscle-svg{width:72px;height:72px;border-radius:6px;background:#f8f6f3;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;}
@@ -1066,6 +1069,7 @@ let libData={};     // {catId: exercises[]}
 let libExpanded={}; // {exId: bool}
 let libLoading={};  // {catId: bool}
 let pickerVisible=false; // exercise picker in editor
+let pickerCat=null;      // active muscle-group filter in picker (null = show all)
 
 function renderEjercicios(){
   const pg=document.getElementById('page-ejercicios');
@@ -1201,13 +1205,15 @@ function filterExDropdown(inputEl,idx){
   const matches=all.filter(e=>e.name.toLowerCase().includes(q)).slice(0,8);
   if(!matches.length){drop.classList.remove('open');return;}
   drop.innerHTML=matches.map(e=>
-    `<div class="ex-drop-item" onclick="selectLibEx(${idx},${JSON.stringify(e.name)})">
+    `<div class="ex-drop-item" data-idx="${idx}" data-exname="${escHtml(e.name)}" onclick="selectLibExFromEl(this)">
       ${escHtml(e.name)}<span class="cat-tag" style="color:${e.catColor}">${e.catName}</span>
     </div>`
   ).join('');
   drop.classList.add('open');
 }
-function selectLibEx(idx,name){
+function selectLibExFromEl(el){
+  const idx=el.dataset.idx;
+  const name=el.dataset.exname;
   const inp=document.querySelector(`.ed-input[data-field="name"][data-idx="${idx}"]`);
   if(inp)inp.value=name;
   const drop=document.getElementById('ex-drop-'+idx);
@@ -1220,14 +1226,40 @@ document.addEventListener('click',e=>{
 
 // ── EXERCISE PICKER (panel for adding new exercises) ──
 function showExPicker(){
-  pickerVisible=true;
-  // Pre-load all categories (fire & forget)
+  pickerVisible=true; pickerCat=null;
   MUSCLE_CATS.forEach(mc=>{if(!libData[mc.id]&&!libLoading[mc.id])fetchLibCat(mc.id);});
   renderEditor();
-  // Focus search after render
-  setTimeout(()=>document.getElementById('picker-search')?.focus(),80);
+  setTimeout(()=>{ document.getElementById('picker-search')?.focus(); renderPickerList(); },50);
 }
-function hideExPicker(){pickerVisible=false;renderEditor();}
+function hideExPicker(){pickerVisible=false;pickerCat=null;renderEditor();}
+
+// Called when a category pill is tapped
+function setPickerCat(catId){
+  pickerCat=(pickerCat===catId)?null:catId;
+  // Clear search so results are category-focused
+  const inp=document.getElementById('picker-search');
+  if(inp)inp.value='';
+  // Update pill visual states
+  document.querySelectorAll('.picker-cat-pill').forEach(el=>{
+    const mc=MUSCLE_CATS.find(m=>m.id===+el.dataset.cat);
+    if(!mc)return;
+    const on=pickerCat===mc.id;
+    el.style.background=on?mc.color:'';
+    el.style.color=on?'#fff':'';
+    el.style.borderColor=on?mc.color:'';
+  });
+  renderPickerList();
+}
+
+// Called on search input
+function onPickerSearch(){
+  // Deselect category pills visually when searching
+  pickerCat=null;
+  document.querySelectorAll('.picker-cat-pill').forEach(el=>{
+    el.style.background=''; el.style.color=''; el.style.borderColor='';
+  });
+  renderPickerList();
+}
 
 function renderPickerList(){
   const listEl=document.getElementById('picker-list');
@@ -1236,49 +1268,88 @@ function renderPickerList(){
 
   const anyLoading=MUSCLE_CATS.some(mc=>libLoading[mc.id]);
   const hasAny=MUSCLE_CATS.some(mc=>libData[mc.id]?.length);
-
-  // Loading bar
   const bar=document.getElementById('picker-bar');
   if(bar)bar.style.display=anyLoading?'block':'none';
 
   if(!hasAny&&anyLoading){
-    listEl.innerHTML='<div class="picker-status">⏳ Cargando ejercicios de la biblioteca…</div>';
+    listEl.innerHTML='<div class="picker-status">⏳ Cargando ejercicios…</div>';
     return;
   }
 
+  const catsToShow=pickerCat?MUSCLE_CATS.filter(mc=>mc.id===pickerCat):MUSCLE_CATS;
   let html='';
-  MUSCLE_CATS.forEach(mc=>{
+
+  catsToShow.forEach(mc=>{
     if(!libData[mc.id]?.length)return;
-    const pool=q
-      ?libData[mc.id].filter(e=>e.name.toLowerCase().includes(q))
-      :libData[mc.id];
+    const pool=q?libData[mc.id].filter(e=>e.name.toLowerCase().includes(q)):libData[mc.id];
     if(!pool.length)return;
-    const shown=pool.slice(0,q?20:5);
-    html+=`<div class="picker-cat-hdr" style="color:${mc.color}">${mc.emoji} ${mc.name}</div>`;
-    shown.forEach(ex=>{
-      html+=`<div class="picker-ex-item" onclick="pickExercise(${JSON.stringify(ex.name)})">
+
+    // Show category header only in "all" mode or when searching across cats
+    if(!pickerCat||q){
+      html+=`<div class="picker-cat-hdr" style="color:${mc.color}">${mc.emoji} ${mc.name}</div>`;
+    }
+
+    const limit=pickerCat&&!q?pool.length:(q?15:5);
+    pool.slice(0,limit).forEach(ex=>{
+      // KEY FIX: use data-exname attribute, not onclick JSON — avoids quote-breaking bugs
+      html+=`<div class="picker-ex-item" data-exname="${escHtml(ex.name)}" onclick="pickExFromEl(this)">
         <span class="picker-ex-name">${escHtml(ex.name)}</span>
         <span class="picker-add-icon">＋</span>
       </div>`;
     });
-    if(!q&&pool.length>5){
-      html+=`<div style="padding:6px 14px 10px;font-size:11px;color:var(--muted)">+${pool.length-5} más — busca para filtrar</div>`;
+
+    if(!pickerCat&&!q&&pool.length>5){
+      html+=`<button class="picker-see-all" data-cat="${mc.id}" onclick="setPickerCat(${mc.id})">
+        Ver todos los ejercicios de ${mc.name} (${pool.length}) →
+      </button>`;
     }
   });
 
-  listEl.innerHTML=html||'<div class="picker-status">Sin resultados. Añade como ejercicio libre ↓</div>';
+  listEl.innerHTML=html||'<div class="picker-status">Sin resultados — usa el nombre libre ↓</div>';
+}
+
+// Reads data-exname from clicked element (avoids JS string-escaping in HTML attributes)
+function pickExFromEl(el){
+  pickExercise(el.closest('[data-exname]').dataset.exname);
 }
 
 function pickExercise(name){
   const sess=workoutDefs[currentSession];
   sess.exercises.push({id:`ex_${Date.now()}`,name,sets:'3 × 10',note:'',unit:'kg'});
-  pickerVisible=false;
+  pickerVisible=false; pickerCat=null;
   renderEditor();
   showToast('✓ '+name+' añadido');
 }
 function addFreeExercise(){
   const q=(document.getElementById('picker-search')?.value||'').trim();
   pickExercise(q||'Nuevo ejercicio');
+}
+
+// Build the full picker panel HTML (returns string, embedded in renderEditor)
+function renderPickerPanel(){
+  const pills=MUSCLE_CATS.map(mc=>{
+    const on=pickerCat===mc.id;
+    return`<button class="picker-cat-pill" data-cat="${mc.id}" onclick="setPickerCat(${mc.id})"
+      style="${on?`background:${mc.color};color:#fff;border-color:${mc.color}`:''}">${mc.emoji} ${mc.name}</button>`;
+  }).join('');
+
+  return`<div class="ex-picker">
+    <div class="picker-top">
+      <input class="picker-search-input" id="picker-search" type="search"
+        placeholder="🔍 Buscar ejercicio…" oninput="onPickerSearch()" autocomplete="off">
+      <button class="picker-cancel-btn" onclick="hideExPicker()">✕</button>
+    </div>
+    <div id="picker-bar" class="picker-load-bar" style="display:none"></div>
+    <div class="picker-cats">${pills}</div>
+    <div class="picker-scroll">
+      <div id="picker-list"><div class="picker-status">Cargando…</div></div>
+    </div>
+    <div class="picker-free-row">
+      <button class="picker-free-btn" onclick="addFreeExercise()">
+        ✏️ Añadir con nombre personalizado
+      </button>
+    </div>
+  </div>`;
 }
 
 // ── WORKOUT EDITOR ──
@@ -1297,39 +1368,14 @@ function renderEditor(){
     <p>Edita, reordena o añade ejercicios. El historial existente se conserva siempre.</p>
     <div class="ed-ex-list" id="ed-ex-list">`;
 
-  sess.exercises.forEach((ex,idx)=>{
-    html+=renderEditorRow(ex,idx,sess.exercises.length);
-  });
+  sess.exercises.forEach((ex,idx)=>{ html+=renderEditorRow(ex,idx,sess.exercises.length); });
 
-  html+=`</div>`;
-
-  if(pickerVisible){
-    // Build picker panel inline
-    const freeLabel=(/* will be updated by renderPickerList */'');
-    html+=`<div class="ex-picker">
-      <div class="picker-top">
-        <input class="picker-search-input" id="picker-search" type="text"
-          placeholder="🔍 Buscar ejercicio…"
-          oninput="renderPickerList()" autocomplete="off">
-        <button class="picker-cancel-btn" onclick="hideExPicker()">Cancelar</button>
-      </div>
-      <div id="picker-bar" class="picker-load-bar" style="display:none"></div>
-      <div class="picker-scroll"><div id="picker-list"><div class="picker-status">Cargando…</div></div></div>
-      <div class="picker-free-row">
-        <button class="picker-free-btn" onclick="addFreeExercise()">
-          ✏️ Añadir nombre libre (lo que estés escribiendo arriba)
-        </button>
-      </div>
-    </div>`;
-  } else {
-    html+=`<button class="add-ex-btn" onclick="showExPicker()">＋ Añadir ejercicio</button>`;
-  }
-
-  html+=`<button class="save-plan-btn" onclick="saveEditorChanges()">💾 Guardar cambios</button>
+  html+=`</div>
+    ${pickerVisible ? renderPickerPanel() : `<button class="add-ex-btn" onclick="showExPicker()">＋ Añadir ejercicio</button>`}
+    <button class="save-plan-btn" onclick="saveEditorChanges()">💾 Guardar cambios</button>
   </div>`;
   cont.innerHTML=html;
 
-  // After render, populate picker list
   if(pickerVisible)setTimeout(renderPickerList,0);
 }
 
