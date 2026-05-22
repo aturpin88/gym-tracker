@@ -163,6 +163,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .whoop-metric-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);}
 .whoop-metric-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 
+/* ── HOME PAGE ── */
+.home-hero{border-radius:14px;padding:18px 18px 14px;margin-bottom:12px;background:var(--white);border:1px solid var(--line);}
+.home-hero-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:6px;}
+.home-hero-score{font-family:'DM Mono',monospace;font-size:68px;font-weight:800;line-height:1;}
+.home-hero-divider{border:none;border-top:1px solid rgba(0,0,0,.07);margin:12px 0 10px;}
+.home-hero-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:0;}
+.home-hero-metric{text-align:center;padding:0 4px;}
+.home-hero-metric+.home-hero-metric{border-left:1px solid rgba(0,0,0,.07);}
+.home-hero-mval{font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;}
+.home-hero-mlbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.home-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.home-tile{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:13px 8px 10px;text-align:center;}
+.home-tile-icon{font-size:20px;margin-bottom:5px;}
+.home-tile-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--ink);line-height:1.1;}
+.home-tile-lbl{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
+.home-tile-sub{font-size:9px;color:var(--muted);margin-top:1px;}
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;z-index:600;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -390,7 +407,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 </div>
 
 <div class="view-tabs">
-  <button class="vtab active" onclick="setView('log',event)">📝 Registrar</button>
+  <button class="vtab active" onclick="setView('home',event)">🏠 Inicio</button>
+  <button class="vtab" onclick="setView('log',event)">📝 Registrar</button>
   <button class="vtab" onclick="setView('history',event)">📋 Historial</button>
   <button class="vtab" onclick="setView('charts',event)">📈 Progreso</button>
   <button class="vtab" onclick="setView('ejercicios',event)">🏋️ Ejercicios</button>
@@ -398,7 +416,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 </div>
 
 <div class="content">
-  <div class="page active" id="page-log"></div>
+  <div class="page active" id="page-home"></div>
+  <div class="page" id="page-log"></div>
   <div class="page" id="page-history"></div>
   <div class="page" id="page-charts"></div>
   <div class="page" id="page-ejercicios"></div>
@@ -488,7 +507,7 @@ function fmtRestTime(s){
 // ─────────────────────────────────────────────────────────────────
 let workoutDefs = {};         // mutable, loaded from localStorage
 let currentSession='A';
-let currentView='log';
+let currentView='home';
 let currentDate=today();
 let formData={};
 let allLogs={};
@@ -2089,11 +2108,140 @@ function setCloudStatus(status){
 // MAIN RENDER
 // ─────────────────────────────────────────────────────────────────
 function render(){
-  if(currentView==='log')renderLog();
+  if(currentView==='home')renderHome();
+  else if(currentView==='log')renderLog();
   else if(currentView==='history')renderHistory();
   else if(currentView==='charts')renderCharts();
   else if(currentView==='ejercicios')renderEjercicios();
   else if(currentView==='data')renderData();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// HOME PAGE
+// ─────────────────────────────────────────────────────────────────
+function renderHome(){
+  const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{}, body=c.body||{};
+  const connected=isWhoopConnected();
+  const hasRec=r.score!=null;
+
+  // Last strain: most recent workout date with a strain value
+  const workouts=c.workouts||{};
+  const lastWODate=Object.keys(workouts).sort().reverse().find(d=>workouts[d]?.strain!=null);
+  const lastStrain=lastWODate!=null?workouts[lastWODate].strain:null;
+
+  // Recovery colour helpers
+  const rClr=recoveryColor(r.score);
+  const rBg=hasRec
+    ?`color-mix(in srgb, ${rClr} 12%, var(--white))`
+    :'var(--white)';
+
+  // Recovery label
+  const rLabel=!hasRec?''
+    :r.score>=67?'Óptimo 🟢'
+    :r.score>=34?'Moderado 🟡'
+    :'Bajo 🔴';
+
+  // Strain colour (WHOOP 0–21 scale)
+  const sClr=lastStrain==null?'var(--muted)'
+    :lastStrain>=18?'#E84040'
+    :lastStrain>=14?'#F5A623'
+    :lastStrain>=9?'#F5C842':'#3CE0A0';
+
+  // Sleep colour
+  const sp=sl.performance!=null?Math.round(sl.performance):null;
+  const spClr=sp==null?'var(--muted)':sp>=85?'#3CE0A0':sp>=70?'#F5C842':'#E84040';
+
+  // Weight: WHOOP body measurement takes priority, then manual
+  const whoopKg=body.weight_kilogram;
+  const manualKg=localStorage.getItem('home_weight');
+  const weightVal=whoopKg!=null?(Math.round(whoopKg*10)/10)+' kg'
+    :manualKg!=null?manualKg+' kg':'—';
+  const weightSub=whoopKg!=null?'WHOOP':'toca para editar';
+
+  // ── Hero card ────────────────────────────────────────────────
+  let hero='';
+  if(connected&&hasRec){
+    hero=`
+    <div class="home-hero" style="background:${rBg};border-color:${rClr}40">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="home-hero-label">Recovery · Hoy</div>
+          <div style="display:flex;align-items:flex-end;gap:3px;margin-top:2px">
+            <div class="home-hero-score" style="color:${rClr}">${Math.round(r.score)}</div>
+            <div style="font-size:18px;font-weight:700;color:${rClr};margin-bottom:10px">%</div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${rClr};background:${rClr}18;padding:2px 10px;border-radius:20px;display:inline-block">${rLabel}</span>
+        </div>
+        <button onclick="syncWhoopAll()" style="background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit">⟳ sync</button>
+      </div>
+      <hr class="home-hero-divider">
+      <div class="home-hero-metrics">
+        ${[
+          ['HRV', r.hrv!=null?Math.round(r.hrv)+' ms':'—'],
+          ['RHR', r.rhr!=null?Math.round(r.rhr)+' bpm':'—'],
+          ['SpO₂', r.spo2!=null?r.spo2.toFixed(1)+'%':'—'],
+        ].map(([l,v])=>`<div class="home-hero-metric">
+          <div class="home-hero-mval">${v}</div>
+          <div class="home-hero-mlbl">${l}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  } else if(connected){
+    hero=`<div class="home-hero" style="text-align:center;padding:24px">
+      <div style="font-size:28px;margin-bottom:8px">⌚</div>
+      <div style="font-size:13px;font-weight:600;color:var(--ink2)">Sin datos de WHOOP aún</div>
+      <button onclick="syncWhoopAll()" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⟳ Sincronizar</button>
+    </div>`;
+  } else {
+    hero=`<div class="home-hero" style="text-align:center;padding:24px;border-style:dashed">
+      <div style="font-size:28px;margin-bottom:8px">⌚</div>
+      <div style="font-size:13px;font-weight:600;color:var(--ink2)">Conecta WHOOP para ver recovery, HRV y sueño</div>
+      <button onclick="setView('data',null)" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Conectar →</button>
+    </div>`;
+  }
+
+  // ── Tiles ─────────────────────────────────────────────────────
+  const tiles=`<div class="home-tiles">
+    <div class="home-tile">
+      <div class="home-tile-icon">💥</div>
+      <div class="home-tile-val" style="color:${sClr}">${lastStrain!=null?lastStrain.toFixed(1):'—'}</div>
+      <div class="home-tile-lbl">Strain</div>
+      <div class="home-tile-sub">${lastWODate?fmtDate(lastWODate):'sin datos'}</div>
+    </div>
+    <div class="home-tile">
+      <div class="home-tile-icon">😴</div>
+      <div class="home-tile-val" style="color:${spClr}">${sp!=null?sp+'%':'—'}</div>
+      <div class="home-tile-lbl">Sueño</div>
+      <div class="home-tile-sub">anoche</div>
+    </div>
+    <div class="home-tile" onclick="promptHomeWeight()" style="cursor:pointer">
+      <div class="home-tile-icon">⚖️</div>
+      <div class="home-tile-val">${weightVal}</div>
+      <div class="home-tile-lbl">Peso</div>
+      <div class="home-tile-sub">${weightSub}</div>
+    </div>
+  </div>`;
+
+  // ── Heatmap ───────────────────────────────────────────────────
+  const heatmap=renderHeatmap();
+
+  document.getElementById('page-home').innerHTML=hero+tiles+heatmap;
+
+  // Auto-scroll heatmap to current week
+  setTimeout(()=>{
+    const el=document.getElementById('hm-scroll');
+    if(el) el.scrollLeft=el.scrollWidth;
+  },50);
+}
+
+function promptHomeWeight(){
+  const cur=localStorage.getItem('home_weight')||'';
+  const val=prompt('Introduce tu peso (kg):', cur);
+  if(val===null) return;
+  const n=parseFloat(val.replace(',','.'));
+  if(isNaN(n)||n<20||n>300){ showToast('Peso no válido'); return; }
+  localStorage.setItem('home_weight', n.toFixed(1));
+  renderHome();
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -2274,17 +2422,30 @@ async function syncWhoopWorkout(date){
   saveWhoopCache({workouts});
 }
 
+async function syncWhoopBody(){
+  try{
+    const data=await whoopFetch('/body_measurement');
+    saveWhoopCache({body:{
+      weight_kilogram: data.weight_kilogram??null,
+      height_meter:    data.height_meter??null,
+      max_heart_rate:  data.max_heart_rate??null,
+    }});
+  }catch(e){ console.warn('WHOOP body sync skipped:', e.message); }
+}
+
 async function syncWhoopAll(quiet=false){
   if(!isWhoopConnected()) return;
   try{
-    await syncWhoopRecovery();
-    // Sync yesterday (WHOOP processes with ~24h delay) and today
+    // All syncs in parallel where possible
     const yest=new Date(); yest.setDate(yest.getDate()-1);
     await Promise.all([
+      syncWhoopRecovery(),
+      syncWhoopBody(),
       syncWhoopWorkout(yest.toISOString().split('T')[0]),
       syncWhoopWorkout(today()),
     ]);
     if(!quiet) showToast('✓ WHOOP sincronizado');
+    if(currentView==='home')   renderHome();
     if(currentView==='log')    renderLog();
     if(currentView==='data')   renderData();
     if(currentView==='history')renderHistory();
