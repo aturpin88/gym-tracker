@@ -2100,9 +2100,12 @@ function render(){
 // WHOOP INTEGRATION
 // ─────────────────────────────────────────────────────────────────
 const WHOOP_AUTH  = 'https://api.prod.whoop.com/oauth/oauth2/auth';
-const WHOOP_TOKEN = 'https://api.prod.whoop.com/oauth/oauth2/token';
-const WHOOP_API   = 'https://api.prod.whoop.com/developer/v1';
 const WHOOP_SCOPE = 'read:recovery read:sleep read:workout read:profile read:body_measurement';
+
+// Token exchange + API calls go through the Cloudflare Worker (avoids CORS)
+// wls('worker_url') is set by the user in the settings UI
+function whoopTokenUrl(){ return (wls('worker_url')||'').replace(/\/$/,'')+'/token'; }
+function whoopApiBase(){ return (wls('worker_url')||'').replace(/\/$/,'')+'/api/v1'; }
 
 const wls = k => localStorage.getItem('whoop_'+k)||'';
 const wsave = (k,v) => localStorage.setItem('whoop_'+k, v);
@@ -2177,7 +2180,8 @@ async function handleWhoopCallback(){
       code_verifier: wls('pkce'),
     });
     wclear('pkce');
-    const r = await fetch(WHOOP_TOKEN, {method:'POST',
+    if(!wls('worker_url')) throw new Error('Falta la URL del Worker — ver sección WHOOP en Datos');
+    const r = await fetch(whoopTokenUrl(), {method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const t = await r.json();
@@ -2198,7 +2202,7 @@ async function whoopRefresh(){
     grant_type:'refresh_token', refresh_token: wls('refresh_token'),
     client_id: wls('client_id'), client_secret: wls('client_secret'),
   });
-  const r = await fetch(WHOOP_TOKEN, {method:'POST',
+  const r = await fetch(whoopTokenUrl(), {method:'POST',
     headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
   if(!r.ok) throw new Error('Refresh failed '+r.status);
   const t = await r.json();
@@ -2212,9 +2216,10 @@ async function whoopFetch(endpoint){
   let token = wls('access_token');
   if(!token) throw new Error('No conectado');
   if(Date.now() > parseInt(wls('token_expiry'))-60000) token = await whoopRefresh();
-  const r = await fetch(WHOOP_API+endpoint, {headers:{Authorization:'Bearer '+token}});
+  const base = whoopApiBase();
+  const r = await fetch(base+endpoint, {headers:{Authorization:'Bearer '+token}});
   if(r.status===401){ token=await whoopRefresh();
-    const r2=await fetch(WHOOP_API+endpoint,{headers:{Authorization:'Bearer '+token}});
+    const r2=await fetch(base+endpoint,{headers:{Authorization:'Bearer '+token}});
     if(!r2.ok) throw new Error('API '+r2.status); return r2.json(); }
   if(!r.ok) throw new Error('API '+r.status);
   return r.json();
@@ -2292,8 +2297,10 @@ async function syncWhoopAll(quiet=false){
 async function saveWhoopCreds(){
   const cid=(document.getElementById('whoop-cid')?.value||'').trim();
   const cs =(document.getElementById('whoop-cs')?.value||'').trim();
+  const wu =(document.getElementById('whoop-worker')?.value||'').trim();
   if(!cid){ showToast('Client ID requerido'); return; }
-  wsave('client_id', cid); wsave('client_secret', cs);
+  if(!wu){ showToast('Worker URL requerida — despliega el Cloudflare Worker primero'); return; }
+  wsave('client_id', cid); wsave('client_secret', cs); wsave('worker_url', wu);
   await whoopConnect();
 }
 
@@ -2374,9 +2381,14 @@ function renderWhoopDataSection(){
         <input id="whoop-cs" class="whoop-cfg-input" type="password"
           value="${wls('client_secret')}" placeholder="••••••••••••••••••••" autocomplete="off">
       </div>
+      <div class="whoop-cfg-row" style="margin-top:8px">
+        <label class="whoop-cfg-label">Worker URL</label>
+        <input id="whoop-worker" class="whoop-cfg-input" type="url"
+          value="${wls('worker_url')}" placeholder="https://whoop-proxy.tunombre.workers.dev" autocomplete="off">
+      </div>
       <button class="data-btn export" onclick="saveWhoopCreds()" style="margin-top:4px">Conectar WHOOP →</button>
       <p style="font-size:10px;color:var(--muted);margin-top:10px;line-height:1.5">
-        <b>Redirect URI</b> (cópialo exacto en el Developer Portal de WHOOP):<br>
+        <b>Redirect URI</b> para el Developer Portal de WHOOP:<br>
         <code style="font-size:10px;word-break:break-all;color:var(--ink2)">${location.origin+location.pathname}</code>
       </p>
     </div>`;
