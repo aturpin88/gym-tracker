@@ -180,6 +180,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .home-tile-lbl{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
 .home-tile-sub{font-size:9px;color:var(--muted);margin-top:1px;}
 
+/* ── SESIONES PAGE ── */
+.sess-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.sess-card{background:var(--white);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.sess-card-accent{height:5px;}
+.sess-card-body{padding:14px 16px 12px;}
+.sess-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.sess-card-info{flex:1;}
+.sess-card-name{font-size:15px;font-weight:700;color:var(--ink);line-height:1.2;}
+.sess-card-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.sess-card-meta{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.sess-card-pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--bg);}
+.sess-card-actions{display:flex;gap:8px;}
+.sess-btn-train{flex:1;padding:9px 0;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff;}
+.sess-btn-edit{padding:9px 14px;border:1px solid var(--line);border-radius:8px;background:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink2);}
+.sess-btn-edit:hover{background:var(--bg);}
+.sess-new-btn{width:100%;padding:13px;border:2px dashed var(--line);border-radius:14px;background:none;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;}
+.sess-new-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--bg);}
+.sess-page-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;}
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;z-index:600;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -399,16 +418,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
       <button class="sync-chip" id="sync-chip" onclick="handleSyncChip()">☁️ Iniciar sesión</button>
     </div>
   </div>
-  <div class="session-tabs">
-    <button class="stab active" onclick="setSession('A')">Sesión A</button>
-    <button class="stab" onclick="setSession('B')">Sesión B</button>
-    <button class="stab" onclick="setSession('C')">Sesión C</button>
-  </div>
 </div>
 
 <div class="view-tabs">
   <button class="vtab active" onclick="setView('home',event)">🏠 Inicio</button>
-  <button class="vtab" onclick="setView('log',event)">📝 Registrar</button>
+  <button class="vtab" onclick="setView('sesiones',event)">🗓️ Sesiones</button>
   <button class="vtab" onclick="setView('history',event)">📋 Historial</button>
   <button class="vtab" onclick="setView('charts',event)">📈 Progreso</button>
   <button class="vtab" onclick="setView('ejercicios',event)">🏋️ Ejercicios</button>
@@ -417,6 +431,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
 <div class="content">
   <div class="page active" id="page-home"></div>
+  <div class="page" id="page-sesiones"></div>
   <div class="page" id="page-log"></div>
   <div class="page" id="page-history"></div>
   <div class="page" id="page-charts"></div>
@@ -523,7 +538,7 @@ const STORAGE_KEY   = 'gymtracker_v2';
 const DRAFT_KEY     = 'gymtracker_draft';
 const BANNER_KEY    = 'gymtracker_banner_dismissed';
 const WORKOUT_KEY   = 'gymtracker_workouts';
-const LIB_CACHE_PRE = 'gymtracker_lib_';
+const LIB_CACHE_PRE = 'gymtracker_lib2_';
 
 function loadAll(){try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):{}}catch(e){return{}}}
 function saveAll(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(allLogs))}catch(e){alert('Error guardando: '+e.message)}}
@@ -752,7 +767,6 @@ function showToast(msg,duration=2500){
 // ─────────────────────────────────────────────────────────────────
 function setSession(s){
   currentSession=s;selectedChartEx=null;
-  document.querySelectorAll('.stab').forEach((t,i)=>t.classList.toggle('active',['A','B','C'][i]===s));
   loadFormFromLogs();render();
 }
 function setView(v,e){
@@ -760,9 +774,42 @@ function setView(v,e){
   document.querySelectorAll('.vtab').forEach(t=>t.classList.remove('active'));
   if(e?.target)e.target.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+v).classList.add('active');
+  const pg=document.getElementById('page-'+v);
+  if(pg)pg.classList.add('active');
   document.getElementById('save-bar').style.display=v==='log'?'block':'none';
   render();
+}
+// Navigate to log view for a session (called from Sesiones cards)
+function startSession(key){
+  currentSession=key;
+  selectedChartEx=null;
+  loadFormFromLogs();
+  currentView='log';
+  document.querySelectorAll('.vtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-log').classList.add('active');
+  document.getElementById('save-bar').style.display='block';
+  renderLog();
+}
+// Navigate to editor for a session (called from Sesiones cards)
+function editSession(key){
+  currentSession=key;
+  selectedChartEx=null;
+  setView('ejercicios',null);
+  document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===4));
+  ejerciciosSubTab='editar';
+  renderEjercicios();
+}
+// Create a new session and open its editor
+function addNewSession(){
+  const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const used=Object.keys(workoutDefs);
+  const key=letters.split('').find(l=>!used.includes(l))||'S'+Date.now();
+  const colors=['#7b3f00','#1a5c3a','#2d5a8e','#5c1a5a','#5c4a1a','#1a3a5c'];
+  const color=colors[used.length%colors.length];
+  workoutDefs[key]={label:'Nueva sesión '+key,sub:'Edita para personalizar',color,bg:'#f5f3f0',exercises:[]};
+  saveWorkoutDefs();
+  editSession(key);
 }
 function setEjerciciosSubTab(tab){
   ejerciciosSubTab=tab;pickerVisible=false;
@@ -862,6 +909,9 @@ function renderLog(){
   const sessVol=calcSessionVolume();
 
   let html=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <button onclick="setView('sesiones',null);document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sesiones</button>
+    </div>
     <div class="session-banner" style="background:${color}">
       <div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div>
       <div class="sb-right">
@@ -1098,7 +1148,9 @@ function heatmapTap(date){
   if(!d||!d.sessions.length)return;
   const sess=d.sessions.slice().sort().join(' + ');
   const vol=d.volume>0?` · ${fmtVol(d.volume)}`:'';
-  showToast(`${fmtDate(date)} — Sesión ${sess}${vol}`,3200);
+  const strain=(getWhoopCache().workouts||{})[date]?.strain;
+  const strainTxt=strain!=null?` · 💥 Strain ${fmtStrain(strain)}`:'';
+  showToast(`${fmtDate(date)} — ${sess}${vol}${strainTxt}`,3200);
 }
 
 function renderHistory(){
@@ -1331,7 +1383,7 @@ function toggleAlts(exId){
 // ─────────────────────────────────────────────────────────────────
 const FREE_EX_URL='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 const FREE_EX_IMG='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
-const FREE_EX_CACHE_KEY='gymtracker_freeexdb_v1';
+const FREE_EX_CACHE_KEY='gymtracker_freeexdb_v2';
 const FREE_EX_TTL=7*86400000; // 7 days
 
 let _freeExAll=null;    // full array in memory (session lifetime)
@@ -1427,6 +1479,8 @@ function renderEjercicios(){
 // ── LIBRARY ──
 function renderLibrary(){
   const cont=document.getElementById('ej-sub-content');if(!cont)return;
+  // Auto-fetch the active category if data isn't loaded yet
+  if(libData[libCat]===undefined&&!libLoading[libCat]){fetchLibCat(libCat);return;}
   const cat=MUSCLE_CATS.find(c=>c.id===libCat)||MUSCLE_CATS[0];
 
   let html=`<div class="muscle-tabs">`;
@@ -1452,7 +1506,7 @@ function renderLibrary(){
       html+=`<div class="lib-card">
         <div class="lib-card-head" data-libid="${escHtml(safeId)}" onclick="toggleLibExEl(this)">
           ${imgUrl
-            ?`<img class="lib-thumb" src="${imgUrl}" alt="${escHtml(name)}" loading="lazy"
+            ?`<img class="lib-thumb" src="${imgUrl}" alt="${escHtml(name)}"
                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
             :''}
           <div class="lib-muscle-svg" style="${imgUrl?'display:none':'display:flex'}">${svgThumb}</div>
@@ -1701,8 +1755,11 @@ function renderEditor(){
   const sess=workoutDefs[currentSession];if(!sess)return;
 
   const curGoal=sess.goal||'hypertrophy';
-  let html=`<div class="editor-section">
-    <h3>Sesión ${currentSession} — Información básica</h3>
+  let html=`<div style="margin-bottom:8px">
+    <button onclick="setView('sesiones',null);document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sesiones</button>
+  </div>
+  <div class="editor-section">
+    <h3>${sess.label} — Información básica</h3>
     <p>Nombre y descripción que aparecen en el header.</p>
     <input class="sess-name-input" type="text" id="ed-label" value="${escHtml(sess.label)}" placeholder="Nombre de la sesión">
     <input class="sess-sub-input" type="text" id="ed-sub" value="${escHtml(sess.sub)}" placeholder="Descripción">
@@ -1806,11 +1863,7 @@ function saveEditorChanges(){
 }
 
 function goEditPlan(){
-  setView('ejercicios',null);
-  // manually set active tab
-  document.querySelectorAll('.vtab').forEach((t,i)=>{t.classList.toggle('active',i===3);});
-  ejerciciosSubTab='editar';
-  renderEjercicios();
+  editSession(currentSession);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -2112,6 +2165,7 @@ function setCloudStatus(status){
 // ─────────────────────────────────────────────────────────────────
 function render(){
   if(currentView==='home')renderHome();
+  else if(currentView==='sesiones')renderSesiones();
   else if(currentView==='log')renderLog();
   else if(currentView==='history')renderHistory();
   else if(currentView==='charts')renderCharts();
@@ -2120,12 +2174,57 @@ function render(){
 }
 
 // ─────────────────────────────────────────────────────────────────
+// SESIONES PAGE
+// ─────────────────────────────────────────────────────────────────
+function renderSesiones(){
+  const cont=document.getElementById('page-sesiones');if(!cont)return;
+
+  const keys=Object.keys(workoutDefs);
+  let html=`<div class="sess-page-title">Mis sesiones</div><div class="sess-cards">`;
+
+  keys.forEach(key=>{
+    const sess=workoutDefs[key];if(!sess)return;
+    const {label,sub,color,exercises=[]}=sess;
+    // Last log for this session
+    const logs=Object.values(allLogs).filter(l=>l.session===key).sort((a,b)=>b.date.localeCompare(a.date));
+    const lastDate=logs[0]?.date;
+    const lastStr=lastDate?`Última: ${fmtDate(lastDate)}`:`Sin registros aún`;
+    html+=`<div class="sess-card">
+      <div class="sess-card-accent" style="background:${color}"></div>
+      <div class="sess-card-body">
+        <div class="sess-card-header">
+          <div class="sess-card-info">
+            <div class="sess-card-name">${escHtml(label)}</div>
+            <div class="sess-card-sub">${escHtml(sub)}</div>
+          </div>
+        </div>
+        <div class="sess-card-meta">
+          <span class="sess-card-pill">${exercises.length} ejercicios</span>
+          <span class="sess-card-pill">${lastStr}</span>
+          ${logs.length?`<span class="sess-card-pill">${logs.length} sesión${logs.length>1?'es':''}</span>`:''}
+        </div>
+        <div class="sess-card-actions">
+          <button class="sess-btn-train" style="background:${color}" onclick="startSession('${key}')">▶ Entrenar</button>
+          <button class="sess-btn-edit" onclick="editSession('${key}')">✏️ Editar</button>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  html+=`</div>
+  <button class="sess-new-btn" onclick="addNewSession()">＋ Nueva sesión</button>`;
+  cont.innerHTML=html;
+}
+
+// ─────────────────────────────────────────────────────────────────
 // HOME PAGE
 // ─────────────────────────────────────────────────────────────────
 function renderHome(){
   const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{}, body=c.body||{};
-  const connected=isWhoopConnected();
   const hasRec=r.score!=null;
+  // Show WHOOP data if browser-connected OR if Firestore pipeline has written any data
+  const hasAnyData=hasRec||sl.performance!=null||body.weight_kilogram!=null;
+  const connected=isWhoopConnected()||hasAnyData;
 
   // Last strain: most recent workout date with a strain value
   const workouts=c.workouts||{};

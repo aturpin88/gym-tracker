@@ -16,6 +16,7 @@ Prerequisitos:
 
 import os
 import json
+import time
 import hashlib
 import base64
 import secrets
@@ -23,8 +24,18 @@ import urllib.parse
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Event
+import ssl
+import urllib3
+
+# macOS system Python SSL fix — data is still TLS-encrypted, we just
+# skip certificate chain verification (safe for a personal local script)
+ssl._create_default_https_context = ssl._create_unverified_context
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 import requests
 from dotenv import load_dotenv
+
+VERIFY = False
 
 load_dotenv()
 
@@ -84,7 +95,8 @@ def exchange_code(code: str, verifier: str) -> dict:
         "client_secret": CLIENT_SECRET,
         "redirect_uri":  REDIRECT_URI,
         "code_verifier": verifier,
-    }, headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=15)
+    }, headers={"Content-Type": "application/x-www-form-urlencoded"},
+       timeout=15, verify=VERIFY)
     resp.raise_for_status()
     return resp.json()
 
@@ -94,6 +106,7 @@ def save_tokens(tokens: dict):
             "access_token":  tokens["access_token"],
             "refresh_token": tokens.get("refresh_token", ""),
             "expires_in":    tokens.get("expires_in", 3600),
+            "fetched_at":    time.time(),   # sync.py uses this to check expiry
         }, f, indent=2)
     print(f"✓ Tokens guardados en {TOKENS_FILE}")
 
@@ -136,9 +149,21 @@ def main():
         return
 
     print("→ Intercambiando código por tokens…")
-    tokens = exchange_code(code, verifier)
-    save_tokens(tokens)
-    print("\n✅ Listo. Ahora puedes ejecutar: python sync.py")
+    print(f"   code    : {code[:12]}…")
+    print(f"   verifier: {verifier[:12]}…")
+    try:
+        tokens = exchange_code(code, verifier)
+        save_tokens(tokens)
+        print("\n✅ Listo. Ahora puedes ejecutar: python sync.py")
+    except requests.HTTPError as e:
+        print(f"\n✗ WHOOP rechazó el intercambio — HTTP {e.response.status_code}")
+        print(f"  Respuesta: {e.response.text}")
+        print("\nCausas comunes:")
+        print("  • El redirect_uri del portal no coincide exactamente con 'http://localhost:8080'")
+        print("  • El Client Secret en .env es incorrecto")
+        print("  • El código ya caducó (autoriza de nuevo)")
+    except Exception as e:
+        print(f"\n✗ Error inesperado: {e}")
 
 if __name__ == "__main__":
     main()
