@@ -2033,6 +2033,9 @@ async function syncFromCloud(){
 
     updateStats();render();
     lastSyncTime=new Date();setCloudStatus('synced');
+
+    // Load WHOOP data written by the Python sync script (non-blocking)
+    loadWhoopFromFirestore().catch(()=>{});
   }catch(e){console.error('Sync error:',e);setCloudStatus('error');}
 }
 
@@ -2242,6 +2245,31 @@ function promptHomeWeight(){
   if(isNaN(n)||n<20||n>300){ showToast('Peso no válido'); return; }
   localStorage.setItem('home_weight', n.toFixed(1));
   renderHome();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// WHOOP — Firestore reader (data written by whoop-sync/sync.py)
+// ─────────────────────────────────────────────────────────────────
+async function loadWhoopFromFirestore(){
+  if(!currentUser||!fbDb) return;
+  try{
+    const snap=await fbDb
+      .collection('users').doc(currentUser.uid)
+      .collection('whoop').doc('cache')
+      .get();
+    if(!snap.exists) return;
+    const data=snap.data();
+    // Merge Firestore data into local cache — Firestore wins (freshest data)
+    _whoopCache={...getWhoopCache(),...data, lastSync: data.lastSync
+      ? new Date(data.lastSync).getTime() : Date.now()};
+    try{localStorage.setItem('whoop_cache',JSON.stringify(_whoopCache));}catch(e){}
+    if(currentView==='home')   renderHome();
+    if(currentView==='log')    renderLog();
+    if(currentView==='history')renderHistory();
+    console.log('[WHOOP] Loaded from Firestore, lastSync:', data.lastSync);
+  }catch(e){
+    console.warn('[WHOOP] Could not load from Firestore:', e.message);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────
