@@ -778,6 +778,8 @@ function setView(v,e){
   if(pg)pg.classList.add('active');
   document.getElementById('save-bar').style.display=v==='log'?'block':'none';
   render();
+  // Auto-refresh WHOOP data from Firestore when navigating to Home
+  if(v==='home') loadWhoopFromFirestore().catch(()=>{});
 }
 // Navigate to log view for a session (called from Sesiones cards)
 function startSession(key){
@@ -1871,10 +1873,17 @@ function goEditPlan(){
 // ─────────────────────────────────────────────────────────────────
 function renderData(){
   const total=Object.keys(allLogs).length;
-  const sA=Object.values(allLogs).filter(l=>l.session==='A').length;
-  const sB=Object.values(allLogs).filter(l=>l.session==='B').length;
-  const sC=Object.values(allLogs).filter(l=>l.session==='C').length;
   const sizeKb=(JSON.stringify(allLogs).length/1024).toFixed(1);
+  // Dynamic per-session counts
+  const sessBreakdown=Object.keys(workoutDefs).map(k=>{
+    const count=Object.values(allLogs).filter(l=>l.session===k).length;
+    const label=workoutDefs[k]?.label||k;
+    const color=workoutDefs[k]?.color||'var(--muted)';
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px">
+      <span style="font-weight:600;color:${color}">${escHtml(label)}</span>
+      <span style="color:var(--muted);font-family:'DM Mono',monospace">${count} entreno${count!==1?'s':''}</span>
+    </div>`;
+  }).join('');
   const isStandalone=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
 
   let syncSection='';
@@ -1913,10 +1922,10 @@ function renderData(){
     <div class="data-section">
       <h3>Resumen de datos</h3>
       <div class="data-stats">
-        <div class="ds-item"><div class="ds-val">${total}</div><div class="ds-key">Sesiones</div></div>
-        <div class="ds-item"><div class="ds-val">${sA}/${sB}/${sC}</div><div class="ds-key">A/B/C</div></div>
+        <div class="ds-item"><div class="ds-val">${total}</div><div class="ds-key">Total entrenos</div></div>
         <div class="ds-item"><div class="ds-val">${sizeKb}KB</div><div class="ds-key">Tamaño</div></div>
       </div>
+      ${sessBreakdown?`<div style="margin-top:12px">${sessBreakdown}</div>`:''}
     </div>
     ${syncSection}
     ${renderWhoopDataSection()}
@@ -2274,7 +2283,7 @@ function renderHome(){
           </div>
           <span style="font-size:11px;font-weight:700;color:${rClr};background:${rClr}18;padding:2px 10px;border-radius:20px;display:inline-block">${rLabel}</span>
         </div>
-        <button onclick="syncWhoopAll()" style="background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit">⟳ sync</button>
+        <button onclick="refreshWhoopFromFirestore()" style="background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit">⟳ sync</button>
       </div>
       <hr class="home-hero-divider">
       <div class="home-hero-metrics">
@@ -2292,7 +2301,7 @@ function renderHome(){
     hero=`<div class="home-hero" style="text-align:center;padding:24px">
       <div style="font-size:28px;margin-bottom:8px">⌚</div>
       <div style="font-size:13px;font-weight:600;color:var(--ink2)">Sin datos de WHOOP aún</div>
-      <button onclick="syncWhoopAll()" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⟳ Sincronizar</button>
+      <button onclick="refreshWhoopFromFirestore()" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⟳ Sincronizar</button>
     </div>`;
   } else {
     hero=`<div class="home-hero" style="text-align:center;padding:24px;border-style:dashed">
@@ -2653,50 +2662,41 @@ function renderWhoopStrainBadge(date){
   return`<span class="whoop-strain-badge">${parts.join(' · ')}</span>`;
 }
 
+// Refresh WHOOP data from Firestore (replaces browser-based syncWhoopAll for UI buttons)
+async function refreshWhoopFromFirestore(){
+  showToast('Actualizando datos WHOOP…',1500);
+  try{
+    await loadWhoopFromFirestore();
+    showToast('✓ Datos WHOOP actualizados');
+    if(currentView==='data') renderData();
+  }catch(e){
+    showToast('⚠️ Error al cargar datos WHOOP');
+  }
+}
+
 function renderWhoopDataSection(){
-  if(!isWhoopConnected()) return`
-    <div class="data-section">
-      <h3>⌚ WHOOP</h3>
-      <p>Conecta tu cuenta WHOOP para ver recovery, HRV, sueño y strain junto a tus entrenos.<br>
-      Las credenciales se guardan solo en este dispositivo.</p>
-      <div class="whoop-cfg-row">
-        <label class="whoop-cfg-label">Client ID</label>
-        <input id="whoop-cid" class="whoop-cfg-input" type="text"
-          value="${wls('client_id')}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
-      </div>
-      <div class="whoop-cfg-row">
-        <label class="whoop-cfg-label">Client Secret</label>
-        <input id="whoop-cs" class="whoop-cfg-input" type="password"
-          value="${wls('client_secret')}" placeholder="••••••••••••••••••••" autocomplete="off">
-      </div>
-      <div class="whoop-cfg-row" style="margin-top:8px">
-        <label class="whoop-cfg-label">Worker URL</label>
-        <input id="whoop-worker" class="whoop-cfg-input" type="url"
-          value="${wls('worker_url')}" placeholder="https://whoop-proxy.tunombre.workers.dev" autocomplete="off">
-      </div>
-      <button class="data-btn export" onclick="saveWhoopCreds()" style="margin-top:4px">Conectar WHOOP →</button>
-      <p style="font-size:10px;color:var(--muted);margin-top:10px;line-height:1.5">
-        <b>Redirect URI</b> para el Developer Portal de WHOOP:<br>
-        <code style="font-size:10px;word-break:break-all;color:var(--ink2)">${location.origin+location.pathname}</code>
-      </p>
-    </div>`;
-  const c=getWhoopCache(), r=c.recovery||{};
+  const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{}, body=c.body||{};
+  const hasData=r.score!=null||sl.performance!=null||body.weight_kilogram!=null;
   const lastSync=c.lastSync
     ? new Date(c.lastSync).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
     : 'Nunca';
   return`
-    <div class="data-section" style="border-color:#3CE0A070">
+    <div class="data-section" style="${hasData?'border-color:#3CE0A070':''}">
       <h3 style="display:flex;align-items:center;justify-content:space-between">
-        ⌚ WHOOP conectado
-        <span style="font-size:10px;color:var(--muted);font-weight:400">última sync: ${lastSync}</span>
+        ⌚ WHOOP
+        <span style="font-size:10px;color:var(--muted);font-weight:400">sync: ${lastSync}</span>
       </h3>
-      ${r.score!=null?`<div style="font-size:12px;color:var(--muted);margin-bottom:12px">
-        Recovery hoy: <b style="color:${recoveryColor(r.score)}">${Math.round(r.score)}%</b>
-        ${r.hrv!=null?` · HRV: <b>${Math.round(r.hrv)}ms</b>`:''}
-        ${r.rhr!=null?` · RHR: <b>${Math.round(r.rhr)}bpm</b>`:''}
-      </div>`:''}
-      <button class="data-btn import" onclick="syncWhoopAll()" style="margin-bottom:8px">⟳ Sincronizar WHOOP</button>
-      <button class="data-btn danger" onclick="whoopDisconnect()">Desconectar WHOOP</button>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+        Los datos llegan automáticamente desde <code>sync.py</code> en tu Mac (cron 6–9h). Toca el botón para refrescar ahora.
+      </p>
+      ${hasData?`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.8">
+        ${r.score!=null?`Recovery: <b style="color:${recoveryColor(r.score)}">${Math.round(r.score)}%</b>`:''}
+        ${r.hrv!=null?` · HRV: <b>${Math.round(r.hrv)} ms</b>`:''}
+        ${r.rhr!=null?` · RHR: <b>${Math.round(r.rhr)} bpm</b>`:''}
+        ${sl.performance!=null?`<br>Sueño: <b>${Math.round(sl.performance)}%</b>`:''}
+        ${body.weight_kilogram!=null?` · Peso: <b>${body.weight_kilogram} kg</b>`:''}
+      </div>`:`<p style="font-size:12px;color:var(--muted)">Sin datos aún. Ejecuta <code>python sync.py</code> en tu Mac.</p>`}
+      <button class="data-btn import" onclick="refreshWhoopFromFirestore()">⟳ Actualizar desde Firestore</button>
     </div>`;
 }
 
@@ -2711,13 +2711,8 @@ render();
 document.getElementById('save-bar').style.display='block';
 maybeShowInstallBanner();
 initFirebase();
-// Handle WHOOP OAuth callback (returns from whoop.com with ?code=...)
-handleWhoopCallback().then(wasCallback=>{
-  // Auto-sync WHOOP recovery on startup (non-blocking, after 2s)
-  if(!wasCallback && isWhoopConnected()){
-    setTimeout(()=>syncWhoopAll(true), 2000);
-  }
-});
+// Handle WHOOP OAuth callback (kept for legacy compatibility)
+handleWhoopCallback().catch(()=>{});
 // Pre-load the exercise database and all 6 categories silently
 setTimeout(async()=>{
   const ok=await ensureFreeExDb();
