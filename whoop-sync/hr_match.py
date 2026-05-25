@@ -68,8 +68,11 @@ def load_hr_samples():
     skipped = 0
     for s in raw:
         try:
-            # Acepta ISO 8601 con o sin Z, con timezone offset, etc.
-            ts_str = s["ts"].replace("Z", "+00:00")
+            # Normalise: handle Z, +0200 (no colon), +02:00, naive datetime
+            ts_str = s["ts"].strip().replace("Z", "+00:00")
+            # Add colon to timezone offset if missing (+0200 → +02:00)
+            import re as _re
+            ts_str = _re.sub(r'([+-])(\d{2})(\d{2})$', r'\1\2:\3', ts_str)
             ts = datetime.fromisoformat(ts_str)
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)
