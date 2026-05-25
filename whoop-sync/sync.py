@@ -184,10 +184,12 @@ def fetch_sleep(token: str, debug: bool = False) -> dict:
     records = [r for r in (data.get("records") or []) if not r.get("nap", False)]
     rec  = records[0] if records else {}
     sl   = rec.get("score") or {}
+    # total_in_bed_time_milli está dentro de stage_summary (objeto anidado en SleepScore)
+    stages = sl.get("stage_summary") or {}
     return {
         "performance":  sl.get("sleep_performance_percentage"),
         "consistency":  sl.get("sleep_consistency_percentage"),
-        "duration_min": round(sl.get("total_in_bed_time_milli", 0) / 60000) or None,
+        "duration_min": round(stages.get("total_in_bed_time_milli", 0) / 60000) or None,
     }
 
 def fetch_workouts(token: str, days_back: int = 7, debug: bool = False) -> dict:
@@ -297,6 +299,25 @@ def main(days_back: int = SYNC_DAYS, debug: bool = False):
     print("→ Obteniendo medidas corporales…")
     body = safe_get("body_measurement", lambda: fetch_body(token, debug=debug))
     print(f"   Peso: {body.get('weight_kilogram')} kg · Altura: {body.get('height_meter')} m")
+
+    # ── Rastrear la fecha en que se registró el peso ───────────────────────────
+    # WHOOP no expone cuándo se pesó el usuario, así que detectamos cambios localmente.
+    BODY_CACHE = "body_cache.json"
+    try:
+        bc = json.load(open(BODY_CACHE)) if os.path.exists(BODY_CACHE) else {}
+    except Exception:
+        bc = {}
+    new_kg = body.get("weight_kilogram")
+    old_kg = bc.get("weight_kilogram")
+    if new_kg is not None and (old_kg is None or abs(new_kg - old_kg) > 0.05):
+        bc["weight_kilogram"] = new_kg
+        bc["body_date"] = datetime.now(timezone.utc).date().isoformat()
+        try:
+            with open(BODY_CACHE, "w") as f:
+                json.dump(bc, f)
+        except Exception:
+            pass
+    body["body_date"] = bc.get("body_date")  # None si no hay datos locales aún
 
     payload = {
         "recovery":  recovery,

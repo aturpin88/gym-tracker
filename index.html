@@ -1211,6 +1211,42 @@ function renderHistBody(log,sess,color){
       ${vol>0?`<div class="hist-vol">Vol: ${fmtVol(vol)}</div>`:''}
     </div>`;
   }
+  // ── Zonas FC (datos WHOOP para esa fecha) ─────────────────────
+  const wData=(getWhoopCache().workouts||{})[log.date];
+  const wZones=wData?.zones;
+  const maxHR=(getWhoopCache().body||{}).max_heart_rate||190;
+  if(wZones){
+    const total=(wZones.z0||0)+(wZones.z1||0)+(wZones.z2||0)+(wZones.z3||0)+(wZones.z4||0)+(wZones.z5||0);
+    if(total>0){
+      const maxMin=Math.max(wZones.z0||0,wZones.z1||0,wZones.z2||0,wZones.z3||0,wZones.z4||0,wZones.z5||0);
+      const mhr=Math.round(maxHR);
+      const zDef=[
+        {lbl:'Z5',col:'#EF4444',min:wZones.z5||0,range:`>${Math.round(0.95*mhr)} bpm`},
+        {lbl:'Z4',col:'#F97316',min:wZones.z4||0,range:`${Math.round(0.90*mhr)}–${Math.round(0.95*mhr)} bpm`},
+        {lbl:'Z3',col:'#FBBF24',min:wZones.z3||0,range:`${Math.round(0.80*mhr)}–${Math.round(0.90*mhr)} bpm`},
+        {lbl:'Z2',col:'#34D399',min:wZones.z2||0,range:`${Math.round(0.70*mhr)}–${Math.round(0.80*mhr)} bpm`},
+        {lbl:'Z1',col:'#60A5FA',min:wZones.z1||0,range:`${Math.round(0.60*mhr)}–${Math.round(0.70*mhr)} bpm`},
+        {lbl:'Z0',col:'#9CA3AF',min:wZones.z0||0,range:`<${Math.round(0.60*mhr)} bpm`},
+      ];
+      const rows=zDef.map(({lbl,col,min,range})=>{
+        const pct=maxMin>0?Math.round((min/maxMin)*100):0;
+        const minTxt=min>0?`<span style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;padding:0 6px">${min}m</span>`:'';
+        return `<div style="display:grid;grid-template-columns:28px 1fr 90px;gap:6px;align-items:center;margin-bottom:5px">
+          <div style="font-size:10px;font-weight:700;color:${col}">${lbl}</div>
+          <div style="background:#f0f0f0;border-radius:3px;height:20px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${col};border-radius:3px;display:flex;align-items:center;min-width:${min>0?'8px':'0'}">${minTxt}</div>
+          </div>
+          <div style="font-size:9px;color:var(--muted);text-align:right;line-height:1.4">${range}</div>
+        </div>`;
+      }).join('');
+      const sportLbl=wData.sport?(wData.sport.replace(/_/g,' ')+' · '):'';
+      html+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">⚡ ${sportLbl}Zonas FC</div>
+        ${rows}
+      </div>`;
+    }
+  }
+
   html+=`<button class="hist-del-btn" onclick="deleteLog('${log.date}')">🗑 Eliminar sesión</button>`;
   return html;
 }
@@ -2273,10 +2309,10 @@ function renderHome(){
   const manualKg=localStorage.getItem('home_weight');
   const weightVal=whoopKg!=null?(Math.round(whoopKg*10)/10)+' kg'
     :manualKg!=null?manualKg+' kg':'—';
-  const syncDate=c.lastSync
-    ?new Date(c.lastSync).toLocaleDateString('es-ES',{day:'numeric',month:'short'})
+  const bodyDate=body.body_date
+    ?new Date(body.body_date+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})
     :null;
-  const weightSub=whoopKg!=null?(syncDate||'WHOOP'):'toca para editar';
+  const weightSub=whoopKg!=null?(bodyDate||'WHOOP'):'toca para editar';
 
   // ── Hero card ────────────────────────────────────────────────
   let hero='';
@@ -2342,42 +2378,10 @@ function renderHome(){
     </div>
   </div>`;
 
-  // ── Zonas FC último entreno ───────────────────────────────────
-  let zonesCard='';
-  if(lastWODate&&workouts[lastWODate]?.zones){
-    const wk=workouts[lastWODate];
-    const z=wk.zones||{};
-    const total=(z.z0||0)+(z.z1||0)+(z.z2||0)+(z.z3||0)+(z.z4||0)+(z.z5||0);
-    if(total>0){
-      const zDef=[
-        ['Z0','#9CA3AF',z.z0||0,'<60%'],
-        ['Z1','#60A5FA',z.z1||0,'60-70%'],
-        ['Z2','#34D399',z.z2||0,'70-80%'],
-        ['Z3','#FBBF24',z.z3||0,'80-90%'],
-        ['Z4','#F97316',z.z4||0,'90-95%'],
-        ['Z5','#EF4444',z.z5||0,'>95%'],
-      ];
-      const bars=zDef.filter(([,, v])=>v>0).map(([,col,v])=>
-        `<div style="flex:${v};background:${col};height:8px"></div>`).join('');
-      const legend=zDef.map(([lbl,col,v])=>`
-        <div style="text-align:center">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:${v>0?col:'var(--muted)'}">${v>0?v+'m':'—'}</div>
-          <div style="font-size:8px;color:var(--muted);margin-top:1px">${lbl}</div>
-        </div>`).join('');
-      const sportLbl=(wk.sport||'entreno').replace(/_/g,' ');
-      zonesCard=`
-      <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:13px;margin-bottom:14px">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">💥 ${sportLbl} · ${fmtDate(lastWODate)}</div>
-        <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;margin-bottom:10px">${bars}</div>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:2px">${legend}</div>
-      </div>`;
-    }
-  }
-
   // ── Heatmap ───────────────────────────────────────────────────
   const heatmap=renderHeatmap();
 
-  document.getElementById('page-home').innerHTML=hero+tiles+zonesCard+heatmap;
+  document.getElementById('page-home').innerHTML=hero+tiles+heatmap;
 
   // Auto-scroll heatmap to current week
   setTimeout(()=>{
