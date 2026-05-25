@@ -2261,13 +2261,22 @@ function renderHome(){
   // Sleep colour
   const sp=sl.performance!=null?Math.round(sl.performance):null;
   const spClr=sp==null?'var(--muted)':sp>=85?'#3CE0A0':sp>=70?'#F5C842':'#E84040';
+  // Sleep sub: duration + consistency
+  const sleepH=sl.duration_min!=null?Math.floor(sl.duration_min/60):null;
+  const sleepM=sl.duration_min!=null?sl.duration_min%60:null;
+  const sleepDurTxt=sleepH!=null?`${sleepH}h${sleepM>0?` ${sleepM}m`:''}`:null;
+  const sleepConsTxt=sl.consistency!=null?`${Math.round(sl.consistency)}% cons.`:null;
+  const sleepSub=[sleepDurTxt,sleepConsTxt].filter(Boolean).join(' · ')||'anoche';
 
   // Weight: WHOOP body measurement takes priority, then manual
   const whoopKg=body.weight_kilogram;
   const manualKg=localStorage.getItem('home_weight');
   const weightVal=whoopKg!=null?(Math.round(whoopKg*10)/10)+' kg'
     :manualKg!=null?manualKg+' kg':'—';
-  const weightSub=whoopKg!=null?'WHOOP':'toca para editar';
+  const syncDate=c.lastSync
+    ?new Date(c.lastSync).toLocaleDateString('es-ES',{day:'numeric',month:'short'})
+    :null;
+  const weightSub=whoopKg!=null?(syncDate||'WHOOP'):'toca para editar';
 
   // ── Hero card ────────────────────────────────────────────────
   let hero='';
@@ -2323,7 +2332,7 @@ function renderHome(){
       <div class="home-tile-icon">😴</div>
       <div class="home-tile-val" style="color:${spClr}">${sp!=null?sp+'%':'—'}</div>
       <div class="home-tile-lbl">Sueño</div>
-      <div class="home-tile-sub">anoche</div>
+      <div class="home-tile-sub">${sleepSub}</div>
     </div>
     <div class="home-tile" onclick="promptHomeWeight()" style="cursor:pointer">
       <div class="home-tile-icon">⚖️</div>
@@ -2333,10 +2342,42 @@ function renderHome(){
     </div>
   </div>`;
 
+  // ── Zonas FC último entreno ───────────────────────────────────
+  let zonesCard='';
+  if(lastWODate&&workouts[lastWODate]?.zones){
+    const wk=workouts[lastWODate];
+    const z=wk.zones||{};
+    const total=(z.z0||0)+(z.z1||0)+(z.z2||0)+(z.z3||0)+(z.z4||0)+(z.z5||0);
+    if(total>0){
+      const zDef=[
+        ['Z0','#9CA3AF',z.z0||0,'<60%'],
+        ['Z1','#60A5FA',z.z1||0,'60-70%'],
+        ['Z2','#34D399',z.z2||0,'70-80%'],
+        ['Z3','#FBBF24',z.z3||0,'80-90%'],
+        ['Z4','#F97316',z.z4||0,'90-95%'],
+        ['Z5','#EF4444',z.z5||0,'>95%'],
+      ];
+      const bars=zDef.filter(([,, v])=>v>0).map(([,col,v])=>
+        `<div style="flex:${v};background:${col};height:8px"></div>`).join('');
+      const legend=zDef.map(([lbl,col,v])=>`
+        <div style="text-align:center">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:${v>0?col:'var(--muted)'}">${v>0?v+'m':'—'}</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:1px">${lbl}</div>
+        </div>`).join('');
+      const sportLbl=(wk.sport||'entreno').replace(/_/g,' ');
+      zonesCard=`
+      <div style="background:var(--white);border:1px solid var(--line);border-radius:10px;padding:13px;margin-bottom:14px">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">💥 ${sportLbl} · ${fmtDate(lastWODate)}</div>
+        <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;margin-bottom:10px">${bars}</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:2px">${legend}</div>
+      </div>`;
+    }
+  }
+
   // ── Heatmap ───────────────────────────────────────────────────
   const heatmap=renderHeatmap();
 
-  document.getElementById('page-home').innerHTML=hero+tiles+heatmap;
+  document.getElementById('page-home').innerHTML=hero+tiles+zonesCard+heatmap;
 
   // Auto-scroll heatmap to current week
   setTimeout(()=>{

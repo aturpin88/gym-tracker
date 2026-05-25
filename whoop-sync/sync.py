@@ -67,7 +67,12 @@ def refresh_access_token(refresh_token: str) -> str:
         "refresh_token": refresh_token,
         "client_id":     CLIENT_ID,
         "client_secret": CLIENT_SECRET,
+        "scope":         "offline",
     }, headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=15, verify=VERIFY)
+    if resp.status_code == 400:
+        print("\n✗ El refresh token ha caducado o es inválido.")
+        print("  Solución: ejecuta   python auth.py   para obtener tokens nuevos.\n")
+        sys.exit(1)
     resp.raise_for_status()
     new_tokens = resp.json()
     # Guarda el nuevo refresh_token (WHOOP rota los refresh tokens)
@@ -81,12 +86,23 @@ def refresh_access_token(refresh_token: str) -> str:
 
 def get_valid_token() -> str:
     tokens = load_tokens()
-    fetched_at = tokens.get("fetched_at", time.time())  # assume fresh if missing
+    refresh_token = tokens.get("refresh_token", "")
+    fetched_at = tokens.get("fetched_at", time.time())
     expires_in = tokens.get("expires_in", 3600)
-    # Renueva solo si queda menos de 5 minutos de vida
+    token_still_valid = time.time() < fetched_at + expires_in - 60
+
+    if not refresh_token:
+        # No hay refresh token — auth.py se ejecutó sin el scope offline_access
+        if token_still_valid:
+            return tokens["access_token"]  # úsalo mientras dure
+        print("✗ No hay refresh token. Vuelve a ejecutar: python auth.py")
+        print("  (El scope offline_access ya está añadido, así que esta vez sí lo guardará.)")
+        sys.exit(1)
+
+    # Renueva el access token si queda menos de 5 minutos de vida
     if time.time() > fetched_at + expires_in - 300:
         print("→ Renovando access token…")
-        return refresh_access_token(tokens["refresh_token"])
+        return refresh_access_token(refresh_token)
     return tokens["access_token"]
 
 # ── WHOOP API helpers ─────────────────────────────────────────────────────────
@@ -162,35 +178,50 @@ def fetch_recovery(token: str, debug: bool = False) -> dict:
         return {}
 
 def fetch_sleep(token: str, debug: bool = False) -> dict:
-    start, end = iso_range(days_back=2)
-    data = whoop_get("/activity/sleep", token, {"start": start, "end": end, "limit": 2}, debug=debug)
-    rec  = (data.get("records") or [{}])[0]
+    start, end = iso_range(days_back=3)
+    data = whoop_get("/activity/sleep", token, {"start": start, "end": end, "limit": 10}, debug=debug)
+    # Ignorar siestas (nap=True) — coger el sueño nocturno más reciente
+    records = [r for r in (data.get("records") or []) if not r.get("nap", False)]
+    rec  = records[0] if records else {}
     sl   = rec.get("score") or {}
     return {
         "performance":  sl.get("sleep_performance_percentage"),
+        "consistency":  sl.get("sleep_consistency_percentage"),
         "duration_min": round(sl.get("total_in_bed_time_milli", 0) / 60000) or None,
     }
 
 def fetch_workouts(token: str, days_back: int = 7, debug: bool = False) -> dict:
-    """Devuelve {date_str: {strain, avgHr, maxHr, calories, duration}}."""
+    """Devuelve {date_str: {strain, avgHr, maxHr, calories, duration, sport, zones}}."""
     start, end = iso_range(days_back=days_back)
     data = whoop_get("/activity/workout", token, {"start": start, "end": end, "limit": 25}, debug=debug)
     workouts = {}
     for w in (data.get("records") or []):
-        sc      = w.get("score") or {}
-        raw     = w.get("start_time") or w.get("created_at", "")
+        sc       = w.get("score") or {}
+        raw      = w.get("start") or w.get("created_at", "")
         date_str = raw[:10] if raw else None
         if not date_str:
             continue
+        # Zonas de frecuencia cardíaca (ms → minutos)
+        zd = sc.get("zone_durations") or {}
+        zones = {
+            "z0": round(zd.get("zone_zero_milli",  0) / 60000, 1),
+            "z1": round(zd.get("zone_one_milli",   0) / 60000, 1),
+            "z2": round(zd.get("zone_two_milli",   0) / 60000, 1),
+            "z3": round(zd.get("zone_three_milli", 0) / 60000, 1),
+            "z4": round(zd.get("zone_four_milli",  0) / 60000, 1),
+            "z5": round(zd.get("zone_five_milli",  0) / 60000, 1),
+        }
         entry = {
             "strain":   sc.get("strain"),
             "avgHr":    sc.get("average_heart_rate"),
             "maxHr":    sc.get("max_heart_rate"),
             "calories": round(sc["kilojoule"] * 0.239) if sc.get("kilojoule") else None,
+            "sport":    w.get("sport_name"),
+            "zones":    zones,
             "duration": round(
-                (datetime.fromisoformat(w["end_time"].replace("Z", "+00:00")) -
-                 datetime.fromisoformat(w["start_time"].replace("Z", "+00:00"))).total_seconds() / 60
-            ) if w.get("start_time") and w.get("end_time") else None,
+                (datetime.fromisoformat(w["end"].replace("Z", "+00:00")) -
+                 datetime.fromisoformat(w["start"].replace("Z", "+00:00"))).total_seconds() / 60
+            ) if w.get("start") and w.get("end") else None,
         }
         if date_str not in workouts or (entry["strain"] or 0) > (workouts[date_str]["strain"] or 0):
             workouts[date_str] = entry
