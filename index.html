@@ -658,10 +658,15 @@ function playBeep(){
     });
   }catch(e){}
 }
+function onSetFocus(exId,idx){
+  const s=formData[exId]?.sets[idx];
+  if(s&&!s.t_start) s.t_start=new Date().toISOString();
+}
 function checkAutoTimer(exId,idx){
   const d=formData[exId];if(!d||!d.sets[idx])return;
   const s=d.sets[idx];
   if(s.weight&&s.reps){
+    if(!s.t_end) s.t_end=new Date().toISOString();
     const sess=workoutDefs[currentSession];
     const ex=sess?.exercises.find(e=>e.id===exId);
     startTimer(ex?.name||exId);
@@ -996,10 +1001,12 @@ function renderSetRows(exId,sets,color){
       <div class="set-num${s.weight||s.reps?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color}">${i+1}</div>
       <input type="number" step="0.5" class="set-input weight-input" style="--sess-color:${color}"
         value="${s.weight||''}" placeholder="—"
+        onfocus="onSetFocus('${exId}',${i})"
         oninput="updateWeight('${exId}',${i},this.value)"
         onblur="onSetBlur('${exId}',${i})">
       <input type="number" class="set-input reps-input"
         value="${s.reps||''}" placeholder="—"
+        onfocus="onSetFocus('${exId}',${i})"
         oninput="updateReps('${exId}',${i},this.value)"
         onblur="onSetBlur('${exId}',${i})">
       <button class="rm-btn" onclick="removeSet('${exId}',${i})" ${sets.length<=1?'disabled':''}>×</button>
@@ -1198,7 +1205,11 @@ function renderHistBody(log,sess,color){
     const d=log.data[ex.id];
     if(!d?.sets?.some(s=>s.weight||s.reps))continue;
     const filled=d.sets.filter(s=>s.weight||s.reps);
-    const setsStr=filled.map((s,i)=>`S${i+1}: ${s.weight?`<b>${s.weight}${ex.unit}</b>`:'—'}${s.reps?` ×${s.reps}`:''}`).join('  ·  ');
+    const setsStr=filled.map((s,i)=>{
+      const hrTxt=s.avg_hr!=null
+        ?` <span style="font-family:'DM Mono',monospace;font-size:10px;color:#E84040;font-weight:600">❤ ${Math.round(s.avg_hr)}/${Math.round(s.max_hr)}</span>`:'';
+      return`S${i+1}: ${s.weight?`<b>${s.weight}${ex.unit}</b>`:'—'}${s.reps?` ×${s.reps}`:''}${hrTxt}`;
+    }).join('  ·  ');
     const vol=calcExVolume(ex.id,d);
     // Check if this was a PR at the time
     const maxW=Math.max(...(d.sets.map(s=>parseFloat(s.weight)||0)));
