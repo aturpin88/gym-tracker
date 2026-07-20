@@ -1,17 +1,12 @@
 """
 auth.py — Autorización WHOOP (ejecución única)
 ================================================
-Abre el navegador en la página de login de WHOOP, captura el callback
-localmente en el puerto 8080 y guarda los tokens en tokens.json.
+Intenta primero el flujo confidencial (sin PKCE, solo client_secret).
+Si WHOOP devuelve refresh_token → el cron funcionará indefinidamente.
+Si no → avisa y guarda lo que haya.
 
 Uso:
     python auth.py
-
-Prerequisitos:
-    1. Copia .env.example → .env y rellena WHOOP_CLIENT_ID y WHOOP_CLIENT_SECRET
-    2. En el WHOOP Developer Portal añade este Redirect URI:
-           http://localhost:8080
-    3. pip install -r requirements.txt
 """
 
 import os
@@ -23,12 +18,9 @@ import secrets
 import urllib.parse
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from threading import Event
 import ssl
 import urllib3
 
-# macOS system Python SSL fix — data is still TLS-encrypted, we just
-# skip certificate chain verification (safe for a personal local script)
 ssl._create_default_https_context = ssl._create_unverified_context
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -36,7 +28,6 @@ import requests
 from dotenv import load_dotenv
 
 VERIFY = False
-
 load_dotenv()
 
 CLIENT_ID     = os.getenv("WHOOP_CLIENT_ID", "")
@@ -44,10 +35,10 @@ CLIENT_SECRET = os.getenv("WHOOP_CLIENT_SECRET", "")
 REDIRECT_URI  = "http://localhost:8080"
 WHOOP_AUTH    = "https://api.prod.whoop.com/oauth/oauth2/auth"
 WHOOP_TOKEN   = "https://api.prod.whoop.com/oauth/oauth2/token"
-SCOPE         = "read:recovery read:sleep read:workout read:profile read:body_measurement"
+SCOPE         = "offline read:recovery read:sleep read:workout read:profile read:body_measurement"
 TOKENS_FILE   = "tokens.json"
 
-# ── PKCE helpers ──────────────────────────────────────────────────────────────
+# ── PKCE helpers (fallback) ───────────────────────────────────────────────────
 
 def _b64url(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
@@ -60,13 +51,11 @@ def generate_pkce():
 # ── Local callback server ─────────────────────────────────────────────────────
 
 received_code: dict = {}
-done_event = Event()
 
 class CallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         params = dict(urllib.parse.parse_qsl(parsed.query))
-
         if "error" in params:
             received_code["error"] = params["error"]
             body = f"<h2>Error: {params['error']}</h2><p>{params.get('error_description','')}</p>"
@@ -75,19 +64,31 @@ class CallbackHandler(BaseHTTPRequestHandler):
             body = "<h2>✓ Autorización completada</h2><p>Puedes cerrar esta ventana.</p>"
         else:
             body = "<h2>Respuesta inesperada</h2>"
-
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
         self.wfile.write(body.encode())
-        done_event.set()
 
     def log_message(self, format, *args):
-        pass  # silencia los logs del servidor HTTP
+        pass
 
 # ── Token exchange ────────────────────────────────────────────────────────────
 
-def exchange_code(code: str, verifier: str) -> dict:
+def exchange_confidential(code: str) -> dict:
+    """Flujo sin PKCE — cliente confidencial (client_secret). Devuelve refresh_token."""
+    resp = requests.post(WHOOP_TOKEN, data={
+        "grant_type":    "authorization_code",
+        "code":          code,
+        "client_id":     CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "redirect_uri":  REDIRECT_URI,
+    }, headers={"Content-Type": "application/x-www-form-urlencoded"},
+       timeout=15, verify=VERIFY)
+    resp.raise_for_status()
+    return resp.json()
+
+def exchange_pkce(code: str, verifier: str) -> dict:
+    """Flujo con PKCE — fallback si el confidencial falla."""
     resp = requests.post(WHOOP_TOKEN, data={
         "grant_type":    "authorization_code",
         "code":          code,
@@ -106,64 +107,102 @@ def save_tokens(tokens: dict):
             "access_token":  tokens["access_token"],
             "refresh_token": tokens.get("refresh_token", ""),
             "expires_in":    tokens.get("expires_in", 3600),
-            "fetched_at":    time.time(),   # sync.py uses this to check expiry
+            "fetched_at":    time.time(),
         }, f, indent=2)
     print(f"✓ Tokens guardados en {TOKENS_FILE}")
 
 # ── Main ──────────────────────────────────────────────────────────────────────
+
+def authorize_and_get_code(use_pkce: bool):
+    """Abre el navegador y espera el callback. Devuelve (code, verifier|None)."""
+    state   = secrets.token_urlsafe(16)
+    verifier = None
+
+    auth_params = {
+        "response_type": "code",
+        "client_id":     CLIENT_ID,
+        "redirect_uri":  REDIRECT_URI,
+        "scope":         SCOPE,
+        "state":         state,
+    }
+
+    if use_pkce:
+        verifier, challenge = generate_pkce()
+        auth_params["code_challenge"]        = challenge
+        auth_params["code_challenge_method"] = "S256"
+
+    auth_url = f"{WHOOP_AUTH}?{urllib.parse.urlencode(auth_params)}"
+    print(f"→ Abriendo navegador ({'PKCE' if use_pkce else 'confidencial'})…")
+    webbrowser.open(auth_url)
+    print("⏳ Esperando callback en http://localhost:8080 …")
+
+    received_code.clear()
+    server = HTTPServer(("localhost", 8080), CallbackHandler)
+    server.handle_request()
+
+    if "error" in received_code:
+        raise RuntimeError(f"WHOOP devolvió error: {received_code['error']}")
+
+    code = received_code.get("code")
+    if not code:
+        raise RuntimeError("No se recibió código de autorización")
+
+    return code, verifier
+
 
 def main():
     if not CLIENT_ID or not CLIENT_SECRET:
         print("✗ Falta WHOOP_CLIENT_ID o WHOOP_CLIENT_SECRET en .env")
         return
 
-    verifier, challenge = generate_pkce()
-    state = secrets.token_urlsafe(16)
-
-    params = urllib.parse.urlencode({
-        "response_type":         "code",
-        "client_id":             CLIENT_ID,
-        "redirect_uri":          REDIRECT_URI,
-        "scope":                 SCOPE,
-        "state":                 state,
-        "code_challenge":        challenge,
-        "code_challenge_method": "S256",
-    })
-    auth_url = f"{WHOOP_AUTH}?{params}"
-
-    print("→ Abriendo navegador para autorizar WHOOP…")
-    print(f"  URL: {auth_url}\n")
-    webbrowser.open(auth_url)
-
-    server = HTTPServer(("localhost", 8080), CallbackHandler)
-    print("⏳ Esperando callback en http://localhost:8080 …")
-    server.handle_request()  # atiende una sola petición y para
-
-    if "error" in received_code:
-        print(f"✗ WHOOP devolvió error: {received_code['error']}")
-        return
-
-    code = received_code.get("code")
-    if not code:
-        print("✗ No se recibió código de autorización")
-        return
-
-    print("→ Intercambiando código por tokens…")
-    print(f"   code    : {code[:12]}…")
-    print(f"   verifier: {verifier[:12]}…")
+    # ── Intento 1: flujo confidencial sin PKCE ────────────────────────────────
+    print("\n── Intento 1/2: flujo confidencial (sin PKCE) ──")
     try:
-        tokens = exchange_code(code, verifier)
+        code, _ = authorize_and_get_code(use_pkce=False)
+        print("→ Intercambiando código por tokens…")
+        tokens = exchange_confidential(code)
+        campos = list(tokens.keys())
+        print(f"   Campos recibidos: {campos}")
+
+        if tokens.get("refresh_token"):
+            print("   ✓ refresh_token obtenido — el cron renovará el token automáticamente")
+            save_tokens(tokens)
+            print("\n✅ Listo. Ejecuta: python sync.py")
+            return
+        else:
+            print("   ⚠ Sin refresh_token en este intento. Probando con PKCE…")
+
+    except requests.HTTPError as e:
+        print(f"   ✗ Error HTTP {e.response.status_code}: {e.response.text[:200]}")
+        print("   Probando con PKCE…")
+    except Exception as e:
+        print(f"   ✗ Error: {e}. Probando con PKCE…")
+
+    # ── Intento 2: flujo PKCE (fallback) ─────────────────────────────────────
+    print("\n── Intento 2/2: flujo PKCE ──")
+    try:
+        code, verifier = authorize_and_get_code(use_pkce=True)
+        print("→ Intercambiando código por tokens…")
+        tokens = exchange_pkce(code, verifier)
+        campos = list(tokens.keys())
+        print(f"   Campos recibidos: {campos}")
+
+        if tokens.get("refresh_token"):
+            print("   ✓ refresh_token obtenido")
+        else:
+            print("   ⚠ WHOOP no devuelve refresh_token para esta app.")
+            print("     Revisa en developer-dashboard.whoop.com que el tipo de app")
+            print("     sea 'Web Application' (no SPA), o contacta el soporte de WHOOP.")
+
         save_tokens(tokens)
-        print("\n✅ Listo. Ahora puedes ejecutar: python sync.py")
+        print("\n✅ Listo. Ejecuta: python sync.py")
+
     except requests.HTTPError as e:
         print(f"\n✗ WHOOP rechazó el intercambio — HTTP {e.response.status_code}")
         print(f"  Respuesta: {e.response.text}")
-        print("\nCausas comunes:")
-        print("  • El redirect_uri del portal no coincide exactamente con 'http://localhost:8080'")
-        print("  • El Client Secret en .env es incorrecto")
-        print("  • El código ya caducó (autoriza de nuevo)")
     except Exception as e:
         print(f"\n✗ Error inesperado: {e}")
+
 
 if __name__ == "__main__":
     main()
