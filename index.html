@@ -379,6 +379,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .lib-steps-ordered li{font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:5px;padding-left:2px;}
 .lib-card-meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
 .lib-fetch-bar{height:2px;background:linear-gradient(90deg,var(--gold) 0%,transparent 60%);background-size:200%;animation:loadslide 1s linear infinite;margin-bottom:4px;}
+
+/* ── EXERCISE PHOTO ── */
+.ex-photo{width:48px;height:48px;border-radius:8px;object-fit:cover;cursor:pointer;flex-shrink:0;border:2px solid var(--line);transition:opacity .15s;}
+.ex-photo:active{opacity:.75;}
+.ex-photo-btn{width:36px;height:36px;border-radius:7px;background:var(--bg);border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;color:var(--muted);transition:border-color .15s;}
+.ex-photo-btn:hover{border-color:var(--muted);}
+.photo-modal{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;}
+.photo-modal-img{max-width:100%;max-height:65vh;border-radius:14px;object-fit:contain;}
+.photo-modal-row{display:flex;gap:10px;}
+.photo-modal-btn{border:none;border-radius:8px;padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* ── ADD-HOC EXERCISES ── */
+.adhoc-form{background:var(--white);border:2px dashed var(--gold);border-radius:10px;padding:14px;margin-bottom:10px;}
+.adhoc-form-title{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.adhoc-row{display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px;}
+.adhoc-input{border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--bg);width:100%;}
+.adhoc-input:focus{outline:none;border-color:var(--gold);}
+.adhoc-confirm-btn{width:100%;border:none;border-radius:6px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff;background:var(--gold);}
+.add-adhoc-btn{width:100%;background:none;border:2px dashed var(--line);border-radius:10px;padding:11px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;margin-top:4px;}
+.add-adhoc-btn:hover{border-color:var(--gold);color:var(--gold);}
+.adhoc-badge{font-size:9px;font-weight:700;background:var(--gold);color:#fff;padding:2px 6px;border-radius:3px;letter-spacing:.5px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -445,6 +466,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
 <div class="toast" id="toast"></div>
 <div class="tooltip" id="tooltip" style="display:none"></div>
+<input type="file" id="photo-file-input" accept="image/*" style="display:none" onchange="handlePhotoFile(event)">
+<div id="photo-modal" class="photo-modal" style="display:none" onclick="closePhotoModal()">
+  <img id="photo-modal-img" class="photo-modal-img" src="" onclick="event.stopPropagation()">
+  <div class="photo-modal-row" onclick="event.stopPropagation()">
+    <button class="photo-modal-btn" style="background:rgba(255,255,255,.15);color:#fff" onclick="pickExPhoto(photoPendingExId)">📷 Cambiar</button>
+    <button class="photo-modal-btn" style="background:#fff;color:var(--ink)" onclick="closePhotoModal()">Cerrar</button>
+  </div>
+</div>
 
 <script>
 // ─────────────────────────────────────────────────────────────────
@@ -530,6 +559,11 @@ let expandedLog=null;
 let selectedChartEx=null;
 let draftTimer=null;
 let setNoteOpen={};
+let adhocExercises=[];
+let adhocShowForm=false;
+let exPhotos={};
+let photoPendingExId=null;
+const PHOTOS_KEY='gymtracker_photos';
 let ejerciciosSubTab='biblioteca'; // 'biblioteca' | 'editar'
 
 // ─────────────────────────────────────────────────────────────────
@@ -546,7 +580,7 @@ function saveAll(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(allLogs))
 function saveDraft(){
   clearTimeout(draftTimer);
   draftTimer=setTimeout(()=>{
-    try{localStorage.setItem(DRAFT_KEY,JSON.stringify({session:currentSession,date:currentDate,data:formData}));
+    try{localStorage.setItem(DRAFT_KEY,JSON.stringify({session:currentSession,date:currentDate,data:formData,adhocExercises}));
     const el=document.getElementById('draft-badge');if(el)el.style.display='inline-block';}catch(e){}
   },400);
 }
@@ -698,9 +732,14 @@ function selectGoal(id,el){
 // PR DETECTION
 // ─────────────────────────────────────────────────────────────────
 function getHistoricMax(exId,excludeDate){
+  const altId=findExIdByName(findExerciseName(exId)||'',exId);
   return Object.values(allLogs)
-    .filter(l=>l.session===currentSession&&(!excludeDate||l.date!==excludeDate))
-    .flatMap(l=>(l.data[exId]?.sets||[]).map(s=>parseFloat(s.weight)||0))
+    .filter(l=>!excludeDate||l.date!==excludeDate)
+    .flatMap(l=>{
+      const direct=(l.data[exId]?.sets||[]).map(s=>parseFloat(s.weight)||0);
+      const alt=altId?(l.data[altId]?.sets||[]).map(s=>parseFloat(s.weight)||0):[];
+      return [...direct,...alt];
+    })
     .reduce((mx,w)=>Math.max(mx,w),0);
 }
 function getCurrentMax(exId){
@@ -740,7 +779,9 @@ function calcExVolume(exId,data){
   },0);
 }
 function calcSessionVolume(){
-  return(workoutDefs[currentSession]?.exercises||[]).reduce((t,ex)=>t+calcExVolume(ex.id),0);
+  const sessVol=(workoutDefs[currentSession]?.exercises||[]).reduce((t,ex)=>t+calcExVolume(ex.id),0);
+  const adhocVol=adhocExercises.reduce((t,ex)=>t+calcExVolume(ex.id),0);
+  return sessVol+adhocVol;
 }
 function fmtVol(v){return v>=1000?(v/1000).toFixed(1)+'t':v.toFixed(0)+' kg'}
 
@@ -748,10 +789,99 @@ function fmtVol(v){return v>=1000?(v/1000).toFixed(1)+'t':v.toFixed(0)+' kg'}
 // COMPARE WITH LAST SESSION
 // ─────────────────────────────────────────────────────────────────
 function getLastSessionData(exId){
+  const altId=findExIdByName(findExerciseName(exId)||'',exId);
   const logs=Object.values(allLogs)
-    .filter(l=>l.session===currentSession&&l.date!==currentDate&&l.data[exId]?.sets?.some(s=>s.weight||s.reps))
+    .filter(l=>{
+      if(l.date===currentDate&&l.session===currentSession)return false;
+      if(l.data[exId]?.sets?.some(s=>s.weight||s.reps))return true;
+      if(altId&&l.data[altId]?.sets?.some(s=>s.weight||s.reps))return true;
+      return false;
+    })
     .sort((a,b)=>b.date.localeCompare(a.date));
-  return logs[0]?{log:logs[0],data:logs[0].data[exId]}:null;
+  if(!logs[0])return null;
+  const log=logs[0];
+  const data=log.data[exId]||(altId?log.data[altId]:null);
+  return data?{log,data}:null;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// EXERCISE PHOTOS
+// ─────────────────────────────────────────────────────────────────
+function loadExPhotos(){try{exPhotos=JSON.parse(localStorage.getItem(PHOTOS_KEY)||'{}')}catch(e){exPhotos={};}}
+function saveExPhotos(){try{localStorage.setItem(PHOTOS_KEY,JSON.stringify(exPhotos))}catch(e){showToast('Foto demasiado grande');}}
+function pickExPhoto(exId){
+  photoPendingExId=exId;
+  document.getElementById('photo-file-input').value='';
+  document.getElementById('photo-file-input').click();
+}
+function handlePhotoFile(e){
+  const file=e.target.files[0];
+  if(!file||!photoPendingExId)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const SIZE=240;canvas.width=SIZE;canvas.height=SIZE;
+      const ctx=canvas.getContext('2d');
+      const ratio=Math.max(SIZE/img.width,SIZE/img.height);
+      const sw=SIZE/ratio,sh=SIZE/ratio;
+      const sx=(img.width-sw)/2,sy=(img.height-sh)/2;
+      ctx.drawImage(img,sx,sy,sw,sh,0,0,SIZE,SIZE);
+      exPhotos[photoPendingExId]=canvas.toDataURL('image/jpeg',.82);
+      saveExPhotos();
+      closePhotoModal();
+      renderLog();
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function showPhotoModal(exId){
+  photoPendingExId=exId;
+  const photo=exPhotos[exId];
+  if(!photo){pickExPhoto(exId);return;}
+  document.getElementById('photo-modal-img').src=photo;
+  document.getElementById('photo-modal').style.display='flex';
+}
+function closePhotoModal(){document.getElementById('photo-modal').style.display='none';}
+
+// ─────────────────────────────────────────────────────────────────
+// AD-HOC EXERCISES
+// ─────────────────────────────────────────────────────────────────
+function showAdHocForm(){adhocShowForm=true;renderLog();setTimeout(()=>document.getElementById('adhoc-name-input')?.focus(),60);}
+function hideAdHocForm(){adhocShowForm=false;renderLog();}
+function addAdHocExercise(){
+  const name=(document.getElementById('adhoc-name-input')?.value||'').trim();
+  if(!name){showToast('Escribe un nombre');return;}
+  const unit=document.getElementById('adhoc-unit-select')?.value||'kg';
+  adhocExercises.push({id:'adhoc_'+Date.now(),name,unit,sets:'',note:''});
+  adhocShowForm=false;
+  renderLog();
+}
+function removeAdHocExercise(id){
+  adhocExercises=adhocExercises.filter(e=>e.id!==id);
+  delete formData[id];
+  renderLog();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CROSS-SESSION HELPERS
+// ─────────────────────────────────────────────────────────────────
+function findExerciseName(exId){
+  for(const sess of Object.values(workoutDefs)){
+    const ex=sess.exercises?.find(e=>e.id===exId);
+    if(ex)return ex.name;
+  }
+  return null;
+}
+function findExIdByName(name,excludeId){
+  const n=name.toLowerCase();
+  for(const sess of Object.values(workoutDefs)){
+    const ex=sess.exercises?.find(e=>e.id!==excludeId&&e.name.toLowerCase()===n);
+    if(ex)return ex.id;
+  }
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -769,7 +899,7 @@ function showToast(msg,duration=2500){
 // NAVIGATION
 // ─────────────────────────────────────────────────────────────────
 function setSession(s){
-  currentSession=s;selectedChartEx=null;
+  currentSession=s;selectedChartEx=null;adhocExercises=[];adhocShowForm=false;
   loadFormFromLogs();render();
 }
 function setView(v,e){
@@ -787,7 +917,7 @@ function setView(v,e){
 // Navigate to log view for a session (called from Sesiones cards)
 function startSession(key){
   currentSession=key;
-  selectedChartEx=null;
+  selectedChartEx=null;adhocExercises=[];adhocShowForm=false;
   loadFormFromLogs();
   currentView='log';
   document.querySelectorAll('.vtab').forEach(t=>t.classList.remove('active'));
@@ -827,10 +957,18 @@ function setEjerciciosSubTab(tab){
 // ─────────────────────────────────────────────────────────────────
 function loadFormFromLogs(){
   const key=logKey();
-  if(allLogs[key]){formData=JSON.parse(JSON.stringify(allLogs[key].data));clearDraft();return;}
+  if(allLogs[key]){
+    formData=JSON.parse(JSON.stringify(allLogs[key].data));
+    adhocExercises=JSON.parse(JSON.stringify(allLogs[key].adhocExercises||[]));
+    clearDraft();return;
+  }
   const draft=loadDraft();
-  if(draft?.session===currentSession&&draft?.date===currentDate){formData=draft.data;return;}
-  formData={};
+  if(draft?.session===currentSession&&draft?.date===currentDate){
+    formData=draft.data;
+    adhocExercises=draft.adhocExercises||[];
+    return;
+  }
+  formData={};adhocExercises=[];
 }
 function getExData(exId){
   if(!formData[exId])formData[exId]={sets:[{weight:'',reps:''}],notes:''};
@@ -888,7 +1026,7 @@ function updateSessionVolume(){
 // ─────────────────────────────────────────────────────────────────
 function saveSession(){
   const key=logKey();
-  allLogs[key]={session:currentSession,date:currentDate,data:JSON.parse(JSON.stringify(formData))};
+  allLogs[key]={session:currentSession,date:currentDate,data:JSON.parse(JSON.stringify(formData)),adhocExercises:JSON.parse(JSON.stringify(adhocExercises))};
   saveAll();clearDraft();updateStats();
   detectAndShowPRs();
   saveToCloud(key);
@@ -939,10 +1077,27 @@ function renderLog(){
 
 
   for(const ex of sess.exercises)html+=renderExCard(ex,color,bg);
+  for(const ex of adhocExercises)html+=renderExCard(ex,color,bg,true);
+  if(adhocShowForm){
+    html+=`<div class="adhoc-form">
+      <div class="adhoc-form-title">Ejercicio extra</div>
+      <div class="adhoc-row">
+        <input class="adhoc-input" id="adhoc-name-input" type="text" placeholder="Nombre del ejercicio…">
+        <select class="adhoc-input" id="adhoc-unit-select">
+          <option value="kg">kg</option><option value="lb">lb</option>
+          <option value="min">min</option><option value="km/h">km/h</option>
+        </select>
+      </div>
+      <button class="adhoc-confirm-btn" onclick="addAdHocExercise()">+ Añadir</button>
+      <button onclick="hideAdHocForm()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:8px;font-family:inherit;padding:4px">Cancelar</button>
+    </div>`;
+  } else {
+    html+=`<button class="add-adhoc-btn" onclick="showAdHocForm()">+ Ejercicio extra</button>`;
+  }
   document.getElementById('page-log').innerHTML=html;
 }
 
-function renderExCard(ex,color,bg){
+function renderExCard(ex,color,bg,isAdhoc=false){
   const d=getExData(ex.id);
   const filled=hasData(ex.id);
   const wLabel=ex.unit==='min'?'Duración':ex.unit==='km/h'?'Vel.':'Peso';
@@ -958,19 +1113,27 @@ function renderExCard(ex,color,bg){
     lastHtml=`<div class="last-time">↩ ${fmtShort(last.log.date)}: <span>${escHtml(str)}</span></div>`;
   }
 
+  const photo=exPhotos[ex.id];
   return`<div class="ex-card${filled?' has-data':''}" data-card="${ex.id}" style="--sess-color:${color};--sess-bg:${bg}">
-    <div class="ex-head">
-      <div>
+    <div class="ex-head" style="gap:10px">
+      ${photo
+        ?`<img class="ex-photo" src="${photo}" onclick="showPhotoModal('${ex.id}')" alt="">`
+        :`<div class="ex-photo-btn" onclick="pickExPhoto('${ex.id}')">📷</div>`}
+      <div style="flex:1;min-width:0">
         <div class="ex-name-row">
           <span class="ex-name">${ex.name}</span>
+          ${isAdhoc?'<span class="adhoc-badge">EXTRA</span>':''}
           <span class="pr-badge${isPR?' show':''}" data-pr="${ex.id}">🏆 PR</span>
         </div>
         <div class="ex-meta">
-          <span class="ex-target" style="color:${color};background:${bg};border:1px solid ${color}33">${ex.sets}</span>
-          <span class="ex-ref">${ex.note}</span>
+          ${ex.sets?`<span class="ex-target" style="color:${color};background:${bg};border:1px solid ${color}33">${ex.sets}</span>`:''}
+          ${ex.note?`<span class="ex-ref">${ex.note}</span>`:''}
         </div>
       </div>
-      ${filled?'<span style="font-size:14px">✅</span>':''}
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        ${filled&&!isAdhoc?'<span style="font-size:14px">✅</span>':''}
+        ${isAdhoc?`<button onclick="removeAdHocExercise('${ex.id}')" style="background:none;border:none;color:#ccc;font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>`:''}
+      </div>
     </div>
     ${lastHtml}
     <div class="col-heads">
@@ -1246,6 +1409,24 @@ function renderHistBody(log,sess,color){
       <div class="hist-ex-name">${ex.name}${wasPR?'<span class="pr-badge show" style="font-size:9px">🏆 PR</span>':''}</div>
       <div class="hist-sets">${setsStr}</div>
       ${d.notes?`<div class="hist-notes">${d.notes}</div>`:''}
+      ${vol>0?`<div class="hist-vol">Vol: ${fmtVol(vol)}</div>`:''}
+    </div>`;
+  }
+  // ── Ejercicios extra (ad-hoc) ─────────────────────────────────
+  for(const adEx of (log.adhocExercises||[])){
+    const d=log.data[adEx.id];
+    if(!d?.sets?.some(s=>s.weight||s.reps))continue;
+    const filled=d.sets.filter(s=>s.weight||s.reps);
+    const setsStr=filled.map((s,i)=>{
+      const hrTxt=s.avg_hr!=null?` <span style="font-family:'DM Mono',monospace;font-size:10px;color:#E84040;font-weight:600">❤ ${Math.round(s.avg_hr)}/${Math.round(s.max_hr)}</span>`:'';
+      const noteTxt=s.note?` <em style="font-size:10px;color:var(--muted)">${escHtml(s.note)}</em>`:'';
+      return`S${i+1}: ${s.weight?`<b>${s.weight}${adEx.unit}</b>`:'—'}${s.reps?` ×${s.reps}`:''}${hrTxt}${noteTxt}`;
+    }).join('  ·  ');
+    const vol=filled.reduce((t,s)=>t+((parseFloat(s.weight)||0)*(parseInt(s.reps)||0)),0);
+    html+=`<div class="hist-ex">
+      <div class="hist-ex-name">${escHtml(adEx.name)} <span class="adhoc-badge">EXTRA</span></div>
+      <div class="hist-sets">${setsStr}</div>
+      ${d.notes?`<div class="hist-notes">${escHtml(d.notes)}</div>`:''}
       ${vol>0?`<div class="hist-vol">Vol: ${fmtVol(vol)}</div>`:''}
     </div>`;
   }
@@ -2792,6 +2973,7 @@ function renderWhoopDataSection(){
 // ─────────────────────────────────────────────────────────────────
 loadWorkoutDefs();
 allLogs=loadAll();
+loadExPhotos();
 loadFormFromLogs();
 updateStats();
 render();
