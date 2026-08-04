@@ -111,6 +111,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .sess-time-btn{background:var(--ink);border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;padding:4px 8px;font-family:inherit;flex-shrink:0;}
 .sess-time-btn:active{opacity:.6;}
 .sess-time-sep{font-size:14px;color:var(--muted);flex-shrink:0;}
+.sess-time-input{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--ink);background:none;border:none;border-bottom:1.5px solid var(--line);padding:2px 0;width:76px;flex-shrink:0;cursor:text;}
+.sess-time-input:focus{outline:none;border-bottom-color:var(--ink);}
+.sess-time-dur{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;flex-shrink:0;}
+/* History timing row */
+.hist-times{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px 6px;border-bottom:1px dashed var(--line);margin-bottom:6px;}
+.hist-time-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.hist-time-input{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--ink);background:none;border:none;border-bottom:1.5px solid var(--line);padding:1px 0;width:72px;cursor:text;}
+.hist-time-input:focus{outline:none;border-bottom-color:var(--ink);}
+.hist-set-time{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;}
 /* Notes label */
 .notes-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:8px;margin-bottom:2px;}
 /* Delete session button */
@@ -814,6 +823,8 @@ function calcSessionVolume(){
 }
 function fmtVol(v){return v>=1000?(v/1000).toFixed(1)+'t':v.toFixed(0)+' kg'}
 function fmtTime(iso){return new Date(iso).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}
+function fmtTime24(iso){const d=new Date(iso);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function fmtDuration(isoStart,isoEnd){const m=Math.round((new Date(isoEnd)-new Date(isoStart))/60000);if(m<0||m>600)return'';return m<60?m+'min':Math.floor(m/60)+'h '+(m%60)+'min'}
 
 // ─────────────────────────────────────────────────────────────────
 // COMPARE WITH LAST SESSION
@@ -1113,15 +1124,18 @@ function renderLog(){
     <div class="sess-time-row">
       <div class="sess-time-block">
         <span class="sess-time-label">INICIO</span>
-        <span class="sess-time-val">${sessionStartTime?fmtTime(sessionStartTime):'—'}</span>
-        <button class="sess-time-btn" onclick="setWorkoutStart()">${sessionStartTime?'↺':'▶'}</button>
+        <input type="time" class="sess-time-input" value="${sessionStartTime?fmtTime24(sessionStartTime):''}"
+          onchange="editWorkoutTime('start',this.value)">
+        <button class="sess-time-btn" onclick="setWorkoutStart()" title="Hora actual">⏱</button>
       </div>
       <div class="sess-time-sep">→</div>
       <div class="sess-time-block">
         <span class="sess-time-label">FIN</span>
-        <span class="sess-time-val">${sessionEndTime?fmtTime(sessionEndTime):'—'}</span>
-        <button class="sess-time-btn" onclick="setWorkoutEnd()">${sessionEndTime?'↺':'■'}</button>
+        <input type="time" class="sess-time-input" value="${sessionEndTime?fmtTime24(sessionEndTime):''}"
+          onchange="editWorkoutTime('end',this.value)">
+        <button class="sess-time-btn" onclick="setWorkoutEnd()" title="Hora actual">⏱</button>
       </div>
+      ${sessionStartTime&&sessionEndTime?`<span class="sess-time-dur">${fmtDuration(sessionStartTime,sessionEndTime)}</span>`:''}
     </div>`;
 
   for(const ex of sess.exercises)html+=renderExCard(ex,color,bg);
@@ -1447,7 +1461,21 @@ function renderHistory(){
 }
 
 function renderHistBody(log,sess,color){
-  let html='';
+  // ── Session timing header ─────────────────────────────────────
+  let html=`<div class="hist-times">
+    <div style="display:flex;align-items:center;gap:5px">
+      <span class="hist-time-label">INICIO</span>
+      <input type="time" class="hist-time-input" value="${log.startTime?fmtTime24(log.startTime):''}"
+        onchange="editLogTime('${log.session}','${log.date}','start',this.value)">
+    </div>
+    <span style="color:var(--muted);font-size:13px">→</span>
+    <div style="display:flex;align-items:center;gap:5px">
+      <span class="hist-time-label">FIN</span>
+      <input type="time" class="hist-time-input" value="${log.endTime?fmtTime24(log.endTime):''}"
+        onchange="editLogTime('${log.session}','${log.date}','end',this.value)">
+    </div>
+    <span class="sess-time-dur" id="hist-dur-${log.session}-${log.date}">${log.startTime&&log.endTime?fmtDuration(log.startTime,log.endTime):''}</span>
+  </div>`;
   for(const ex of sess.exercises){
     const d=log.data[ex.id];
     if(!d?.sets?.some(s=>s.weight||s.reps))continue;
@@ -1456,7 +1484,8 @@ function renderHistBody(log,sess,color){
       const hrTxt=s.avg_hr!=null
         ?` <span style="font-family:'DM Mono',monospace;font-size:10px;color:#E84040;font-weight:600">❤ ${Math.round(s.avg_hr)}/${Math.round(s.max_hr)}</span>`:'';
       const noteTxt=s.note?` <em style="font-size:10px;color:var(--muted)">${escHtml(s.note)}</em>`:'';
-      return`S${i+1}: ${s.weight?`<b>${s.weight}${ex.unit}</b>`:'—'}${s.reps?` ×${s.reps}`:''}${hrTxt}${noteTxt}`;
+      const timeTxt=(s.t_start||s.t_end)?`<br><span class="hist-set-time">⏱ ${s.t_start?fmtTime(s.t_start):'?'}${s.t_end?' → '+fmtTime(s.t_end):''}</span>`:'';
+      return`S${i+1}: ${s.weight?`<b>${s.weight}${ex.unit}</b>`:'—'}${s.reps?` ×${s.reps}`:''}${hrTxt}${noteTxt}${timeTxt}`;
     }).join('  ·  ');
     const vol=calcExVolume(ex.id,d);
     // Check if this was a PR at the time
@@ -1478,7 +1507,8 @@ function renderHistBody(log,sess,color){
     const setsStr=filled.map((s,i)=>{
       const hrTxt=s.avg_hr!=null?` <span style="font-family:'DM Mono',monospace;font-size:10px;color:#E84040;font-weight:600">❤ ${Math.round(s.avg_hr)}/${Math.round(s.max_hr)}</span>`:'';
       const noteTxt=s.note?` <em style="font-size:10px;color:var(--muted)">${escHtml(s.note)}</em>`:'';
-      return`S${i+1}: ${s.weight?`<b>${s.weight}${adEx.unit}</b>`:'—'}${s.reps?` ×${s.reps}`:''}${hrTxt}${noteTxt}`;
+      const timeTxt=(s.t_start||s.t_end)?`<br><span class="hist-set-time">⏱ ${s.t_start?fmtTime(s.t_start):'?'}${s.t_end?' → '+fmtTime(s.t_end):''}</span>`:'';
+      return`S${i+1}: ${s.weight?`<b>${s.weight}${adEx.unit}</b>`:'—'}${s.reps?` ×${s.reps}`:''}${hrTxt}${noteTxt}${timeTxt}`;
     }).join('  ·  ');
     const vol=filled.reduce((t,s)=>t+((parseFloat(s.weight)||0)*(parseInt(s.reps)||0)),0);
     html+=`<div class="hist-ex">
@@ -1577,6 +1607,34 @@ function setWorkoutEnd(){
   sessionEndTime=new Date().toISOString();
   saveDraft();renderLog();
   showToast('Fin: '+fmtTime(sessionEndTime));
+}
+function editWorkoutTime(which,timeVal){
+  if(!timeVal)return;
+  const[h,m]=timeVal.split(':').map(Number);
+  const d=new Date(currentDate+'T12:00:00');
+  d.setHours(h,m,0,0);
+  if(which==='start')sessionStartTime=d.toISOString();
+  else sessionEndTime=d.toISOString();
+  saveDraft();
+  // update duration label without full re-render
+  const el=document.querySelector('.sess-time-dur');
+  if(el&&sessionStartTime&&sessionEndTime)el.textContent=fmtDuration(sessionStartTime,sessionEndTime);
+}
+function editLogTime(session,date,which,timeVal){
+  if(!timeVal)return;
+  const key=`${session}_${date}`;
+  if(!allLogs[key])return;
+  const[h,m]=timeVal.split(':').map(Number);
+  const d=new Date(date+'T12:00:00');
+  d.setHours(h,m,0,0);
+  if(which==='start')allLogs[key].startTime=d.toISOString();
+  else allLogs[key].endTime=d.toISOString();
+  saveAll();saveToCloud(key);
+  showToast('Hora actualizada');
+  // update duration inline without full re-render
+  const dur=document.getElementById(`hist-dur-${session}-${date}`);
+  if(dur&&allLogs[key].startTime&&allLogs[key].endTime)
+    dur.textContent=fmtDuration(allLogs[key].startTime,allLogs[key].endTime);
 }
 async function updateAdHocSearch(val){
   adhocSearchQuery=val;
