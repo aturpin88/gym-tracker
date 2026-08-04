@@ -127,9 +127,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .del-sess-btn:active{background:#fff5f5;}
 /* Adhoc search dropdown */
 .adhoc-search-drop{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--white);border:1px solid var(--line);border-radius:6px;z-index:50;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);}
-.adhoc-search-result{padding:9px 10px;cursor:pointer;border-bottom:1px solid var(--line);font-size:12px;display:flex;justify-content:space-between;align-items:center;-webkit-tap-highlight-color:transparent;}
+.adhoc-search-result{width:100%;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--line);font-size:12px;display:flex;justify-content:space-between;align-items:center;background:var(--white);border-left:none;border-right:none;border-top:none;border-radius:0;text-align:left;font-family:'DM Sans',sans-serif;color:var(--ink);}
 .adhoc-search-result:last-child{border-bottom:none;}
-.adhoc-search-result:active{background:var(--bg);}
+.adhoc-search-result:active,.adhoc-search-result:focus{background:var(--bg);outline:none;}
 .set-num{width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,color .2s;background:var(--line);color:var(--muted);}
 .set-num.filled{background:var(--sess-color);color:#fff;}
 .set-input{width:100%;border:1px solid var(--line);border-radius:5px;padding:7px 5px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;text-align:center;background:var(--bg);transition:border-color .15s,background .15s;-moz-appearance:textfield;}
@@ -1682,14 +1682,14 @@ async function updateAdHocSearch(val){
   }
   if(!document.getElementById('adhoc-search-results'))return;
   if(!results.length){
-    container.innerHTML=`<div class="adhoc-search-result" style="color:var(--muted);cursor:default">Sin resultados</div>`;
+    container.innerHTML=`<div style="padding:10px 12px;font-size:12px;color:var(--muted)">Sin resultados</div>`;
     return;
   }
   container.innerHTML=results.slice(0,8).map(r=>
-    `<div class="adhoc-search-result" onmousedown="event.preventDefault();selectAdHocFromSearch(${JSON.stringify(r.name)},${JSON.stringify(r.unit||'kg')})">
+    `<button type="button" class="adhoc-search-result" onclick="selectAdHocFromSearch(${JSON.stringify(r.name)},${JSON.stringify(r.unit||'kg')})">
       <b>${escHtml(r.name)}</b>
       <span style="font-size:10px;color:var(--muted)">${r.unit||'kg'}${r.source==='session'?' · sesión':''}</span>
-    </div>`
+    </button>`
   ).join('');
 }
 function selectAdHocFromSearch(name,unit){
