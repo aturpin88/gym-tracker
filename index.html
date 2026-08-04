@@ -90,11 +90,37 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .last-time{font-size:10px;color:var(--muted);padding:0 14px 6px;font-family:'DM Mono',monospace;border-bottom:1px dashed var(--line);}
 .last-time span{color:var(--ink2);font-weight:500;}
 /* Col headers */
-.col-heads{display:grid;grid-template-columns:26px 1fr 1fr 26px;gap:5px;padding:5px 14px 4px;border-bottom:1px solid var(--bg);}
+.col-heads{display:grid;grid-template-columns:26px 20px 1fr 1fr 26px;gap:5px;padding:5px 14px 4px;border-bottom:1px solid var(--bg);}
 .col-head{font-size:9px;color:#ccc;text-transform:uppercase;letter-spacing:1px;text-align:center;}
 /* Sets */
 .sets-body{padding:5px 14px;}
-.set-row{display:grid;grid-template-columns:26px 1fr 1fr 26px;gap:5px;align-items:center;margin-bottom:5px;}
+.set-row{display:grid;grid-template-columns:26px 20px 1fr 1fr 26px;gap:5px;align-items:center;margin-bottom:5px;}
+/* Set start button */
+.set-start-btn{width:18px;height:22px;border:none;background:none;cursor:pointer;color:#ccc;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0;border-radius:3px;flex-shrink:0;transition:color .15s;}
+.set-start-btn.done{color:#2e8b57;}
+.set-start-btn:active{opacity:.6;}
+/* Exercise reorder buttons */
+.ex-mv-btn{background:none;border:none;cursor:pointer;color:#ddd;font-size:10px;padding:0;width:16px;height:13px;display:flex;align-items:center;justify-content:center;line-height:1;transition:color .15s;}
+.ex-mv-btn:not(:disabled):hover,.ex-mv-btn:not(:disabled):active{color:var(--ink2);}
+.ex-mv-btn:disabled{cursor:default;color:#eee;}
+/* Session timing row */
+.sess-time-row{display:flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--line);border-radius:7px;padding:8px 14px;margin-bottom:10px;}
+.sess-time-block{display:flex;align-items:center;gap:5px;flex:1;min-width:0;}
+.sess-time-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);flex-shrink:0;}
+.sess-time-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--ink);flex:1;}
+.sess-time-btn{background:var(--ink);border:none;border-radius:5px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;padding:4px 8px;font-family:inherit;flex-shrink:0;}
+.sess-time-btn:active{opacity:.6;}
+.sess-time-sep{font-size:14px;color:var(--muted);flex-shrink:0;}
+/* Notes label */
+.notes-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:8px;margin-bottom:2px;}
+/* Delete session button */
+.del-sess-btn{width:100%;background:#fff;border:1.5px solid var(--danger);border-radius:8px;padding:11px;font-size:13px;font-weight:700;color:var(--danger);cursor:pointer;margin-top:16px;font-family:inherit;}
+.del-sess-btn:active{background:#fff5f5;}
+/* Adhoc search dropdown */
+.adhoc-search-drop{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--white);border:1px solid var(--line);border-radius:6px;z-index:50;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);}
+.adhoc-search-result{padding:9px 10px;cursor:pointer;border-bottom:1px solid var(--line);font-size:12px;display:flex;justify-content:space-between;align-items:center;-webkit-tap-highlight-color:transparent;}
+.adhoc-search-result:last-child{border-bottom:none;}
+.adhoc-search-result:active{background:var(--bg);}
 .set-num{width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,color .2s;background:var(--line);color:var(--muted);}
 .set-num.filled{background:var(--sess-color);color:#fff;}
 .set-input{width:100%;border:1px solid var(--line);border-radius:5px;padding:7px 5px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;text-align:center;background:var(--bg);transition:border-color .15s,background .15s;-moz-appearance:textfield;}
@@ -561,6 +587,9 @@ let draftTimer=null;
 let setNoteOpen={};
 let adhocExercises=[];
 let adhocShowForm=false;
+let sessionStartTime=null;
+let sessionEndTime=null;
+let adhocSearchQuery='';
 let exPhotos={};
 let photoPendingExId=null;
 const PHOTOS_KEY='gymtracker_photos';
@@ -580,7 +609,7 @@ function saveAll(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(allLogs))
 function saveDraft(){
   clearTimeout(draftTimer);
   draftTimer=setTimeout(()=>{
-    try{localStorage.setItem(DRAFT_KEY,JSON.stringify({session:currentSession,date:currentDate,data:formData,adhocExercises}));
+    try{localStorage.setItem(DRAFT_KEY,JSON.stringify({session:currentSession,date:currentDate,data:formData,adhocExercises,sessionStartTime,sessionEndTime}));
     const el=document.getElementById('draft-badge');if(el)el.style.display='inline-block';}catch(e){}
   },400);
 }
@@ -784,6 +813,7 @@ function calcSessionVolume(){
   return sessVol+adhocVol;
 }
 function fmtVol(v){return v>=1000?(v/1000).toFixed(1)+'t':v.toFixed(0)+' kg'}
+function fmtTime(iso){return new Date(iso).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}
 
 // ─────────────────────────────────────────────────────────────────
 // COMPARE WITH LAST SESSION
@@ -957,15 +987,20 @@ function setEjerciciosSubTab(tab){
 // ─────────────────────────────────────────────────────────────────
 function loadFormFromLogs(){
   const key=logKey();
+  sessionStartTime=null;sessionEndTime=null;
   if(allLogs[key]){
     formData=JSON.parse(JSON.stringify(allLogs[key].data));
     adhocExercises=JSON.parse(JSON.stringify(allLogs[key].adhocExercises||[]));
+    sessionStartTime=allLogs[key].startTime||null;
+    sessionEndTime=allLogs[key].endTime||null;
     clearDraft();return;
   }
   const draft=loadDraft();
   if(draft?.session===currentSession&&draft?.date===currentDate){
     formData=draft.data;
     adhocExercises=draft.adhocExercises||[];
+    sessionStartTime=draft.sessionStartTime||null;
+    sessionEndTime=draft.sessionEndTime||null;
     return;
   }
   formData={};adhocExercises=[];
@@ -1026,7 +1061,8 @@ function updateSessionVolume(){
 // ─────────────────────────────────────────────────────────────────
 function saveSession(){
   const key=logKey();
-  allLogs[key]={session:currentSession,date:currentDate,data:JSON.parse(JSON.stringify(formData)),adhocExercises:JSON.parse(JSON.stringify(adhocExercises))};
+  if(!sessionEndTime)sessionEndTime=new Date().toISOString();
+  allLogs[key]={session:currentSession,date:currentDate,data:JSON.parse(JSON.stringify(formData)),adhocExercises:JSON.parse(JSON.stringify(adhocExercises)),startTime:sessionStartTime,endTime:sessionEndTime};
   saveAll();clearDraft();updateStats();
   detectAndShowPRs();
   saveToCloud(key);
@@ -1073,17 +1109,33 @@ function renderLog(){
       <span class="sv-val">${sessVol>0?fmtVol(sessVol)+' total':'—'}</span>
     </div>
     ${renderWhoopRecoveryCard()}
-    ${renderRestChip()}`;
-
+    ${renderRestChip()}
+    <div class="sess-time-row">
+      <div class="sess-time-block">
+        <span class="sess-time-label">INICIO</span>
+        <span class="sess-time-val">${sessionStartTime?fmtTime(sessionStartTime):'—'}</span>
+        <button class="sess-time-btn" onclick="setWorkoutStart()">${sessionStartTime?'↺':'▶'}</button>
+      </div>
+      <div class="sess-time-sep">→</div>
+      <div class="sess-time-block">
+        <span class="sess-time-label">FIN</span>
+        <span class="sess-time-val">${sessionEndTime?fmtTime(sessionEndTime):'—'}</span>
+        <button class="sess-time-btn" onclick="setWorkoutEnd()">${sessionEndTime?'↺':'■'}</button>
+      </div>
+    </div>`;
 
   for(const ex of sess.exercises)html+=renderExCard(ex,color,bg);
   for(const ex of adhocExercises)html+=renderExCard(ex,color,bg,true);
   if(adhocShowForm){
     html+=`<div class="adhoc-form">
       <div class="adhoc-form-title">Ejercicio extra</div>
-      <div class="adhoc-row">
-        <input class="adhoc-input" id="adhoc-name-input" type="text" placeholder="Nombre del ejercicio…">
-        <select class="adhoc-input" id="adhoc-unit-select">
+      <div class="adhoc-row" style="position:relative;overflow:visible">
+        <div style="flex:1;position:relative">
+          <input class="adhoc-input" id="adhoc-name-input" type="text" placeholder="Busca o escribe…" autocomplete="off"
+            oninput="updateAdHocSearch(this.value)">
+          <div id="adhoc-search-results" class="adhoc-search-drop"></div>
+        </div>
+        <select class="adhoc-input" id="adhoc-unit-select" style="flex:0 0 65px;min-width:65px">
           <option value="kg">kg</option><option value="lb">lb</option>
           <option value="min">min</option><option value="km/h">km/h</option>
         </select>
@@ -1131,19 +1183,24 @@ function renderExCard(ex,color,bg,isAdhoc=false){
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        ${!isAdhoc?`<div style="display:flex;flex-direction:column;gap:2px;margin-right:2px">
+          <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',-1)" title="Subir">▲</button>
+          <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',+1)" title="Bajar">▼</button>
+        </div>`:''}
         ${filled&&!isAdhoc?'<span style="font-size:14px">✅</span>':''}
         ${isAdhoc?`<button onclick="removeAdHocExercise('${ex.id}')" style="background:none;border:none;color:#ccc;font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>`:''}
       </div>
     </div>
     ${lastHtml}
     <div class="col-heads">
-      <div class="col-head">#</div><div class="col-head">${wLabel}</div>
+      <div class="col-head">#</div><div class="col-head"></div><div class="col-head">${wLabel}</div>
       <div class="col-head">Reps</div><div class="col-head"></div>
     </div>
     <div class="sets-body" id="sets-${ex.id}">${renderSetRows(ex.id,d.sets,color)}</div>
     <div class="ex-footer">
       <button class="add-set-btn" style="--sess-color:${color}" onclick="addSet('${ex.id}')">+ Serie</button>
-      <input class="notes-input" type="text" value="${escHtml(d.notes||'')}" placeholder="Notas…" oninput="updateNotes('${ex.id}',this.value)">
+      <div class="notes-label">💬 Comentarios</div>
+      <input class="notes-input" type="text" value="${escHtml(d.notes||'')}" placeholder="Añade un comentario sobre este ejercicio…" oninput="updateNotes('${ex.id}',this.value)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
         <div class="ex-volume" data-vol="${ex.id}">${vol>0?`Vol: <span>${fmtVol(vol)}</span>`:''}</div>
         <button class="alt-trigger" onclick="toggleAlts('${ex.id}')">Alternativas</button>
@@ -1162,7 +1219,8 @@ function renderSetRows(exId,sets,color){
     const numStyle=s.note?`background:${color};color:#fff;outline:2px solid rgba(0,0,0,.15);`:'';
     return `
     <div class="set-row">
-      <div class="set-num${s.weight||s.reps?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color};${numStyle}cursor:pointer" onclick="toggleSetNote('${exId}',${i})" title="Añadir nota">${i+1}</div>
+      <div class="set-num${s.weight||s.reps?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color};${numStyle}cursor:pointer" onclick="toggleSetNote('${exId}',${i})" title="Añadir nota serie">${i+1}</div>
+      <button class="set-start-btn${s.t_start?' done':''}" onclick="startSet('${exId}',${i})" title="${s.t_start?'Inicio: '+fmtTime(s.t_start):'Iniciar serie'}">${s.t_start?'●':'▶'}</button>
       <input type="number" step="0.5" class="set-input weight-input" style="--sess-color:${color}"
         value="${s.weight||''}" placeholder="—"
         onfocus="onSetFocus('${exId}',${i})"
@@ -1479,6 +1537,89 @@ function deleteLog(session,date){
   if(!confirm(`¿Eliminar la sesión ${session} del ${fmtDate(date)}?`))return;
   const key=`${session}_${date}`;
   delete allLogs[key];saveAll();deleteFromCloud(key);updateStats();expandedLog=null;renderHistory();
+}
+
+function deleteSessionTemplate(key){
+  if(!confirm(`¿Eliminar la plantilla "${workoutDefs[key]?.label}"?\n\nEl historial de ejercicios en Historial se conservará.`))return;
+  workoutDefs[key]._deleted=true;
+  saveWorkoutDefs();
+  setView('sesiones',null);
+  document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1));
+  renderSesiones();
+  showToast('Plantilla eliminada. El historial se conserva.');
+}
+function moveExercise(exId,delta){
+  const sess=workoutDefs[currentSession];
+  const exs=sess.exercises;
+  const idx=exs.findIndex(e=>e.id===exId);
+  if(idx<0)return;
+  const ni=idx+delta;
+  if(ni<0||ni>=exs.length)return;
+  [exs[idx],exs[ni]]=[exs[ni],exs[idx]];
+  saveWorkoutDefs();
+  renderLog();
+}
+function startSet(exId,idx){
+  const d=getExData(exId);
+  if(!d.sets[idx])return;
+  d.sets[idx].t_start=new Date().toISOString();
+  if(!sessionStartTime)sessionStartTime=d.sets[idx].t_start;
+  saveDraft();
+  renderSetsFor(exId);
+  showToast(`Serie ${idx+1} iniciada`);
+}
+function setWorkoutStart(){
+  sessionStartTime=new Date().toISOString();
+  saveDraft();renderLog();
+  showToast('Inicio: '+fmtTime(sessionStartTime));
+}
+function setWorkoutEnd(){
+  sessionEndTime=new Date().toISOString();
+  saveDraft();renderLog();
+  showToast('Fin: '+fmtTime(sessionEndTime));
+}
+async function updateAdHocSearch(val){
+  adhocSearchQuery=val;
+  const container=document.getElementById('adhoc-search-results');
+  if(!container)return;
+  if(!val||val.length<2){container.innerHTML='';return;}
+  const q=val.toLowerCase();
+  const results=[];const seen=new Set();
+  for(const sess of Object.values(workoutDefs)){
+    if(sess._deleted)continue;
+    for(const ex of (sess.exercises||[])){
+      if(ex.name.toLowerCase().includes(q)&&!seen.has(ex.name)){
+        seen.add(ex.name);results.push({name:ex.name,unit:ex.unit||'kg',source:'session'});
+      }
+    }
+  }
+  await ensureFreeExDb();
+  for(const ex of (_freeExAll||[])){
+    if(results.length>=10)break;
+    if(ex.name.toLowerCase().includes(q)&&!seen.has(ex.name)){
+      seen.add(ex.name);results.push({name:ex.name,unit:'kg',source:'library'});
+    }
+  }
+  if(!document.getElementById('adhoc-search-results'))return;
+  if(!results.length){
+    container.innerHTML=`<div class="adhoc-search-result" style="color:var(--muted);cursor:default">Sin resultados</div>`;
+    return;
+  }
+  container.innerHTML=results.slice(0,8).map(r=>
+    `<div class="adhoc-search-result" onclick="selectAdHocFromSearch(${JSON.stringify(r.name)},${JSON.stringify(r.unit||'kg')})">
+      <b>${escHtml(r.name)}</b>
+      <span style="font-size:10px;color:var(--muted)">${r.unit||'kg'}${r.source==='session'?' · sesión':''}</span>
+    </div>`
+  ).join('');
+}
+function selectAdHocFromSearch(name,unit){
+  const inp=document.getElementById('adhoc-name-input');
+  if(inp)inp.value=name;
+  const sel=document.getElementById('adhoc-unit-select');
+  if(sel)sel.value=unit;
+  const cont=document.getElementById('adhoc-search-results');
+  if(cont)cont.innerHTML='';
+  adhocSearchQuery=name;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -2046,6 +2187,11 @@ function renderEditor(){
   html+=`</div>
     ${pickerVisible ? renderPickerPanel() : `<button class="add-ex-btn" onclick="showExPicker()">＋ Añadir ejercicio</button>`}
     <button class="save-plan-btn" onclick="saveEditorChanges()">💾 Guardar cambios</button>
+  </div>
+  <div class="editor-section" style="border-color:var(--danger)20">
+    <h3 style="color:var(--danger)">Zona peligrosa</h3>
+    <p>Elimina esta plantilla del programa. El historial de tus entrenamientos se conservará siempre en Historial.</p>
+    <button class="del-sess-btn" onclick="deleteSessionTemplate('${currentSession}')">🗑 Eliminar plantilla «${escHtml(sess.label)}»</button>
   </div>`;
   cont.innerHTML=html;
 
@@ -2451,7 +2597,7 @@ function renderSesiones(){
   let html=`<div class="sess-page-title">Mis sesiones</div><div class="sess-cards">`;
 
   keys.forEach(key=>{
-    const sess=workoutDefs[key];if(!sess)return;
+    const sess=workoutDefs[key];if(!sess||sess._deleted)return;
     const {label,sub,color,exercises=[]}=sess;
     // Last log for this session
     const logs=Object.values(allLogs).filter(l=>l.session===key).sort((a,b)=>b.date.localeCompare(a.date));
