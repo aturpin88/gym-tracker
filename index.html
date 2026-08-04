@@ -1685,12 +1685,21 @@ async function updateAdHocSearch(val){
     container.innerHTML=`<div style="padding:10px 12px;font-size:12px;color:var(--muted)">Sin resultados</div>`;
     return;
   }
-  container.innerHTML=results.slice(0,8).map(r=>
-    `<button type="button" class="adhoc-search-result" onclick="selectAdHocFromSearch(${JSON.stringify(r.name)},${JSON.stringify(r.unit||'kg')})">
+  const sliced=results.slice(0,8);
+  container.innerHTML=sliced.map((r,i)=>
+    `<button type="button" class="adhoc-search-result" data-idx="${i}">
       <b>${escHtml(r.name)}</b>
       <span style="font-size:10px;color:var(--muted)">${r.unit||'kg'}${r.source==='session'?' · sesión':''}</span>
     </button>`
   ).join('');
+  // pointerdown fires before blur — avoids the click-after-blur race on all browsers
+  container.onpointerdown=function(e){
+    const btn=e.target.closest('[data-idx]');
+    if(!btn)return;
+    e.preventDefault();
+    const r=sliced[+btn.dataset.idx];
+    if(r)selectAdHocFromSearch(r.name,r.unit||'kg');
+  };
 }
 function selectAdHocFromSearch(name,unit){
   const inp=document.getElementById('adhoc-name-input');
