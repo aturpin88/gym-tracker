@@ -896,7 +896,14 @@ function addAdHocExercise(){
   const name=(document.getElementById('adhoc-name-input')?.value||'').trim();
   if(!name){showToast('Escribe un nombre');return;}
   const unit=document.getElementById('adhoc-unit-select')?.value||'kg';
-  adhocExercises.push({id:'adhoc_'+Date.now(),name,unit,sets:'',note:''});
+  const nSets=Math.max(1,parseInt(document.getElementById('adhoc-sets-input')?.value)||1);
+  const weight=document.getElementById('adhoc-weight-input')?.value||'';
+  const reps=document.getElementById('adhoc-reps-input')?.value||'';
+  const setsLabel=weight||reps?`${nSets}×${reps||'?'}`+(weight?` ${weight}${unit}`:''):`${nSets} series`;
+  const id='adhoc_'+Date.now();
+  adhocExercises.push({id,name,unit,sets:setsLabel,note:''});
+  // pre-fill set data so the card shows with weight/reps already entered
+  formData[id]={notes:'',sets:Array.from({length:nSets},()=>({weight,reps}))};
   adhocShowForm=false;
   renderLog();
 }
@@ -1142,10 +1149,10 @@ function renderLog(){
   for(const ex of adhocExercises)html+=renderExCard(ex,color,bg,true);
   if(adhocShowForm){
     html+=`<div class="adhoc-form">
-      <div class="adhoc-form-title">Ejercicio extra</div>
-      <div class="adhoc-row" style="position:relative;overflow:visible">
+      <div class="adhoc-form-title">+ Ejercicio extra</div>
+      <div class="adhoc-row" style="position:relative;overflow:visible;margin-bottom:8px">
         <div style="flex:1;position:relative">
-          <input class="adhoc-input" id="adhoc-name-input" type="text" placeholder="Busca o escribe…" autocomplete="off"
+          <input class="adhoc-input" id="adhoc-name-input" type="text" placeholder="Busca ejercicio…" autocomplete="off"
             oninput="updateAdHocSearch(this.value)">
           <div id="adhoc-search-results" class="adhoc-search-drop"></div>
         </div>
@@ -1154,7 +1161,22 @@ function renderLog(){
           <option value="min">min</option><option value="km/h">km/h</option>
         </select>
       </div>
-      <button class="adhoc-confirm-btn" onclick="addAdHocExercise()">+ Añadir</button>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px">Series objetivo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+        <div style="text-align:center">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Nº series</div>
+          <input class="adhoc-input" id="adhoc-sets-input" type="number" min="1" max="20" placeholder="3" style="text-align:center">
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Peso</div>
+          <input class="adhoc-input" id="adhoc-weight-input" type="number" step="0.5" placeholder="—" style="text-align:center">
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Reps</div>
+          <input class="adhoc-input" id="adhoc-reps-input" type="number" placeholder="—" style="text-align:center">
+        </div>
+      </div>
+      <button class="adhoc-confirm-btn" onclick="addAdHocExercise()">+ Añadir al entrenamiento</button>
       <button onclick="hideAdHocForm()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:8px;font-family:inherit;padding:4px">Cancelar</button>
     </div>`;
   } else {
@@ -1664,7 +1686,7 @@ async function updateAdHocSearch(val){
     return;
   }
   container.innerHTML=results.slice(0,8).map(r=>
-    `<div class="adhoc-search-result" onclick="selectAdHocFromSearch(${JSON.stringify(r.name)},${JSON.stringify(r.unit||'kg')})">
+    `<div class="adhoc-search-result" onmousedown="event.preventDefault();selectAdHocFromSearch(${JSON.stringify(r.name)},${JSON.stringify(r.unit||'kg')})">
       <b>${escHtml(r.name)}</b>
       <span style="font-size:10px;color:var(--muted)">${r.unit||'kg'}${r.source==='session'?' · sesión':''}</span>
     </div>`
