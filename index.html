@@ -271,6 +271,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .chart-line{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
 .chart-dot{stroke:none;}.chart-grid{stroke:#f0ede8;stroke-width:1;}
 .chart-label{font-family:'DM Mono',monospace;font-size:9px;fill:#ccc;}
+/* ── MUSCLE CHART ── */
+.muscle-seg{cursor:pointer;transition:opacity .12s;}
+.muscle-legend-row{display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;}
+.muscle-exrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);}
+.muscle-exrow:last-child{border-bottom:none;}
+.muscle-mode-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.muscle-mode-tab{flex:1;padding:7px 6px;font-size:11px;font-weight:600;background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.muscle-mode-tab.active{background:var(--ink);color:#fff;border-color:var(--ink);}
 
 /* ── LIBRARY ── */
 .muscle-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
@@ -603,6 +611,10 @@ let exPhotos={};
 let photoPendingExId=null;
 const PHOTOS_KEY='gymtracker_photos';
 let ejerciciosSubTab='biblioteca'; // 'biblioteca' | 'editar'
+let chartsSubTab='ejercicios';    // 'ejercicios' | 'musculos'
+let muscleMode='session';         // 'session' | 'global'
+let muscleSel=null;
+let muscleSelType=null;
 
 // ─────────────────────────────────────────────────────────────────
 // STORAGE
@@ -1730,8 +1742,21 @@ function getChartData(exId){
 function renderCharts(){
   const sess=workoutDefs[currentSession];if(!sess)return;
   const {color}=sess;
-  let html=`<div class="session-banner" style="background:${color}"><div><div class="sb-title">${sess.label}</div><div class="sb-sub">Progreso por ejercicio</div></div></div>
-    <div style="font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Selecciona ejercicio</div>
+  let html=`<div class="session-banner" style="background:${color}"><div><div class="sb-title">${sess.label}</div><div class="sb-sub">Análisis de entrenamiento</div></div></div>
+    <div class="sub-tabs">
+      <button class="subtab${chartsSubTab==='ejercicios'?' active':''}" onclick="setChartsTab('ejercicios')">📈 Progreso</button>
+      <button class="subtab${chartsSubTab==='musculos'?' active':''}" onclick="setChartsTab('musculos')">💪 Músculos</button>
+    </div>`;
+  if(chartsSubTab==='musculos'){
+    html+=`<div class="muscle-mode-tabs">
+      <button class="muscle-mode-tab${muscleMode==='session'?' active':''}" onclick="setMuscleMode('session')">Esta sesión</button>
+      <button class="muscle-mode-tab${muscleMode==='global'?' active':''}" onclick="setMuscleMode('global')">Todas las sesiones</button>
+    </div><div id="muscle-full-view"></div>`;
+    document.getElementById('page-charts').innerHTML=html;
+    renderMuscleFull();
+    return;
+  }
+  html+=`<div style="font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Selecciona ejercicio</div>
     <div class="ex-selector">`;
   for(const ex of sess.exercises){
     const data=getChartData(ex.id);
@@ -1790,6 +1815,198 @@ function renderSVGChart(data,key,unit,color){
   return svg+'</svg>';
 }
 function selectChartEx(id){selectedChartEx=selectedChartEx===id?null:id;renderCharts();}
+
+// ─────────────────────────────────────────────────────────────────
+// MUSCLE CHART
+// ─────────────────────────────────────────────────────────────────
+function calcMuscleData(exercises){
+  const smT={};
+  for(const ex of exercises){
+    const key=(ex.name||'').toLowerCase().trim();
+    const map=MUSCLE_EX[key];
+    if(!map)continue;
+    for(const[sid,w]of Object.entries(map))
+      smT[sid]=(smT[sid]||0)+w;
+  }
+  const grpT={};
+  for(const[sid,t]of Object.entries(smT)){
+    const g=MUSCLE_SM[sid]?.grp;
+    if(g)grpT[g]=(grpT[g]||0)+t;
+  }
+  return{smT,grpT};
+}
+function muscleArcPath(cx,cy,R,ri,s,e){
+  if(e-s<0.1)return'';
+  const toXY=(r,deg)=>{const a=(deg-90)*Math.PI/180;return[+(cx+r*Math.cos(a)).toFixed(2),+(cy+r*Math.sin(a)).toFixed(2)];};
+  const lg=e-s>180?1:0;
+  const[x1,y1]=toXY(R,s),[x2,y2]=toXY(R,e),[x3,y3]=toXY(ri,e),[x4,y4]=toXY(ri,s);
+  return`M${x1},${y1} A${R},${R} 0 ${lg} 1 ${x2},${y2} L${x3},${y3} A${ri},${ri} 0 ${lg} 0 ${x4},${y4} Z`;
+}
+function renderMiniMuscleSVG(exercises,size){
+  size=size||52;
+  const{smT,grpT}=calcMuscleData(exercises);
+  const grand=Object.values(grpT).reduce((a,b)=>a+b,0);
+  if(!grand)return'';
+  const cx=size/2,cy=size/2,oR=size/2-1,ori=size/2-9,iR=size/2-11,iri=size/2-19,gap=3;
+  let paths='';let ang=0;
+  for(const grp of MUSCLE_GO){
+    const gt=grpT[grp]||0;if(!gt)continue;
+    const gsw=(gt/grand)*360;
+    const d=muscleArcPath(cx,cy,iR,iri,ang+gap/2,ang+gsw-gap/2);
+    if(d)paths+=`<path d="${d}" fill="${MUSCLE_GC[grp]}"/>`;
+    const grpSMs=Object.entries(smT).filter(([id])=>MUSCLE_SM[id]?.grp===grp);
+    const smSum=grpSMs.reduce((s,[,v])=>s+v,0);
+    let sa=ang;
+    for(const[sid,sv]of grpSMs){
+      const ssw=(sv/smSum)*gsw;
+      const od=muscleArcPath(cx,cy,oR,ori,sa+gap/2,sa+ssw-gap/2);
+      if(od)paths+=`<path d="${od}" fill="${MUSCLE_SM[sid].c}"/>`;
+      sa+=ssw;
+    }
+    ang+=gsw;
+  }
+  return`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}<circle cx="${cx}" cy="${cy}" r="${iri-2}" fill="var(--white)"/></svg>`;
+}
+function pickMuscleSeg(id,type){
+  if(id===null||(muscleSel===id&&muscleSelType===type)){muscleSel=null;muscleSelType=null;}
+  else{muscleSel=id;muscleSelType=type;}
+  renderMuscleFull();
+}
+function buildMuscleSummary(exercises){
+  const{grpT}=calcMuscleData(exercises);
+  const grand=Object.values(grpT).reduce((a,b)=>a+b,0);
+  if(!grand)return`<p style="font-size:12px;color:var(--muted);margin:0">Añade ejercicios para ver el análisis muscular.</p>`;
+  return MUSCLE_GO.filter(g=>grpT[g]).map(g=>{
+    const pct=Math.round(grpT[g]/grand*100);
+    return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+      <div style="width:8px;height:8px;border-radius:2px;background:${MUSCLE_GC[g]};flex-shrink:0"></div>
+      <span style="font-size:11px;color:var(--muted);flex:1">${g}</span>
+      <div style="width:54px;height:4px;background:var(--line);border-radius:2px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${MUSCLE_GC[g]}"></div></div>
+      <span style="font-size:10px;font-weight:700;color:var(--ink);width:26px;text-align:right">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+function setChartsTab(tab){chartsSubTab=tab;muscleSel=null;muscleSelType=null;renderCharts();}
+function setMuscleMode(mode){muscleMode=mode;muscleSel=null;muscleSelType=null;renderCharts();}
+function renderMuscleFull(){
+  const container=document.getElementById('muscle-full-view');
+  if(!container)return;
+  let exercises;
+  if(muscleMode==='global'){
+    exercises=Object.values(workoutDefs).filter(s=>!s._deleted).flatMap(s=>s.exercises||[]);
+  }else{
+    exercises=(workoutDefs[currentSession]?.exercises)||[];
+  }
+  const{smT,grpT}=calcMuscleData(exercises);
+  const grand=Object.values(grpT).reduce((a,b)=>a+b,0);
+  if(!grand){
+    container.innerHTML=`<div class="empty"><div class="empty-icon">💪</div><div class="empty-title">Sin datos de músculos</div><div class="empty-sub">Añade ejercicios para ver el análisis</div></div>`;
+    return;
+  }
+  const cx=82,cy=82,oR=78,ori=61,iR=54,iri=37,gap=2;
+  let svgPaths='';let ang=0;
+  for(const grp of MUSCLE_GO){
+    const gt=grpT[grp]||0;if(!gt)continue;
+    const gsw=(gt/grand)*360;
+    const isGrp=muscleSel===grp&&muscleSelType==='group';
+    const grpHasSel=muscleSelType==='sub'&&MUSCLE_SM[muscleSel]?.grp===grp;
+    const iFade=muscleSel?(isGrp||grpHasSel?1:0.2):1;
+    const d=muscleArcPath(cx,cy,iR,iri,ang+gap/2,ang+gsw-gap/2);
+    if(d)svgPaths+=`<path d="${d}" fill="${MUSCLE_GC[grp]}" opacity="${iFade}" class="muscle-seg" onclick="pickMuscleSeg('${grp}','group')"><title>${grp}</title></path>`;
+    const grpSMs=Object.entries(smT).filter(([id])=>MUSCLE_SM[id]?.grp===grp);
+    const smSum=grpSMs.reduce((s,[,v])=>s+v,0);
+    let sa=ang;
+    for(const[sid,sv]of grpSMs){
+      const ssw=(sv/smSum)*gsw;
+      const isSm=muscleSel===sid&&muscleSelType==='sub';
+      const oFade=muscleSel?(isSm||isGrp?1:grpHasSel?0.6:0.2):1;
+      const od=muscleArcPath(cx,cy,oR,ori,sa+gap/2,sa+ssw-gap/2);
+      if(od)svgPaths+=`<path d="${od}" fill="${MUSCLE_SM[sid].c}" opacity="${oFade}" class="muscle-seg" onclick="pickMuscleSeg('${sid}','sub')"><title>${MUSCLE_SM[sid].lab}</title></path>`;
+      sa+=ssw;
+    }
+    ang+=gsw;
+  }
+  let ct='',cb='';
+  if(!muscleSel){
+    ct=muscleMode==='global'?'Global':(workoutDefs[currentSession]?.label?.split(' ').slice(0,2).join(' ')||'');
+    cb=`${exercises.length} ejercicios`;
+  }else if(muscleSelType==='group'){
+    ct=muscleSel;cb=`${Math.round((grpT[muscleSel]||0)/grand*100)}%`;
+  }else{
+    const sm=MUSCLE_SM[muscleSel];
+    ct=sm?.lab?.split(' ').slice(0,2).join(' ')||muscleSel;
+    cb=`${Math.round((smT[muscleSel]||0)/grand*100)}%`;
+  }
+  const svgHtml=`<svg width="164" height="164" viewBox="0 0 164 164" style="flex-shrink:0">${svgPaths}
+    <circle cx="${cx}" cy="${cy}" r="${iri-2}" fill="var(--white)" style="cursor:pointer" onclick="pickMuscleSeg(null,null)"/>
+    <text x="${cx}" y="${cy-5}" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="var(--muted)">${escHtml(ct)}</text>
+    <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="13" font-weight="700" font-family="DM Sans,sans-serif" fill="var(--ink)">${escHtml(cb)}</text>
+  </svg>`;
+  let panelHtml='';
+  if(!muscleSel){
+    panelHtml=MUSCLE_GO.filter(g=>grpT[g]).map(g=>{
+      const pct=Math.round(grpT[g]/grand*100);
+      const subs=Object.entries(smT).filter(([id])=>MUSCLE_SM[id]?.grp===g);
+      return`<div class="muscle-legend-row" onclick="pickMuscleSeg('${g}','group')">
+        <div style="width:8px;height:8px;border-radius:2px;background:${MUSCLE_GC[g]};flex-shrink:0"></div>
+        <span style="font-size:11px;color:var(--muted);flex:1">${g}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--ink)">${pct}%</span>
+      </div><div style="display:flex;gap:2px;flex-wrap:wrap;margin-bottom:2px">${
+        subs.map(([id])=>`<div title="${MUSCLE_SM[id].lab}" style="width:7px;height:7px;border-radius:1px;background:${MUSCLE_SM[id].c}"></div>`).join('')
+      }</div>`;
+    }).join('');
+  }else if(muscleSelType==='group'){
+    const subs=Object.entries(smT).filter(([id])=>MUSCLE_SM[id]?.grp===muscleSel).sort((a,b)=>b[1]-a[1]);
+    const gSum=subs.reduce((s,[,v])=>s+v,0);
+    panelHtml=`<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">${muscleSel}</div>`;
+    panelHtml+=subs.map(([id,v])=>{
+      const pct=Math.round(v/gSum*100);
+      return`<div class="muscle-legend-row" onclick="pickMuscleSeg('${id}','sub')">
+        <div style="width:7px;height:7px;border-radius:2px;background:${MUSCLE_SM[id].c};flex-shrink:0"></div>
+        <span style="font-size:10px;color:var(--muted);flex:1">${MUSCLE_SM[id].lab}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--ink)">${pct}%</span>
+      </div>`;
+    }).join('');
+  }else{
+    const sm=MUSCLE_SM[muscleSel];
+    const pct=Math.round((smT[muscleSel]||0)/grand*100);
+    panelHtml=`<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">${sm?.grp||''}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <div style="width:10px;height:10px;border-radius:2px;background:${sm?.c||'#888'}"></div>
+        <span style="font-size:12px;font-weight:600;color:var(--ink)">${sm?.lab||muscleSel}</span>
+      </div>
+      <div style="font-size:28px;font-weight:800;color:var(--ink);line-height:1">${pct}%</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px">del total</div>`;
+  }
+  let filtExs=exercises;
+  if(muscleSel){
+    if(muscleSelType==='group')
+      filtExs=exercises.filter(ex=>{const map=MUSCLE_EX[(ex.name||'').toLowerCase().trim()]||{};return Object.keys(map).some(sid=>MUSCLE_SM[sid]?.grp===muscleSel);});
+    else
+      filtExs=exercises.filter(ex=>!!(MUSCLE_EX[(ex.name||'').toLowerCase().trim()]||{})[muscleSel]);
+  }
+  const seen=new Set();
+  filtExs=filtExs.filter(ex=>{const k=ex.name;if(seen.has(k))return false;seen.add(k);return true;});
+  const listTitle=muscleSel
+    ?(muscleSelType==='group'?`Ejercicios — ${muscleSel}`:`Ejercicios — ${MUSCLE_SM[muscleSel]?.lab||muscleSel}`)
+    :`Todos los ejercicios (${filtExs.length})`;
+  const exListHtml=filtExs.length
+    ?`<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">${escHtml(listTitle)}</div>`+
+      filtExs.map(ex=>{
+        const topSM=Object.entries(MUSCLE_EX[(ex.name||'').toLowerCase().trim()]||{}).sort((a,b)=>b[1]-a[1]).slice(0,4);
+        return`<div class="muscle-exrow">
+          <span style="font-size:12px;color:var(--ink);flex:1">${escHtml(ex.name)}</span>
+          <div style="display:flex;gap:3px">${topSM.map(([id])=>`<div title="${MUSCLE_SM[id]?.lab||id}" style="width:7px;height:7px;border-radius:50%;background:${MUSCLE_SM[id]?.c||'#888'}"></div>`).join('')}</div>
+        </div>`;
+      }).join('')
+    :`<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Sin ejercicios en esta selección</div>`;
+  container.innerHTML=`
+    <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
+      ${svgHtml}
+      <div style="flex:1;min-width:0;padding-top:4px;max-height:170px;overflow-y:auto">${panelHtml}</div>
+    </div>
+    <div style="background:var(--bg);border-radius:10px;padding:12px 14px">${exListHtml}</div>`;
+}
 
 // ─────────────────────────────────────────────────────────────────
 // RENDER EJERCICIOS (Library + Editor)
@@ -1889,6 +2106,201 @@ const MUSCLE_TO_CAT={
   'quadriceps':9,'hamstrings':9,'glutes':9,'calves':9,
   'adductors':9,'abductors':9,
   'abdominals':10,
+};
+
+// ── SUB-MUSCLE DEFINITIONS ──
+const MUSCLE_SM={
+  tc_l:{lab:'Cabeza larga',grp:'Brazos',c:'#7F77DD'},
+  tc_la:{lab:'Cabeza lateral',grp:'Brazos',c:'#534AB7'},
+  tc_m:{lab:'Cabeza medial',grp:'Brazos',c:'#AFA9EC'},
+  bc_b:{lab:'Bíceps braquial',grp:'Brazos',c:'#378ADD'},
+  bc_br:{lab:'Braquial',grp:'Brazos',c:'#85B7EB'},
+  fa_f:{lab:'Flexores',grp:'Brazos',c:'#EF9F27'},
+  fa_e:{lab:'Extensores',grp:'Brazos',c:'#BA7517'},
+  ch_cl:{lab:'Pec. clavicular',grp:'Pecho',c:'#D85A30'},
+  ch_st:{lab:'Pec. esternal',grp:'Pecho',c:'#F0997B'},
+  ch_mi:{lab:'Pec. menor',grp:'Pecho',c:'#993C1D'},
+  bk_la:{lab:'Dorsal ancho',grp:'Espalda',c:'#185FA5'},
+  bk_rh:{lab:'Romboides',grp:'Espalda',c:'#378ADD'},
+  bk_tr:{lab:'Trapecio',grp:'Espalda',c:'#0C447C'},
+  bk_er:{lab:'Erector esp.',grp:'Espalda',c:'#85B7EB'},
+  sh_an:{lab:'Deltoides ant.',grp:'Hombros',c:'#EF9F27'},
+  sh_la:{lab:'Deltoides lat.',grp:'Hombros',c:'#BA7517'},
+  sh_po:{lab:'Deltoides post.',grp:'Hombros',c:'#633806'},
+  qu_rf:{lab:'Recto femoral',grp:'Piernas',c:'#97C459'},
+  qu_vl:{lab:'Vasto lateral',grp:'Piernas',c:'#639922'},
+  qu_vm:{lab:'Vasto medial',grp:'Piernas',c:'#3B6D11'},
+  ha_bf:{lab:'Bíceps femoral',grp:'Piernas',c:'#7FB843'},
+  ha_se:{lab:'Semitendinoso',grp:'Piernas',c:'#4A8015'},
+  gl_ma:{lab:'Glúteo mayor',grp:'Piernas',c:'#27500A'},
+  gl_me:{lab:'Glúteo medio',grp:'Piernas',c:'#5A9E1F'},
+  ca_ga:{lab:'Gastrocnemio',grp:'Piernas',c:'#8BC34A'},
+  ca_so:{lab:'Sóleo',grp:'Piernas',c:'#C5E1A5'},
+  ab_re:{lab:'Recto abdominal',grp:'Core',c:'#888780'},
+  ab_ob:{lab:'Oblicuos',grp:'Core',c:'#5F5E5A'},
+};
+const MUSCLE_GC={Pecho:'#D85A30',Espalda:'#185FA5',Hombros:'#BA7517',Brazos:'#7F77DD',Piernas:'#3B6D11',Core:'#888780'};
+const MUSCLE_GO=['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
+const MUSCLE_EX={
+  'bench press':{ch_st:1,ch_cl:0.7,tc_la:0.6,sh_an:0.4},
+  'barbell bench press':{ch_st:1,ch_cl:0.7,tc_la:0.6,sh_an:0.4},
+  'dumbbell bench press':{ch_st:1,ch_cl:0.6,tc_la:0.5,sh_an:0.4},
+  'incline bench press':{ch_cl:1,ch_st:0.5,tc_l:0.6,sh_an:0.5},
+  'incline press':{ch_cl:1,ch_st:0.5,tc_l:0.6,sh_an:0.5},
+  'incline dumbbell press':{ch_cl:1,ch_st:0.4,sh_an:0.5,tc_l:0.5},
+  'decline bench press':{ch_st:1,ch_mi:0.7,tc_la:0.5},
+  'cable flies':{ch_st:1,ch_mi:0.7,sh_an:0.3},
+  'cable fly':{ch_st:1,ch_mi:0.7,sh_an:0.3},
+  'dumbbell fly':{ch_st:1,ch_cl:0.6,sh_an:0.3},
+  'chest fly':{ch_st:1,ch_cl:0.6,sh_an:0.3},
+  'chest press':{ch_st:1,ch_cl:0.6,tc_la:0.5,sh_an:0.4},
+  'push-up':{ch_st:1,ch_cl:0.5,tc_la:0.6,sh_an:0.4},
+  'push up':{ch_st:1,ch_cl:0.5,tc_la:0.6,sh_an:0.4},
+  'pec deck':{ch_st:1,ch_mi:0.6},
+  'pull-up':{bk_la:1,bk_rh:0.6,bc_b:0.7,bc_br:0.4},
+  'pull up':{bk_la:1,bk_rh:0.6,bc_b:0.7,bc_br:0.4},
+  'chin-up':{bk_la:1,bc_b:0.8,bc_br:0.6,bk_rh:0.5},
+  'chin up':{bk_la:1,bc_b:0.8,bc_br:0.6,bk_rh:0.5},
+  'lat pulldown':{bk_la:1,bk_rh:0.5,bc_b:0.7,bc_br:0.3},
+  'barbell row':{bk_rh:1,bk_tr:0.7,bc_b:0.6,bk_la:0.5},
+  'barbell rows':{bk_rh:1,bk_tr:0.7,bc_b:0.6,bk_la:0.5},
+  'dumbbell row':{bk_rh:1,bk_la:0.7,bc_b:0.5},
+  'seated cable row':{bk_rh:1,bk_tr:0.7,bc_b:0.6,bk_la:0.4},
+  'cable row':{bk_rh:1,bk_tr:0.7,bc_b:0.6,bk_la:0.4},
+  'face pull':{bk_tr:1,sh_po:0.8,bk_rh:0.6},
+  'face pulls':{bk_tr:1,sh_po:0.8,bk_rh:0.6},
+  'deadlift':{bk_er:1,gl_ma:0.8,ha_bf:0.7,bk_tr:0.5,qu_vl:0.4},
+  'romanian deadlift':{ha_bf:1,ha_se:0.8,gl_ma:0.8,bk_er:0.6},
+  'rdl':{ha_bf:1,ha_se:0.8,gl_ma:0.8,bk_er:0.6},
+  'hyperextension':{bk_er:1,gl_ma:0.5,ha_bf:0.4},
+  'good morning':{bk_er:1,ha_bf:0.7,gl_ma:0.5},
+  'overhead press':{sh_an:1,sh_la:0.7,tc_l:0.7,tc_la:0.5},
+  'military press':{sh_an:1,sh_la:0.7,tc_l:0.7,tc_la:0.5},
+  'shoulder press':{sh_an:1,sh_la:0.7,tc_l:0.6,tc_la:0.5},
+  'dumbbell shoulder press':{sh_an:1,sh_la:0.6,tc_l:0.6,sh_po:0.3},
+  'lateral raise':{sh_la:1,sh_po:0.4,sh_an:0.3},
+  'lateral raises':{sh_la:1,sh_po:0.4,sh_an:0.3},
+  'front raise':{sh_an:1,sh_la:0.4},
+  'rear delt fly':{sh_po:1,bk_rh:0.6,bk_tr:0.4},
+  'arnold press':{sh_an:1,sh_la:0.7,sh_po:0.5,tc_l:0.5},
+  'upright row':{sh_la:1,bk_tr:0.8,bc_b:0.4},
+  'shrugs':{bk_tr:1},
+  'shrug':{bk_tr:1},
+  'bicep curl':{bc_b:1,bc_br:0.7},
+  'bicep curls':{bc_b:1,bc_br:0.7},
+  'barbell curl':{bc_b:1,bc_br:0.7,fa_f:0.4},
+  'dumbbell curl':{bc_b:1,bc_br:0.7},
+  'hammer curl':{bc_br:1,bc_b:0.6,fa_f:0.7},
+  'hammer curls':{bc_br:1,bc_b:0.6,fa_f:0.7},
+  'preacher curl':{bc_b:1,bc_br:0.8},
+  'concentration curl':{bc_b:1,bc_br:0.6},
+  'cable curl':{bc_b:1,bc_br:0.7},
+  'zottman curl':{bc_b:0.8,bc_br:0.8,fa_e:0.9,fa_f:0.6},
+  'wrist curl':{fa_f:1},
+  'reverse wrist curl':{fa_e:1},
+  'triceps pushdown':{tc_la:1,tc_m:0.8,tc_l:0.4},
+  'tricep pushdown':{tc_la:1,tc_m:0.8,tc_l:0.4},
+  'skull crusher':{tc_l:1,tc_la:0.7,tc_m:0.5},
+  'skull crushers':{tc_l:1,tc_la:0.7,tc_m:0.5},
+  'triceps extension':{tc_l:1,tc_la:0.7,tc_m:0.6},
+  'tricep extension':{tc_l:1,tc_la:0.7,tc_m:0.6},
+  'overhead triceps extension':{tc_l:1,tc_la:0.5,tc_m:0.5},
+  'dips':{tc_la:1,tc_l:0.7,tc_m:0.6,ch_st:0.5,sh_an:0.4},
+  'close grip bench press':{tc_la:1,tc_l:0.7,tc_m:0.6,ch_st:0.5},
+  'diamond push-up':{tc_la:1,tc_l:0.6,tc_m:0.5,ch_st:0.4},
+  'cable overhead extension':{tc_l:1,tc_la:0.6,tc_m:0.5},
+  'squat':{qu_vl:1,qu_vm:0.8,qu_rf:0.8,gl_ma:0.7},
+  'squats':{qu_vl:1,qu_vm:0.8,qu_rf:0.8,gl_ma:0.7},
+  'barbell squat':{qu_vl:1,qu_vm:0.8,qu_rf:0.8,gl_ma:0.7},
+  'front squat':{qu_rf:1,qu_vl:0.8,qu_vm:0.9,gl_ma:0.4},
+  'leg press':{qu_vl:1,qu_vm:0.8,qu_rf:0.6,gl_ma:0.5},
+  'hack squat':{qu_vl:1,qu_vm:0.9,qu_rf:0.7},
+  'lunges':{qu_rf:1,qu_vl:0.7,gl_ma:0.6,ha_bf:0.4},
+  'lunge':{qu_rf:1,qu_vl:0.7,gl_ma:0.6,ha_bf:0.4},
+  'step up':{qu_rf:1,qu_vl:0.7,gl_ma:0.7},
+  'leg extension':{qu_rf:1,qu_vl:0.7,qu_vm:0.7},
+  'bulgarian split squat':{qu_rf:1,qu_vl:0.8,gl_ma:0.8,ha_bf:0.4},
+  'leg curl':{ha_bf:1,ha_se:0.8},
+  'lying leg curl':{ha_bf:1,ha_se:0.8},
+  'nordic curl':{ha_bf:1,ha_se:0.9},
+  'glute bridge':{gl_ma:1,gl_me:0.7,ha_bf:0.5},
+  'hip thrust':{gl_ma:1,gl_me:0.6,ha_bf:0.4},
+  'hip thrusts':{gl_ma:1,gl_me:0.6,ha_bf:0.4},
+  'sumo squat':{gl_ma:1,gl_me:0.7,qu_vm:0.6,ha_se:0.5},
+  'cable kickback':{gl_ma:1,ha_bf:0.4},
+  'calf raise':{ca_ga:1,ca_so:0.6},
+  'calf raises':{ca_ga:1,ca_so:0.6},
+  'standing calf raise':{ca_ga:1,ca_so:0.4},
+  'seated calf raise':{ca_so:1,ca_ga:0.4},
+  'plank':{ab_re:1,ab_ob:0.5},
+  'crunch':{ab_re:1,ab_ob:0.4},
+  'crunches':{ab_re:1,ab_ob:0.4},
+  'sit-up':{ab_re:1,ab_ob:0.5},
+  'sit up':{ab_re:1,ab_ob:0.5},
+  'leg raise':{ab_re:1,ab_ob:0.4},
+  'hanging leg raise':{ab_re:1,ab_ob:0.4},
+  'russian twist':{ab_ob:1,ab_re:0.5},
+  'side plank':{ab_ob:1,ab_re:0.4},
+  'ab wheel':{ab_re:1,ab_ob:0.6},
+  'cable crunch':{ab_re:1,ab_ob:0.4},
+  'mountain climber':{ab_re:1,ab_ob:0.5},
+  // ── ESPAÑOL ──
+  'press banca':{ch_st:1,ch_cl:0.7,tc_la:0.6,sh_an:0.4},
+  'press banca / máquina pecho':{ch_st:1,ch_cl:0.7,tc_la:0.6,sh_an:0.4},
+  'press pecho máquina':{ch_st:1,ch_cl:0.6,tc_la:0.5,sh_an:0.4},
+  'press inclinado mancuernas':{ch_cl:1,ch_st:0.4,sh_an:0.5,tc_l:0.5},
+  'press inclinado':{ch_cl:1,ch_st:0.5,tc_l:0.6,sh_an:0.5},
+  'aperturas cable':{ch_st:1,ch_mi:0.7,sh_an:0.3},
+  'aperturas mancuerna':{ch_st:1,ch_cl:0.6,sh_an:0.3},
+  'dominadas':{bk_la:1,bk_rh:0.6,bc_b:0.7,bc_br:0.4},
+  'dominadas / lat pulldown neutro':{bk_la:1,bk_rh:0.5,bc_b:0.7,bc_br:0.3},
+  'lat pulldown agarre neutro':{bk_la:1,bk_rh:0.5,bc_b:0.7,bc_br:0.3},
+  'remo barra':{bk_rh:1,bk_tr:0.7,bc_b:0.6,bk_la:0.5},
+  'remo mancuerna':{bk_rh:1,bk_la:0.7,bc_b:0.5},
+  'remo barra / mancuerna':{bk_rh:1,bk_tr:0.7,bc_b:0.6,bk_la:0.5},
+  'remo polea baja':{bk_rh:1,bk_tr:0.7,bc_b:0.6,bk_la:0.4},
+  'jalón al pecho':{bk_la:1,bk_rh:0.5,bc_b:0.7,bc_br:0.3},
+  'peso muerto':{bk_er:1,gl_ma:0.8,ha_bf:0.7,bk_tr:0.5,qu_vl:0.4},
+  'peso muerto convencional':{bk_er:1,gl_ma:0.8,ha_bf:0.7,bk_tr:0.5,qu_vl:0.4},
+  'peso muerto rumano':{ha_bf:1,ha_se:0.8,gl_ma:0.8,bk_er:0.6},
+  'buenos días':{bk_er:1,ha_bf:0.7,gl_ma:0.5},
+  'press militar':{sh_an:1,sh_la:0.7,tc_l:0.7,tc_la:0.5},
+  'press militar mancuernas':{sh_an:1,sh_la:0.6,tc_l:0.6,sh_po:0.3},
+  'press hombro':{sh_an:1,sh_la:0.7,tc_l:0.6,tc_la:0.5},
+  'elevaciones laterales':{sh_la:1,sh_po:0.4,sh_an:0.3},
+  'elevaciones frontales':{sh_an:1,sh_la:0.4},
+  'pájaros':{sh_po:1,bk_rh:0.6,bk_tr:0.4},
+  'encogimientos':{bk_tr:1},
+  'curl bíceps':{bc_b:1,bc_br:0.7},
+  'curl martillo':{bc_br:1,bc_b:0.6,fa_f:0.7},
+  'curl predicador':{bc_b:1,bc_br:0.8},
+  'curl concentración':{bc_b:1,bc_br:0.6},
+  'curl barra':{bc_b:1,bc_br:0.7,fa_f:0.4},
+  'curl + tríceps superserie':{bc_b:0.8,bc_br:0.6,tc_la:0.8,tc_l:0.6,tc_m:0.5},
+  'extensión tríceps polea':{tc_la:1,tc_m:0.8,tc_l:0.4},
+  'extensión tríceps':{tc_l:1,tc_la:0.7,tc_m:0.6},
+  'extensión tríceps polea alta':{tc_la:1,tc_m:0.8,tc_l:0.4},
+  'press francés':{tc_l:1,tc_la:0.7,tc_m:0.5},
+  'fondos':{tc_la:1,tc_l:0.7,tc_m:0.6,ch_st:0.5,sh_an:0.4},
+  'fondos / press francés':{tc_la:1,tc_l:0.8,tc_m:0.6,ch_st:0.4},
+  'sentadilla':{qu_vl:1,qu_vm:0.8,qu_rf:0.8,gl_ma:0.7},
+  'sentadilla goblet':{qu_rf:1,qu_vl:0.8,qu_vm:0.9,gl_ma:0.4},
+  'sentadilla goblet / front squat':{qu_rf:1,qu_vl:0.8,qu_vm:0.9,gl_ma:0.4},
+  'sentadilla búlgara':{qu_rf:1,qu_vl:0.8,gl_ma:0.8,ha_bf:0.4},
+  'prensa de pierna':{qu_vl:1,qu_vm:0.8,qu_rf:0.6,gl_ma:0.5},
+  'extensión cuádriceps':{qu_rf:1,qu_vl:0.7,qu_vm:0.7},
+  'zancadas':{qu_rf:1,qu_vl:0.7,gl_ma:0.6,ha_bf:0.4},
+  'lunges con mancuernas':{qu_rf:1,qu_vl:0.7,gl_ma:0.6,ha_bf:0.4},
+  'curl femoral':{ha_bf:1,ha_se:0.8},
+  'hip thrust':{gl_ma:1,gl_me:0.6,ha_bf:0.4},
+  'hip thrust / puente glúteo':{gl_ma:1,gl_me:0.7,ha_bf:0.5},
+  'puente glúteo':{gl_ma:1,gl_me:0.7,ha_bf:0.5},
+  'elevación de gemelos':{ca_ga:1,ca_so:0.6},
+  'plancha':{ab_re:1,ab_ob:0.5},
+  'crunch':{ab_re:1,ab_ob:0.4},
+  'abdominales':{ab_re:1,ab_ob:0.4},
+  'elevación de piernas':{ab_re:1,ab_ob:0.4},
+  'rotaciones rusas':{ab_ob:1,ab_re:0.5},
 };
 
 function exToCatId(ex){
@@ -2276,6 +2688,14 @@ function renderEditor(){
   html+=`</div>
     ${pickerVisible ? renderPickerPanel() : `<button class="add-ex-btn" onclick="showExPicker()">＋ Añadir ejercicio</button>`}
     <button class="save-plan-btn" onclick="saveEditorChanges()">💾 Guardar cambios</button>
+  </div>
+  <div class="editor-section">
+    <h3>💪 Músculos</h3>
+    <p>Grupos musculares cubiertos por los ejercicios de esta sesión.</p>
+    <div style="display:flex;gap:14px;align-items:flex-start">
+      ${renderMiniMuscleSVG(sess.exercises,72)||''}
+      <div style="flex:1;padding-top:2px">${buildMuscleSummary(sess.exercises)}</div>
+    </div>
   </div>
   <div class="editor-section" style="border-color:var(--danger)20">
     <h3 style="color:var(--danger)">Zona peligrosa</h3>
@@ -2700,6 +3120,7 @@ function renderSesiones(){
             <div class="sess-card-name">${escHtml(label)}</div>
             <div class="sess-card-sub">${escHtml(sub)}</div>
           </div>
+          ${renderMiniMuscleSVG(exercises,52)||''}
         </div>
         <div class="sess-card-meta">
           <span class="sess-card-pill">${exercises.length} ejercicios</span>
