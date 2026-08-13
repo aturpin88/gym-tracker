@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -449,7 +449,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
 <div class="install-banner" id="install-banner" style="display:none">
   <div class="ib-icon">⬆️</div>
-  <div class="ib-text"><b>Instala la app:</b> toca <b>Compartir</b> → <b>Añadir a pantalla de inicio</b></div>
+  <div class="ib-text"><b>Install app:</b> tap <b>Share</b> → <b>Add to Home Screen</b></div>
   <button class="ib-close" onclick="dismissInstallBanner()">×</button>
 </div>
 
@@ -460,7 +460,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="timer-num" id="timer-num">1:30</div>
   </div>
   <div class="timer-info">
-    <div class="timer-label">DESCANSO</div>
+    <div class="timer-label">REST</div>
     <div class="timer-ex" id="timer-ex-name">–</div>
     <div class="timer-goal-tag" id="timer-goal-tag"></div>
   </div>
@@ -476,21 +476,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="logo">Gym <em>Tracker</em></div>
     <div class="header-right">
       <div class="header-stats">
-        <div class="hstat"><div class="hv" id="total-count">0</div><div class="hk">sesiones</div></div>
-        <div class="hstat"><div class="hv" id="week-count">0</div><div class="hk">esta semana</div></div>
+        <div class="hstat"><div class="hv" id="total-count">0</div><div class="hk">sessions</div></div>
+        <div class="hstat"><div class="hv" id="week-count">0</div><div class="hk">this week</div></div>
       </div>
-      <button class="sync-chip" id="sync-chip" onclick="handleSyncChip()">☁️ Iniciar sesión</button>
+      <button class="sync-chip" id="sync-chip" onclick="handleSyncChip()">☁️ Sign in</button>
     </div>
   </div>
 </div>
 
 <div class="view-tabs">
-  <button class="vtab active" onclick="setView('home',event)">🏠 Inicio</button>
-  <button class="vtab" onclick="setView('sesiones',event)">🗓️ Sesiones</button>
-  <button class="vtab" onclick="setView('history',event)">📋 Historial</button>
-  <button class="vtab" onclick="setView('charts',event)">📈 Progreso</button>
-  <button class="vtab" onclick="setView('ejercicios',event)">🏋️ Ejercicios</button>
-  <button class="vtab" onclick="setView('data',event)">⚙️ Datos</button>
+  <button class="vtab active" onclick="setView('home',event)">🏠 Home</button>
+  <button class="vtab" onclick="setView('sesiones',event)">🗓️ Sessions</button>
+  <button class="vtab" onclick="setView('history',event)">📋 History</button>
+  <button class="vtab" onclick="setView('charts',event)">📈 Progress</button>
+  <button class="vtab" onclick="setView('ejercicios',event)">🏋️ Exercises</button>
+  <button class="vtab" onclick="setView('data',event)">⚙️ Data</button>
 </div>
 
 <div class="content">
@@ -504,7 +504,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 </div>
 
 <div class="save-bar" id="save-bar" style="display:none">
-  <button class="save-btn" id="save-btn" onclick="saveSession()">Guardar sesión</button>
+  <button class="save-btn" id="save-btn" onclick="saveSession()">Save session</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -513,8 +513,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 <div id="photo-modal" class="photo-modal" style="display:none" onclick="closePhotoModal()">
   <img id="photo-modal-img" class="photo-modal-img" src="" onclick="event.stopPropagation()">
   <div class="photo-modal-row" onclick="event.stopPropagation()">
-    <button class="photo-modal-btn" style="background:rgba(255,255,255,.15);color:#fff" onclick="pickExPhoto(photoPendingExId)">📷 Cambiar</button>
-    <button class="photo-modal-btn" style="background:#fff;color:var(--ink)" onclick="closePhotoModal()">Cerrar</button>
+    <button class="photo-modal-btn" style="background:rgba(255,255,255,.15);color:#fff" onclick="pickExPhoto(photoPendingExId)">📷 Change</button>
+    <button class="photo-modal-btn" style="background:#fff;color:var(--ink)" onclick="closePhotoModal()">Close</button>
   </div>
 </div>
 
@@ -538,35 +538,35 @@ let lastSyncTime=null;
 // DEFAULT WORKOUT DEFINITIONS
 // ─────────────────────────────────────────────────────────────────
 const DEFAULT_SESSIONS = {
-  A:{label:'Sesión A',sub:'Full body compuesto',color:'#1e3a5f',bg:'#eef2f8',exercises:[
-    {id:'run_start',name:'Carrera inicio',sets:'1 × 1 km',note:'14 km/h · Calentamiento',unit:'km/h'},
-    {id:'squat',name:'Sentadilla goblet / Front squat',sets:'4 × 8–10',note:'Ref: 28–36 kg KB',unit:'kg'},
-    {id:'rdl',name:'Peso muerto rumano',sets:'3 × 10',note:'Ref: 60–80 kg barra',unit:'kg'},
-    {id:'bench',name:'Press banca / Máquina pecho',sets:'4 × 8–10',note:'Ref: 70–85 kg',unit:'kg'},
-    {id:'row',name:'Remo barra / Mancuerna',sets:'4 × 8–10',note:'Ref: 60–80 kg',unit:'kg'},
-    {id:'ohp',name:'Press militar mancuernas',sets:'3 × 10–12',note:'Ref: 2 × 16–22 kg',unit:'kg'},
-    {id:'lateral_a',name:'Elevaciones laterales',sets:'3 × 12–15',note:'Ref: 8–14 kg',unit:'kg'},
-    {id:'curl_a',name:'Curl bíceps',sets:'3 × 12',note:'Ref: 2 × 14–18 kg',unit:'kg'},
-    {id:'tricep_a',name:'Extensión tríceps polea',sets:'3 × 12',note:'Ref: 20–30 kg',unit:'kg'},
-    {id:'run_end',name:'Carrera final',sets:'1 × 1 km',note:'14 km/h · Enfriamiento',unit:'km/h'},
+  A:{label:'Session A',sub:'Full body compound',color:'#1e3a5f',bg:'#eef2f8',exercises:[
+    {id:'run_start',name:'Opening run',sets:'1 × 1 km',note:'14 km/h · Warm-up',unit:'km/h'},
+    {id:'squat',name:'Goblet squat / Front squat',sets:'4 × 8–10',note:'Ref: 28–36 kg KB',unit:'kg'},
+    {id:'rdl',name:'Romanian deadlift',sets:'3 × 10',note:'Ref: 60–80 kg bar',unit:'kg'},
+    {id:'bench',name:'Bench press / Chest machine',sets:'4 × 8–10',note:'Ref: 70–85 kg',unit:'kg'},
+    {id:'row',name:'Barbell row / Dumbbell row',sets:'4 × 8–10',note:'Ref: 60–80 kg',unit:'kg'},
+    {id:'ohp',name:'Dumbbell shoulder press',sets:'3 × 10–12',note:'Ref: 2 × 16–22 kg',unit:'kg'},
+    {id:'lateral_a',name:'Lateral raises',sets:'3 × 12–15',note:'Ref: 8–14 kg',unit:'kg'},
+    {id:'curl_a',name:'Bicep curl',sets:'3 × 12',note:'Ref: 2 × 14–18 kg',unit:'kg'},
+    {id:'tricep_a',name:'Triceps pushdown',sets:'3 × 12',note:'Ref: 20–30 kg',unit:'kg'},
+    {id:'run_end',name:'Cooldown run',sets:'1 × 1 km',note:'14 km/h · Cool-down',unit:'km/h'},
   ]},
-  B:{label:'Sesión B',sub:'Upper énfasis + cardio',color:'#2d5a8e',bg:'#edf4fb',exercises:[
-    {id:'incline',name:'Press inclinado mancuernas',sets:'4 × 8–10',note:'Ref: 2 × 20–28 kg',unit:'kg'},
-    {id:'lateral_b',name:'Elevaciones laterales',sets:'3 × 12–15',note:'Ref: 8–14 kg',unit:'kg'},
-    {id:'pulldown',name:'Dominadas / Lat pulldown neutro',sets:'4 × 6–8',note:'Ref: 55–70 kg',unit:'kg'},
-    {id:'bulgarian',name:'Sentadilla búlgara',sets:'3 × 10 c/l',note:'Ref: 2 × 14–20 kg',unit:'kg'},
-    {id:'hammer',name:'Curl martillo',sets:'3 × 12',note:'Ref: 2 × 16–20 kg',unit:'kg'},
-    {id:'dips',name:'Fondos / Press francés',sets:'3 × 10–12',note:'Ref: EZ 20–30 kg',unit:'kg'},
-    {id:'cardio_b',name:'Cardio final zona 2',sets:'20 min',note:'Remo o carrera suave',unit:'min'},
+  B:{label:'Session B',sub:'Upper emphasis + cardio',color:'#2d5a8e',bg:'#edf4fb',exercises:[
+    {id:'incline',name:'Incline dumbbell press',sets:'4 × 8–10',note:'Ref: 2 × 20–28 kg',unit:'kg'},
+    {id:'lateral_b',name:'Lateral raises',sets:'3 × 12–15',note:'Ref: 8–14 kg',unit:'kg'},
+    {id:'pulldown',name:'Pull-ups / Neutral lat pulldown',sets:'4 × 6–8',note:'Ref: 55–70 kg',unit:'kg'},
+    {id:'bulgarian',name:'Bulgarian split squat',sets:'3 × 10 e/s',note:'Ref: 2 × 14–20 kg',unit:'kg'},
+    {id:'hammer',name:'Hammer curls',sets:'3 × 12',note:'Ref: 2 × 16–20 kg',unit:'kg'},
+    {id:'dips',name:'Dips / French press',sets:'3 × 10–12',note:'Ref: EZ 20–30 kg',unit:'kg'},
+    {id:'cardio_b',name:'Zone 2 cardio finisher',sets:'20 min',note:'Rowing or easy run',unit:'min'},
   ]},
-  C:{label:'Sesión C',sub:'Lower énfasis + cardio',color:'#1a5c3a',bg:'#eef7f2',exercises:[
-    {id:'deadlift',name:'Peso muerto convencional',sets:'4 × 6–8',note:'Ref: 80–110 kg barra',unit:'kg'},
-    {id:'hip',name:'Hip thrust / Puente glúteo',sets:'3 × 12',note:'Ref: 50–80 kg barra',unit:'kg'},
-    {id:'chest_c',name:'Press pecho máquina',sets:'3 × 10–12',note:'Mantenimiento upper',unit:'kg'},
-    {id:'lunges',name:'Lunges con mancuernas',sets:'3 × 12 c/l',note:'Ref: 2 × 14–20 kg',unit:'kg'},
-    {id:'lat_c',name:'Lat pulldown agarre neutro',sets:'3 × 10–12',note:'Mantenimiento espalda',unit:'kg'},
-    {id:'superset',name:'Curl + Tríceps superserie',sets:'2 × 12 c/u',note:'Curl 12–16 / Tríceps 18–25 kg',unit:'kg'},
-    {id:'cardio_c',name:'Cardio final zona 2–3',sets:'20 min',note:'Carrera o bici',unit:'min'},
+  C:{label:'Session C',sub:'Lower emphasis + cardio',color:'#1a5c3a',bg:'#eef7f2',exercises:[
+    {id:'deadlift',name:'Deadlift',sets:'4 × 6–8',note:'Ref: 80–110 kg bar',unit:'kg'},
+    {id:'hip',name:'Hip thrust / Glute bridge',sets:'3 × 12',note:'Ref: 50–80 kg bar',unit:'kg'},
+    {id:'chest_c',name:'Chest press machine',sets:'3 × 10–12',note:'Upper maintenance',unit:'kg'},
+    {id:'lunges',name:'Dumbbell lunges',sets:'3 × 12 e/s',note:'Ref: 2 × 14–20 kg',unit:'kg'},
+    {id:'lat_c',name:'Neutral lat pulldown',sets:'3 × 10–12',note:'Back maintenance',unit:'kg'},
+    {id:'superset',name:'Curl + Triceps superset',sets:'2 × 12 ea.',note:'Curl 12–16 / Triceps 18–25 kg',unit:'kg'},
+    {id:'cardio_c',name:'Zone 2–3 cardio finisher',sets:'20 min',note:'Run or bike',unit:'min'},
   ]}
 };
 
@@ -574,10 +574,10 @@ const DEFAULT_SESSIONS = {
 // REST GOALS
 // ─────────────────────────────────────────────────────────────────
 const REST_BY_GOAL={
-  strength:    {label:'Fuerza',      emoji:'🏋️', rest:240, desc:'Cargas máximas'},
-  hypertrophy: {label:'Hipertrofia', emoji:'💪', rest:90,  desc:'Crecimiento muscular'},
-  definition:  {label:'Definición',  emoji:'🔥', rest:45,  desc:'Quema de grasa'},
-  cardio:      {label:'Cardio',      emoji:'🫀', rest:30,  desc:'Alta intensidad'},
+  strength:    {label:'Strength',    emoji:'🏋️', rest:240, desc:'Maximum loads'},
+  hypertrophy: {label:'Hypertrophy', emoji:'💪', rest:90,  desc:'Muscle growth'},
+  definition:  {label:'Definition',  emoji:'🔥', rest:45,  desc:'Fat burning'},
+  cardio:      {label:'Cardio',      emoji:'🫀', rest:30,  desc:'High intensity'},
 };
 function getRestGoal(){
   const g=workoutDefs[currentSession]?.goal||'hypertrophy';
@@ -626,7 +626,7 @@ const WORKOUT_KEY   = 'gymtracker_workouts';
 const LIB_CACHE_PRE = 'gymtracker_lib2_';
 
 function loadAll(){try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):{}}catch(e){return{}}}
-function saveAll(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(allLogs))}catch(e){alert('Error guardando: '+e.message)}}
+function saveAll(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(allLogs))}catch(e){alert('Error saving: '+e.message)}}
 function saveDraft(){
   clearTimeout(draftTimer);
   draftTimer=setTimeout(()=>{
@@ -656,8 +656,8 @@ function saveWorkoutDefs(){
 // HELPERS
 // ─────────────────────────────────────────────────────────────────
 function today(){return new Date().toISOString().split('T')[0]}
-function fmtDate(d){return new Date(d+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}
-function fmtShort(d){return new Date(d+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})}
+function fmtDate(d){return new Date(d+'T12:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})}
+function fmtShort(d){return new Date(d+'T12:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short'})}
 function logKey(){return`${currentSession}_${currentDate}`}
 function sessColor(){return workoutDefs[currentSession]?.color||'#1e3a5f'}
 function sessBg(){return workoutDefs[currentSession]?.bg||'#eef2f8'}
@@ -757,13 +757,13 @@ function checkAutoTimer(exId,idx){
 function renderRestChip(){
   const g=getRestGoal();
   return`<div class="rest-chip-row">
-    <div class="rest-chip" onclick="startTimer('Descanso manual')">
+    <div class="rest-chip" onclick="startTimer('Manual rest')">
       <span class="rest-chip-emoji">${g.emoji}</span>
       <div class="rest-chip-info">
-        <div class="rest-chip-label">Objetivo · Descanso recomendado</div>
+        <div class="rest-chip-label">Goal · Recommended rest</div>
         <div class="rest-chip-detail">${g.label} &mdash; ${fmtRestTime(g.rest)}</div>
       </div>
-      <span class="rest-chip-cta">⏱ Iniciar</span>
+      <span class="rest-chip-cta">⏱ Start</span>
     </div>
   </div>`;
 }
@@ -812,7 +812,7 @@ function detectAndShowPRs(){
   if(prs.length>0){
     const msg=prs.length===1
       ?`🏆 PR: ${prs[0].name} — ${prs[0].weight}${prs[0].unit}`
-      :`🏆 ${prs.length} PRs nuevos esta sesión`;
+      :`🏆 ${prs.length} new PRs this session`;
     showToast(msg,3500);
   }
 }
@@ -834,7 +834,7 @@ function calcSessionVolume(){
   return sessVol+adhocVol;
 }
 function fmtVol(v){return v>=1000?(v/1000).toFixed(1)+'t':v.toFixed(0)+' kg'}
-function fmtTime(iso){return new Date(iso).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}
+function fmtTime(iso){return new Date(iso).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}
 function fmtTime24(iso){const d=new Date(iso);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 function fmtDuration(isoStart,isoEnd){const m=Math.round((new Date(isoEnd)-new Date(isoStart))/60000);if(m<0||m>600)return'';return m<60?m+'min':Math.floor(m/60)+'h '+(m%60)+'min'}
 
@@ -861,7 +861,7 @@ function getLastSessionData(exId){
 // EXERCISE PHOTOS
 // ─────────────────────────────────────────────────────────────────
 function loadExPhotos(){try{exPhotos=JSON.parse(localStorage.getItem(PHOTOS_KEY)||'{}')}catch(e){exPhotos={};}}
-function saveExPhotos(){try{localStorage.setItem(PHOTOS_KEY,JSON.stringify(exPhotos))}catch(e){showToast('Foto demasiado grande');}}
+function saveExPhotos(){try{localStorage.setItem(PHOTOS_KEY,JSON.stringify(exPhotos))}catch(e){showToast('Photo too large');}}
 function pickExPhoto(exId){
   photoPendingExId=exId;
   document.getElementById('photo-file-input').value='';
@@ -906,12 +906,12 @@ function showAdHocForm(){adhocShowForm=true;renderLog();setTimeout(()=>document.
 function hideAdHocForm(){adhocShowForm=false;renderLog();}
 function addAdHocExercise(){
   const name=(document.getElementById('adhoc-name-input')?.value||'').trim();
-  if(!name){showToast('Escribe un nombre');return;}
+  if(!name){showToast('Enter a name');return;}
   const unit=document.getElementById('adhoc-unit-select')?.value||'kg';
   const nSets=Math.max(1,parseInt(document.getElementById('adhoc-sets-input')?.value)||1);
   const weight=document.getElementById('adhoc-weight-input')?.value||'';
   const reps=document.getElementById('adhoc-reps-input')?.value||'';
-  const setsLabel=weight||reps?`${nSets}×${reps||'?'}`+(weight?` ${weight}${unit}`:''):`${nSets} series`;
+  const setsLabel=weight||reps?`${nSets}×${reps||'?'}`+(weight?` ${weight}${unit}`:''):`${nSets} sets`;
   const id='adhoc_'+Date.now();
   adhocExercises.push({id,name,unit,sets:setsLabel,note:''});
   // pre-fill set data so the card shows with weight/reps already entered
@@ -1002,7 +1002,7 @@ function addNewSession(){
   const key=letters.split('').find(l=>!used.includes(l))||'S'+Date.now();
   const colors=['#7b3f00','#1a5c3a','#2d5a8e','#5c1a5a','#5c4a1a','#1a3a5c'];
   const color=colors[used.length%colors.length];
-  workoutDefs[key]={label:'Nueva sesión '+key,sub:'Edita para personalizar',color,bg:'#f5f3f0',exercises:[]};
+  workoutDefs[key]={label:'New session '+key,sub:'Edit to customize',color,bg:'#f5f3f0',exercises:[]};
   saveWorkoutDefs();
   editSession(key);
 }
@@ -1098,8 +1098,8 @@ function saveSession(){
   saveToCloud(key);
 
   const btn=document.getElementById('save-btn');
-  btn.textContent='✓ Sesión guardada';btn.style.background='#2e8b57';
-  setTimeout(()=>{btn.textContent='Guardar sesión';btn.style.background=sessColor();},2000);
+  btn.textContent='✓ Session saved';btn.style.background='#2e8b57';
+  setTimeout(()=>{btn.textContent='Save session';btn.style.background=sessColor();},2000);
   const b=document.getElementById('saved-badge');if(b)b.style.display='inline-block';
   const db=document.getElementById('draft-badge');if(db)db.style.display='none';
 }
@@ -1119,40 +1119,40 @@ function renderLog(){
 
   let html=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-      <button onclick="setView('sesiones',null);document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sesiones</button>
+      <button onclick="setView('sesiones',null);document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sessions</button>
     </div>
     <div class="session-banner" style="background:${color}">
       <div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div>
       <div class="sb-right">
-        <div class="sb-badge">${sess.exercises.length} ejercicios</div>
-        <button class="edit-plan-btn" onclick="goEditPlan()">✏️ Editar</button>
+        <div class="sb-badge">${sess.exercises.length} exercises</div>
+        <button class="edit-plan-btn" onclick="goEditPlan()">✏️ Edit</button>
       </div>
     </div>
     <div class="date-row">
-      <label>Fecha</label>
+      <label>Date</label>
       <input type="date" class="date-input" value="${currentDate}" onchange="onDateChange(this.value)">
-      <span class="saved-badge" id="saved-badge" style="display:${isSaved?'inline-block':'none'}">✓ Registrada</span>
-      <span class="draft-badge" id="draft-badge" style="display:${hasDraft?'inline-block':'none'}">✎ Borrador</span>
+      <span class="saved-badge" id="saved-badge" style="display:${isSaved?'inline-block':'none'}">✓ Saved</span>
+      <span class="draft-badge" id="draft-badge" style="display:${hasDraft?'inline-block':'none'}">✎ Draft</span>
     </div>
     <div class="session-volume" id="session-vol">
-      <span class="sv-label">Volumen sesión</span>
+      <span class="sv-label">Session volume</span>
       <span class="sv-val">${sessVol>0?fmtVol(sessVol)+' total':'—'}</span>
     </div>
     ${renderWhoopRecoveryCard()}
     ${renderRestChip()}
     <div class="sess-time-row">
       <div class="sess-time-block">
-        <span class="sess-time-label">INICIO</span>
+        <span class="sess-time-label">START</span>
         <input type="time" class="sess-time-input" value="${sessionStartTime?fmtTime24(sessionStartTime):''}"
           onchange="editWorkoutTime('start',this.value)">
-        <button class="sess-time-btn" onclick="setWorkoutStart()" title="Hora actual">⏱</button>
+        <button class="sess-time-btn" onclick="setWorkoutStart()" title="Current time">⏱</button>
       </div>
       <div class="sess-time-sep">→</div>
       <div class="sess-time-block">
-        <span class="sess-time-label">FIN</span>
+        <span class="sess-time-label">END</span>
         <input type="time" class="sess-time-input" value="${sessionEndTime?fmtTime24(sessionEndTime):''}"
           onchange="editWorkoutTime('end',this.value)">
-        <button class="sess-time-btn" onclick="setWorkoutEnd()" title="Hora actual">⏱</button>
+        <button class="sess-time-btn" onclick="setWorkoutEnd()" title="Current time">⏱</button>
       </div>
       ${sessionStartTime&&sessionEndTime?`<span class="sess-time-dur">${fmtDuration(sessionStartTime,sessionEndTime)}</span>`:''}
     </div>`;
@@ -1161,10 +1161,10 @@ function renderLog(){
   for(const ex of adhocExercises)html+=renderExCard(ex,color,bg,true);
   if(adhocShowForm){
     html+=`<div class="adhoc-form">
-      <div class="adhoc-form-title">+ Ejercicio extra</div>
+      <div class="adhoc-form-title">+ Extra exercise</div>
       <div class="adhoc-row" style="position:relative;overflow:visible;margin-bottom:8px">
         <div style="flex:1;position:relative">
-          <input class="adhoc-input" id="adhoc-name-input" type="text" placeholder="Busca ejercicio…" autocomplete="off"
+          <input class="adhoc-input" id="adhoc-name-input" type="text" placeholder="Search exercise…" autocomplete="off"
             oninput="updateAdHocSearch(this.value)">
           <div id="adhoc-search-results" class="adhoc-search-drop"></div>
         </div>
@@ -1173,14 +1173,14 @@ function renderLog(){
           <option value="min">min</option><option value="km/h">km/h</option>
         </select>
       </div>
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px">Series objetivo</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px">Target sets</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="text-align:center">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Nº series</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:2px"># sets</div>
           <input class="adhoc-input" id="adhoc-sets-input" type="number" min="1" max="20" placeholder="3" style="text-align:center">
         </div>
         <div style="text-align:center">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Peso</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Weight</div>
           <input class="adhoc-input" id="adhoc-weight-input" type="number" step="0.5" placeholder="—" style="text-align:center">
         </div>
         <div style="text-align:center">
@@ -1188,11 +1188,11 @@ function renderLog(){
           <input class="adhoc-input" id="adhoc-reps-input" type="number" placeholder="—" style="text-align:center">
         </div>
       </div>
-      <button class="adhoc-confirm-btn" onclick="addAdHocExercise()">+ Añadir al entrenamiento</button>
-      <button onclick="hideAdHocForm()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:8px;font-family:inherit;padding:4px">Cancelar</button>
+      <button class="adhoc-confirm-btn" onclick="addAdHocExercise()">+ Add to workout</button>
+      <button onclick="hideAdHocForm()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:8px;font-family:inherit;padding:4px">Cancel</button>
     </div>`;
   } else {
-    html+=`<button class="add-adhoc-btn" onclick="showAdHocForm()">+ Ejercicio extra</button>`;
+    html+=`<button class="add-adhoc-btn" onclick="showAdHocForm()">+ Extra exercise</button>`;
   }
   document.getElementById('page-log').innerHTML=html;
 }
@@ -1200,7 +1200,7 @@ function renderLog(){
 function renderExCard(ex,color,bg,isAdhoc=false){
   const d=getExData(ex.id);
   const filled=hasData(ex.id);
-  const wLabel=ex.unit==='min'?'Duración':ex.unit==='km/h'?'Vel.':'Peso';
+  const wLabel=ex.unit==='min'?'Duration':ex.unit==='km/h'?'Speed':'Weight';
   const last=getLastSessionData(ex.id);
   const isPR=isCurrentPR(ex.id);
   const vol=calcExVolume(ex.id);
@@ -1232,8 +1232,8 @@ function renderExCard(ex,color,bg,isAdhoc=false){
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
         ${!isAdhoc?`<div style="display:flex;flex-direction:column;gap:2px;margin-right:2px">
-          <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',-1)" title="Subir">▲</button>
-          <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',+1)" title="Bajar">▼</button>
+          <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',-1)" title="Move up">▲</button>
+          <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',+1)" title="Move down">▼</button>
         </div>`:''}
         ${filled&&!isAdhoc?'<span style="font-size:14px">✅</span>':''}
         ${isAdhoc?`<button onclick="removeAdHocExercise('${ex.id}')" style="background:none;border:none;color:#ccc;font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>`:''}
@@ -1247,14 +1247,14 @@ function renderExCard(ex,color,bg,isAdhoc=false){
     <div class="sets-body" id="sets-${ex.id}">${renderSetRows(ex.id,d.sets,color)}</div>
     <div class="ex-footer">
       <button class="add-set-btn" style="--sess-color:${color}" onclick="addSet('${ex.id}')">+ Serie</button>
-      <div class="notes-label">💬 Comentarios</div>
-      <input class="notes-input" type="text" value="${escHtml(d.notes||'')}" placeholder="Añade un comentario sobre este ejercicio…" oninput="updateNotes('${ex.id}',this.value)">
+      <div class="notes-label">💬 Comments</div>
+      <input class="notes-input" type="text" value="${escHtml(d.notes||'')}" placeholder="Add a comment about this exercise…" oninput="updateNotes('${ex.id}',this.value)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
         <div class="ex-volume" data-vol="${ex.id}">${vol>0?`Vol: <span>${fmtVol(vol)}</span>`:''}</div>
-        <button class="alt-trigger" onclick="toggleAlts('${ex.id}')">Alternativas</button>
+        <button class="alt-trigger" onclick="toggleAlts('${ex.id}')">Alternatives</button>
       </div>
       <div class="alt-box" id="alts-${ex.id}">
-        <div class="alt-box-label">💡 Si está ocupado, prueba:</div>
+        <div class="alt-box-label">💡 If it's busy, try:</div>
         ${getAlternatives(ex.name,2).map(a=>`<div class="alt-item">${escHtml(a)}</div>`).join('')}
       </div>
     </div>
@@ -1267,8 +1267,8 @@ function renderSetRows(exId,sets,color){
     const numStyle=s.note?`background:${color};color:#fff;outline:2px solid rgba(0,0,0,.15);`:'';
     return `
     <div class="set-row">
-      <div class="set-num${s.weight||s.reps?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color};${numStyle}cursor:pointer" onclick="toggleSetNote('${exId}',${i})" title="Añadir nota serie">${i+1}</div>
-      <button class="set-start-btn${s.t_start?' done':''}" onclick="startSet('${exId}',${i})" title="${s.t_start?'Inicio: '+fmtTime(s.t_start):'Iniciar serie'}">${s.t_start?'●':'▶'}</button>
+      <div class="set-num${s.weight||s.reps?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color};${numStyle}cursor:pointer" onclick="toggleSetNote('${exId}',${i})" title="Add set note">${i+1}</div>
+      <button class="set-start-btn${s.t_start?' done':''}" onclick="startSet('${exId}',${i})" title="${s.t_start?'Started: '+fmtTime(s.t_start):'Start set'}">${s.t_start?'●':'▶'}</button>
       <input type="number" step="0.5" class="set-input weight-input" style="--sess-color:${color}"
         value="${s.weight||''}" placeholder="—"
         onfocus="onSetFocus('${exId}',${i})"
@@ -1282,7 +1282,7 @@ function renderSetRows(exId,sets,color){
       <button class="rm-btn" onclick="removeSet('${exId}',${i})" ${sets.length<=1?'disabled':''}>×</button>
     </div>
     ${noteOpen?`<div style="padding:2px 0 5px 31px">
-      <input type="text" value="${escHtml(s.note||'')}" placeholder="Nota serie ${i+1}…"
+      <input type="text" value="${escHtml(s.note||'')}" placeholder="Set ${i+1} note…"
         style="width:100%;border:1px solid var(--line);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--ink2);background:#fafaf8;font-family:'DM Sans',sans-serif"
         oninput="updateSetNote('${exId}',${i},this.value)">
     </div>`:''}`;
@@ -1355,7 +1355,7 @@ function renderHeatmap(){
   const{cur,lng,total,recent}=calcHeatmapStats(byDate);
   const CELL=11,GAP=2,STEP=CELL+GAP,WEEKS=53;
   const COLS=['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'];
-  const MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   // Grid: start from Monday of the week WEEKS-1 weeks before the current week
   const now=new Date();
@@ -1387,8 +1387,8 @@ function renderHeatmap(){
     if(m!==lastM){mlHtml+=`<span style="position:absolute;left:${wi*STEP}px;font-size:9px;color:var(--muted);font-weight:600;white-space:nowrap">${MN[m]}</span>`;lastM=m;}
   });
 
-  // Day labels: show L X V (Mon Wed Fri) only
-  const DL=['L','','X','','V','',''];
+  // Day labels: show M W F (Mon Wed Fri) only
+  const DL=['M','','W','','F','',''];
   const dlHtml=DL.map(l=>
     `<div style="height:${CELL}px;font-size:9px;line-height:${CELL}px;color:var(--muted);width:9px;text-align:right;flex-shrink:0">${l}</div>`
   ).join(`<div style="height:${GAP}px"></div>`);
@@ -1409,13 +1409,13 @@ function renderHeatmap(){
   const totalW=weeks.length*STEP+14;
   return`
     <div style="background:var(--white);border-radius:14px;margin:12px 16px 4px;padding:16px 16px 12px;border:1px solid var(--line)">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Actividad · Último año</div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Activity · Last year</div>
       <div style="display:flex;gap:0;margin-bottom:16px">
         ${[
-          [cur, cur===1?'Semana<br>seguida':'Semanas<br>seguidas', cur>0?'🔥':''],
-          [lng, 'Mejor<br>racha', ''],
-          [recent, 'Últimas<br>4 sem.', ''],
-          [total, 'Total<br>sesiones', ''],
+          [cur, cur===1?'Week<br>streak':'Weeks<br>streak', cur>0?'🔥':''],
+          [lng, 'Best<br>streak', ''],
+          [recent, 'Last<br>4 wk.', ''],
+          [total, 'Total<br>sessions', ''],
         ].map(([v,l,e])=>`<div style="flex:1;border-right:1px solid var(--line);padding:0 10px;first:padding-left:0">
           <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);line-height:1">${v}${e?` <span style="font-size:16px">${e}</span>`:''}</div>
           <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;line-height:1.4">${l}</div>
@@ -1431,7 +1431,7 @@ function renderHeatmap(){
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;margin-top:10px;font-size:10px;color:var(--muted)">
-        Menos ${COLS.map(c=>`<div style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></div>`).join('')} Más
+        Less ${COLS.map(c=>`<div style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></div>`).join('')} More
       </div>
     </div>`;
 }
@@ -1462,7 +1462,7 @@ function renderHistory(){
 
   if(!logs.length){
     document.getElementById('page-history').innerHTML=heatmap+
-      `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Sin sesiones registradas</div><div class="empty-sub">Ve a "Registrar" para añadir tu primera sesión</div></div>`;
+      `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No sessions logged</div><div class="empty-sub">Go to "Train" to add your first session</div></div>`;
     setTimeout(()=>{const s=document.getElementById('hm-scroll');if(s)s.scrollLeft=s.scrollWidth;},0);
     return;
   }
@@ -1482,7 +1482,7 @@ function renderHistory(){
             <span style="font-size:10px;font-weight:800;color:#fff;background:${color};padding:2px 7px;border-radius:4px;flex-shrink:0">${log.session}</span>
             ${fmtDate(log.date)} ${renderWhoopStrainBadge(log.date)}
           </div>
-          <div class="hist-sub">${sess.label} · ${exWithData.length} ejercicios${totalVol>0?' · '+fmtVol(totalVol):''}</div>
+          <div class="hist-sub">${sess.label} · ${exWithData.length} exercises${totalVol>0?' · '+fmtVol(totalVol):''}</div>
         </div>
         <div class="hist-arrow">${isOpen?'▲':'▼'}</div>
       </button>
@@ -1498,13 +1498,13 @@ function renderHistBody(log,sess,color){
   // ── Session timing header ─────────────────────────────────────
   let html=`<div class="hist-times">
     <div style="display:flex;align-items:center;gap:5px">
-      <span class="hist-time-label">INICIO</span>
+      <span class="hist-time-label">START</span>
       <input type="time" class="hist-time-input" value="${log.startTime?fmtTime24(log.startTime):''}"
         onchange="editLogTime('${log.session}','${log.date}','start',this.value)">
     </div>
     <span style="color:var(--muted);font-size:13px">→</span>
     <div style="display:flex;align-items:center;gap:5px">
-      <span class="hist-time-label">FIN</span>
+      <span class="hist-time-label">END</span>
       <input type="time" class="hist-time-input" value="${log.endTime?fmtTime24(log.endTime):''}"
         onchange="editLogTime('${log.session}','${log.date}','end',this.value)">
     </div>
@@ -1582,13 +1582,13 @@ function renderHistBody(log,sess,color){
       }).join('');
       const sportLbl=wData.sport?(wData.sport.replace(/_/g,' ')+' · '):'';
       html+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">⚡ ${sportLbl}Zonas FC</div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">⚡ ${sportLbl}HR Zones</div>
         ${rows}
       </div>`;
     }
   }
 
-  html+=`<button class="hist-del-btn" onclick="deleteLog('${log.session}','${log.date}')">🗑 Eliminar sesión</button>`;
+  html+=`<button class="hist-del-btn" onclick="deleteLog('${log.session}','${log.date}')">🗑 Delete session</button>`;
   return html;
 }
 
@@ -1598,19 +1598,19 @@ function toggleLog(session,date){
   renderHistory();
 }
 function deleteLog(session,date){
-  if(!confirm(`¿Eliminar la sesión ${session} del ${fmtDate(date)}?`))return;
+  if(!confirm(`Delete session ${session} from ${fmtDate(date)}?`))return;
   const key=`${session}_${date}`;
   delete allLogs[key];saveAll();deleteFromCloud(key);updateStats();expandedLog=null;renderHistory();
 }
 
 function deleteSessionTemplate(key){
-  if(!confirm(`¿Eliminar la plantilla "${workoutDefs[key]?.label}"?\n\nEl historial de ejercicios en Historial se conservará.`))return;
+  if(!confirm(`Delete template "${workoutDefs[key]?.label}"?\n\nYour workout history in History will be preserved.`))return;
   workoutDefs[key]._deleted=true;
   saveWorkoutDefs();
   setView('sesiones',null);
   document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1));
   renderSesiones();
-  showToast('Plantilla eliminada. El historial se conserva.');
+  showToast('Template deleted. History is preserved.');
 }
 function moveExercise(exId,delta){
   const sess=workoutDefs[currentSession];
@@ -1630,17 +1630,17 @@ function startSet(exId,idx){
   if(!sessionStartTime)sessionStartTime=d.sets[idx].t_start;
   saveDraft();
   renderSetsFor(exId);
-  showToast(`Serie ${idx+1} iniciada`);
+  showToast(`Set ${idx+1} started`);
 }
 function setWorkoutStart(){
   sessionStartTime=new Date().toISOString();
   saveDraft();renderLog();
-  showToast('Inicio: '+fmtTime(sessionStartTime));
+  showToast('Start: '+fmtTime(sessionStartTime));
 }
 function setWorkoutEnd(){
   sessionEndTime=new Date().toISOString();
   saveDraft();renderLog();
-  showToast('Fin: '+fmtTime(sessionEndTime));
+  showToast('End: '+fmtTime(sessionEndTime));
 }
 function editWorkoutTime(which,timeVal){
   if(!timeVal)return;
@@ -1664,7 +1664,7 @@ function editLogTime(session,date,which,timeVal){
   if(which==='start')allLogs[key].startTime=d.toISOString();
   else allLogs[key].endTime=d.toISOString();
   saveAll();saveToCloud(key);
-  showToast('Hora actualizada');
+  showToast('Time updated');
   // update duration inline without full re-render
   const dur=document.getElementById(`hist-dur-${session}-${date}`);
   if(dur&&allLogs[key].startTime&&allLogs[key].endTime)
@@ -1694,14 +1694,14 @@ async function updateAdHocSearch(val){
   }
   if(!document.getElementById('adhoc-search-results'))return;
   if(!results.length){
-    container.innerHTML=`<div style="padding:10px 12px;font-size:12px;color:var(--muted)">Sin resultados</div>`;
+    container.innerHTML=`<div style="padding:10px 12px;font-size:12px;color:var(--muted)">No results</div>`;
     return;
   }
   const sliced=results.slice(0,8);
   container.innerHTML=sliced.map((r,i)=>
     `<button type="button" class="adhoc-search-result" data-idx="${i}">
       <b>${escHtml(r.name)}</b>
-      <span style="font-size:10px;color:var(--muted)">${r.unit||'kg'}${r.source==='session'?' · sesión':''}</span>
+      <span style="font-size:10px;color:var(--muted)">${r.unit||'kg'}${r.source==='session'?' · session':''}</span>
     </button>`
   ).join('');
   // pointerdown fires before blur — avoids the click-after-blur race on all browsers
@@ -1742,21 +1742,21 @@ function getChartData(exId){
 function renderCharts(){
   const sess=workoutDefs[currentSession];if(!sess)return;
   const {color}=sess;
-  let html=`<div class="session-banner" style="background:${color}"><div><div class="sb-title">${sess.label}</div><div class="sb-sub">Análisis de entrenamiento</div></div></div>
+  let html=`<div class="session-banner" style="background:${color}"><div><div class="sb-title">${sess.label}</div><div class="sb-sub">Training analysis</div></div></div>
     <div class="sub-tabs">
-      <button class="subtab${chartsSubTab==='ejercicios'?' active':''}" onclick="setChartsTab('ejercicios')">📈 Progreso</button>
-      <button class="subtab${chartsSubTab==='musculos'?' active':''}" onclick="setChartsTab('musculos')">💪 Músculos</button>
+      <button class="subtab${chartsSubTab==='ejercicios'?' active':''}" onclick="setChartsTab('ejercicios')">📈 Progress</button>
+      <button class="subtab${chartsSubTab==='musculos'?' active':''}" onclick="setChartsTab('musculos')">💪 Muscles</button>
     </div>`;
   if(chartsSubTab==='musculos'){
     html+=`<div class="muscle-mode-tabs">
-      <button class="muscle-mode-tab${muscleMode==='session'?' active':''}" onclick="setMuscleMode('session')">Esta sesión</button>
-      <button class="muscle-mode-tab${muscleMode==='global'?' active':''}" onclick="setMuscleMode('global')">Todas las sesiones</button>
+      <button class="muscle-mode-tab${muscleMode==='session'?' active':''}" onclick="setMuscleMode('session')">This session</button>
+      <button class="muscle-mode-tab${muscleMode==='global'?' active':''}" onclick="setMuscleMode('global')">All sessions</button>
     </div><div id="muscle-full-view"></div>`;
     document.getElementById('page-charts').innerHTML=html;
     renderMuscleFull();
     return;
   }
-  html+=`<div style="font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Selecciona ejercicio</div>
+  html+=`<div style="font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Select exercise</div>
     <div class="ex-selector">`;
   for(const ex of sess.exercises){
     const data=getChartData(ex.id);
@@ -1767,27 +1767,27 @@ function renderCharts(){
   }
   html+=`</div>`;
   if(!selectedChartEx){
-    html+=`<div class="empty"><div class="empty-icon">👆</div><div class="empty-title">Selecciona un ejercicio</div></div>`;
+    html+=`<div class="empty"><div class="empty-icon">👆</div><div class="empty-title">Select an exercise</div></div>`;
     document.getElementById('page-charts').innerHTML=html;return;
   }
   const data=getChartData(selectedChartEx);
   const ex=sess.exercises.find(e=>e.id===selectedChartEx);
   if(!data.length){
-    html+=`<div class="empty"><div class="empty-icon">📈</div><div class="empty-title">Sin datos aún</div></div>`;
+    html+=`<div class="empty"><div class="empty-icon">📈</div><div class="empty-title">No data yet</div></div>`;
     document.getElementById('page-charts').innerHTML=html;return;
   }
   const maxW=Math.max(...data.map(d=>d.weight)),minW=Math.min(...data.map(d=>d.weight));
   const lastW=data[data.length-1].weight,firstW=data[0].weight;
   const pct=firstW>0?(((lastW-firstW)/firstW)*100).toFixed(1):0;
   html+=`<div class="chart-stats" style="background:${color}">
-    <div class="cs-item"><div class="cs-val">${lastW}${ex.unit}</div><div class="cs-key">Actual</div></div>
-    <div class="cs-item"><div class="cs-val">${maxW}${ex.unit}</div><div class="cs-key">Máximo</div></div>
-    <div class="cs-item"><div class="cs-val">${minW}${ex.unit}</div><div class="cs-key">Mínimo</div></div>
-    <div class="cs-item"><div class="cs-val">${pct>0?'+':''}${pct}%</div><div class="cs-key">Progreso</div></div>
+    <div class="cs-item"><div class="cs-val">${lastW}${ex.unit}</div><div class="cs-key">Current</div></div>
+    <div class="cs-item"><div class="cs-val">${maxW}${ex.unit}</div><div class="cs-key">Maximum</div></div>
+    <div class="cs-item"><div class="cs-val">${minW}${ex.unit}</div><div class="cs-key">Minimum</div></div>
+    <div class="cs-item"><div class="cs-val">${pct>0?'+':''}${pct}%</div><div class="cs-key">Progress</div></div>
   </div>
-  <div class="chart-box"><div class="chart-title">${ex.name} — Peso máximo</div>${renderSVGChart(data,'weight',ex.unit,color)}</div>`;
+  <div class="chart-box"><div class="chart-title">${ex.name} — Max weight</div>${renderSVGChart(data,'weight',ex.unit,color)}</div>`;
   if(data.some(d=>d.reps>0))
-    html+=`<div class="chart-box"><div class="chart-title">${ex.name} — Reps medias</div>${renderSVGChart(data,'reps','reps','#c8a96e')}</div>`;
+    html+=`<div class="chart-box"><div class="chart-title">${ex.name} — Avg reps</div>${renderSVGChart(data,'reps','reps','#c8a96e')}</div>`;
   document.getElementById('page-charts').innerHTML=html;
 }
 function renderSVGChart(data,key,unit,color){
@@ -1875,7 +1875,7 @@ function pickMuscleSeg(id,type){
 function buildMuscleSummary(exercises){
   const{grpT}=calcMuscleData(exercises);
   const grand=Object.values(grpT).reduce((a,b)=>a+b,0);
-  if(!grand)return`<p style="font-size:12px;color:var(--muted);margin:0">Añade ejercicios para ver el análisis muscular.</p>`;
+  if(!grand)return`<p style="font-size:12px;color:var(--muted);margin:0">Add exercises to see the muscle analysis.</p>`;
   return MUSCLE_GO.filter(g=>grpT[g]).map(g=>{
     const pct=Math.round(grpT[g]/grand*100);
     return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
@@ -1900,7 +1900,7 @@ function renderMuscleFull(){
   const{smT,grpT}=calcMuscleData(exercises);
   const grand=Object.values(grpT).reduce((a,b)=>a+b,0);
   if(!grand){
-    container.innerHTML=`<div class="empty"><div class="empty-icon">💪</div><div class="empty-title">Sin datos de músculos</div><div class="empty-sub">Añade ejercicios para ver el análisis</div></div>`;
+    container.innerHTML=`<div class="empty"><div class="empty-icon">💪</div><div class="empty-title">No muscle data</div><div class="empty-sub">Add exercises to see the analysis</div></div>`;
     return;
   }
   const cx=82,cy=82,oR=78,ori=61,iR=54,iri=37,gap=2;
@@ -1929,7 +1929,7 @@ function renderMuscleFull(){
   let ct='',cb='';
   if(!muscleSel){
     ct=muscleMode==='global'?'Global':(workoutDefs[currentSession]?.label?.split(' ').slice(0,2).join(' ')||'');
-    cb=`${exercises.length} ejercicios`;
+    cb=`${exercises.length} exercises`;
   }else if(muscleSelType==='group'){
     ct=muscleSel;cb=`${Math.round((grpT[muscleSel]||0)/grand*100)}%`;
   }else{
@@ -1976,7 +1976,7 @@ function renderMuscleFull(){
         <span style="font-size:12px;font-weight:600;color:var(--ink)">${sm?.lab||muscleSel}</span>
       </div>
       <div style="font-size:28px;font-weight:800;color:var(--ink);line-height:1">${pct}%</div>
-      <div style="font-size:9px;color:var(--muted);margin-top:2px">del total</div>`;
+      <div style="font-size:9px;color:var(--muted);margin-top:2px">of total</div>`;
   }
   let filtExs=exercises;
   if(muscleSel){
@@ -1988,8 +1988,8 @@ function renderMuscleFull(){
   const seen=new Set();
   filtExs=filtExs.filter(ex=>{const k=ex.name;if(seen.has(k))return false;seen.add(k);return true;});
   const listTitle=muscleSel
-    ?(muscleSelType==='group'?`Ejercicios — ${muscleSel}`:`Ejercicios — ${MUSCLE_SM[muscleSel]?.lab||muscleSel}`)
-    :`Todos los ejercicios (${filtExs.length})`;
+    ?(muscleSelType==='group'?`Exercises — ${muscleSel}`:`Exercises — ${MUSCLE_SM[muscleSel]?.lab||muscleSel}`)
+    :`All exercises (${filtExs.length})`;
   const exListHtml=filtExs.length
     ?`<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">${escHtml(listTitle)}</div>`+
       filtExs.map(ex=>{
@@ -1999,7 +1999,7 @@ function renderMuscleFull(){
           <div style="display:flex;gap:3px">${topSM.map(([id])=>`<div title="${MUSCLE_SM[id]?.lab||id}" style="width:7px;height:7px;border-radius:50%;background:${MUSCLE_SM[id]?.c||'#888'}"></div>`).join('')}</div>
         </div>`;
       }).join('')
-    :`<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Sin ejercicios en esta selección</div>`;
+    :`<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">No exercises in this selection</div>`;
   container.innerHTML=`
     <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
       ${svgHtml}
@@ -2012,12 +2012,12 @@ function renderMuscleFull(){
 // RENDER EJERCICIOS (Library + Editor)
 // ─────────────────────────────────────────────────────────────────
 const MUSCLE_CATS=[
-  {id:11,name:'Pecho',emoji:'💪',color:'#c0392b'},
-  {id:12,name:'Espalda',emoji:'🔙',color:'#2d5a8e'},
-  {id:13,name:'Hombros',emoji:'🏋️',color:'#5b3e9e'},
-  {id:8, name:'Brazos', emoji:'💪',color:'#1a5c3a'},
-  {id:9, name:'Piernas',emoji:'🦵',color:'#7a4b00'},
-  {id:10,name:'Core',   emoji:'⚡',color:'#555'},
+  {id:11,name:'Chest',    emoji:'💪',color:'#c0392b'},
+  {id:12,name:'Back',     emoji:'🔙',color:'#2d5a8e'},
+  {id:13,name:'Shoulders',emoji:'🏋️',color:'#5b3e9e'},
+  {id:8, name:'Arms',     emoji:'💪',color:'#1a5c3a'},
+  {id:9, name:'Legs',     emoji:'🦵',color:'#7a4b00'},
+  {id:10,name:'Core',     emoji:'⚡',color:'#555'},
 ];
 // ── MUSCLE BODY SVG ──
 function muscleSVG(catId,color){
@@ -2057,12 +2057,12 @@ function muscleSVG(catId,color){
 
 // ── EXERCISE ALTERNATIVES ──
 const CATEGORY_ALTS={
-  11:['Press inclinado mancuernas','Aperturas pec-deck','Cable crossover','Flexiones lastradas','Press Hammer Strength'],
-  12:['Remo en máquina','Pullover cable','Face pull','Remo con mancuerna','Dominadas con agarre neutro'],
-  13:['Press Arnold','Face pull','Elevaciones frontales','Upright row cable','Reverse flyes'],
-  8: ['Curl predicador','Curl en máquina','Press francés EZ','Kickbacks tríceps','Tríceps en cable cuerda'],
-  9: ['Prensa de piernas','Hack squat','Step-up mancuernas','Extensión de cuádriceps','Curl femoral tumbado'],
-  10:['Plancha (plank)','Russian twist','Crunch en máquina','Elevación de piernas colgado','Ab wheel'],
+  11:['Incline dumbbell press','Pec deck flyes','Cable crossover','Weighted push-ups','Hammer Strength press'],
+  12:['Machine row','Cable pullover','Face pull','Dumbbell row','Neutral grip pull-ups'],
+  13:['Arnold press','Face pull','Front raises','Cable upright row','Reverse flyes'],
+  8: ['Preacher curl','Machine curl','EZ bar French press','Tricep kickbacks','Cable rope triceps'],
+  9: ['Leg press','Hack squat','Dumbbell step-up','Quad extension','Lying leg curl'],
+  10:['Plank','Russian twist','Machine crunch','Hanging leg raise','Ab wheel'],
 };
 function guessExCat(name){
   const n=(name||'').toLowerCase();
@@ -2076,7 +2076,7 @@ function guessExCat(name){
 }
 function getAlternatives(exName,count=2){
   const catId=guessExCat(exName);
-  const pool=catId&&CATEGORY_ALTS[catId]?CATEGORY_ALTS[catId]:['Ejercicio equivalente en máquina','Versión con mancuernas'];
+  const pool=catId&&CATEGORY_ALTS[catId]?CATEGORY_ALTS[catId]:['Machine equivalent exercise','Dumbbell version'];
   const nl=exName.toLowerCase();
   const filtered=pool.filter(a=>!nl.includes(a.toLowerCase().split(' ')[0].replace(/[^\w]/g,'')));
   return filtered.slice(0,count).length>=count?filtered.slice(0,count):pool.slice(0,count);
@@ -2110,37 +2110,37 @@ const MUSCLE_TO_CAT={
 
 // ── SUB-MUSCLE DEFINITIONS ──
 const MUSCLE_SM={
-  tc_l:{lab:'Cabeza larga',grp:'Brazos',c:'#7F77DD'},
-  tc_la:{lab:'Cabeza lateral',grp:'Brazos',c:'#534AB7'},
-  tc_m:{lab:'Cabeza medial',grp:'Brazos',c:'#AFA9EC'},
-  bc_b:{lab:'Bíceps braquial',grp:'Brazos',c:'#378ADD'},
-  bc_br:{lab:'Braquial',grp:'Brazos',c:'#85B7EB'},
-  fa_f:{lab:'Flexores',grp:'Brazos',c:'#EF9F27'},
-  fa_e:{lab:'Extensores',grp:'Brazos',c:'#BA7517'},
-  ch_cl:{lab:'Pec. clavicular',grp:'Pecho',c:'#D85A30'},
-  ch_st:{lab:'Pec. esternal',grp:'Pecho',c:'#F0997B'},
-  ch_mi:{lab:'Pec. menor',grp:'Pecho',c:'#993C1D'},
-  bk_la:{lab:'Dorsal ancho',grp:'Espalda',c:'#185FA5'},
-  bk_rh:{lab:'Romboides',grp:'Espalda',c:'#378ADD'},
-  bk_tr:{lab:'Trapecio',grp:'Espalda',c:'#0C447C'},
-  bk_er:{lab:'Erector esp.',grp:'Espalda',c:'#85B7EB'},
-  sh_an:{lab:'Deltoides ant.',grp:'Hombros',c:'#EF9F27'},
-  sh_la:{lab:'Deltoides lat.',grp:'Hombros',c:'#BA7517'},
-  sh_po:{lab:'Deltoides post.',grp:'Hombros',c:'#633806'},
-  qu_rf:{lab:'Recto femoral',grp:'Piernas',c:'#97C459'},
-  qu_vl:{lab:'Vasto lateral',grp:'Piernas',c:'#639922'},
-  qu_vm:{lab:'Vasto medial',grp:'Piernas',c:'#3B6D11'},
-  ha_bf:{lab:'Bíceps femoral',grp:'Piernas',c:'#7FB843'},
-  ha_se:{lab:'Semitendinoso',grp:'Piernas',c:'#4A8015'},
-  gl_ma:{lab:'Glúteo mayor',grp:'Piernas',c:'#27500A'},
-  gl_me:{lab:'Glúteo medio',grp:'Piernas',c:'#5A9E1F'},
-  ca_ga:{lab:'Gastrocnemio',grp:'Piernas',c:'#8BC34A'},
-  ca_so:{lab:'Sóleo',grp:'Piernas',c:'#C5E1A5'},
-  ab_re:{lab:'Recto abdominal',grp:'Core',c:'#888780'},
-  ab_ob:{lab:'Oblicuos',grp:'Core',c:'#5F5E5A'},
+  tc_l:{lab:'Long head',grp:'Arms',c:'#7F77DD'},
+  tc_la:{lab:'Lateral head',grp:'Arms',c:'#534AB7'},
+  tc_m:{lab:'Medial head',grp:'Arms',c:'#AFA9EC'},
+  bc_b:{lab:'Biceps brachii',grp:'Arms',c:'#378ADD'},
+  bc_br:{lab:'Brachialis',grp:'Arms',c:'#85B7EB'},
+  fa_f:{lab:'Flexors',grp:'Arms',c:'#EF9F27'},
+  fa_e:{lab:'Extensors',grp:'Arms',c:'#BA7517'},
+  ch_cl:{lab:'Clavicular pec.',grp:'Chest',c:'#D85A30'},
+  ch_st:{lab:'Sternal pec.',grp:'Chest',c:'#F0997B'},
+  ch_mi:{lab:'Pec. minor',grp:'Chest',c:'#993C1D'},
+  bk_la:{lab:'Lat',grp:'Back',c:'#185FA5'},
+  bk_rh:{lab:'Rhomboids',grp:'Back',c:'#378ADD'},
+  bk_tr:{lab:'Trapezius',grp:'Back',c:'#0C447C'},
+  bk_er:{lab:'Spinal erector',grp:'Back',c:'#85B7EB'},
+  sh_an:{lab:'Anterior delt',grp:'Shoulders',c:'#EF9F27'},
+  sh_la:{lab:'Lateral delt',grp:'Shoulders',c:'#BA7517'},
+  sh_po:{lab:'Posterior delt',grp:'Shoulders',c:'#633806'},
+  qu_rf:{lab:'Rectus femoris',grp:'Legs',c:'#97C459'},
+  qu_vl:{lab:'Vastus lateralis',grp:'Legs',c:'#639922'},
+  qu_vm:{lab:'Vastus medialis',grp:'Legs',c:'#3B6D11'},
+  ha_bf:{lab:'Biceps femoris',grp:'Legs',c:'#7FB843'},
+  ha_se:{lab:'Semitendinosus',grp:'Legs',c:'#4A8015'},
+  gl_ma:{lab:'Gluteus maximus',grp:'Legs',c:'#27500A'},
+  gl_me:{lab:'Gluteus medius',grp:'Legs',c:'#5A9E1F'},
+  ca_ga:{lab:'Gastrocnemius',grp:'Legs',c:'#8BC34A'},
+  ca_so:{lab:'Soleus',grp:'Legs',c:'#C5E1A5'},
+  ab_re:{lab:'Rectus abdominis',grp:'Core',c:'#888780'},
+  ab_ob:{lab:'Obliques',grp:'Core',c:'#5F5E5A'},
 };
-const MUSCLE_GC={Pecho:'#D85A30',Espalda:'#185FA5',Hombros:'#BA7517',Brazos:'#7F77DD',Piernas:'#3B6D11',Core:'#888780'};
-const MUSCLE_GO=['Pecho','Espalda','Hombros','Brazos','Piernas','Core'];
+const MUSCLE_GC={Chest:'#D85A30',Back:'#185FA5',Shoulders:'#BA7517',Arms:'#7F77DD',Legs:'#3B6D11',Core:'#888780'};
+const MUSCLE_GO=['Chest','Back','Shoulders','Arms','Legs','Core'];
 const MUSCLE_EX={
   'bench press':{ch_st:1,ch_cl:0.7,tc_la:0.6,sh_an:0.4},
   'barbell bench press':{ch_st:1,ch_cl:0.7,tc_la:0.6,sh_an:0.4},
@@ -2371,8 +2371,8 @@ let pickerCat=null;      // active muscle-group filter in picker (null = show al
 function renderEjercicios(){
   const pg=document.getElementById('page-ejercicios');
   pg.innerHTML=`<div class="sub-tabs">
-    <button class="subtab${ejerciciosSubTab==='biblioteca'?' active':''}" data-tab="biblioteca" onclick="setEjerciciosSubTab('biblioteca')">📚 Biblioteca</button>
-    <button class="subtab${ejerciciosSubTab==='editar'?' active':''}" data-tab="editar" onclick="setEjerciciosSubTab('editar')">✏️ Editar workout</button>
+    <button class="subtab${ejerciciosSubTab==='biblioteca'?' active':''}" data-tab="biblioteca" onclick="setEjerciciosSubTab('biblioteca')">📚 Library</button>
+    <button class="subtab${ejerciciosSubTab==='editar'?' active':''}" data-tab="editar" onclick="setEjerciciosSubTab('editar')">✏️ Edit workout</button>
   </div>
   <div id="ej-sub-content"></div>`;
   if(ejerciciosSubTab==='biblioteca') renderLibrary();
@@ -2393,14 +2393,14 @@ function renderLibrary(){
   html+=`</div>`;
 
   if(libLoading[libCat]){
-    html+=`<div class="lib-fetch-bar"></div><div class="lib-loading"><div class="spin">⏳</div><div>Descargando base de datos…</div></div>`;
+    html+=`<div class="lib-fetch-bar"></div><div class="lib-loading"><div class="spin">⏳</div><div>Loading database…</div></div>`;
   } else if(libData[libCat]?.length){
     const count=libData[libCat].length;
-    html+=`<div style="font-size:10px;color:var(--muted);margin-bottom:10px">${count} ejercicios · ${cat.name}</div>`;
+    html+=`<div style="font-size:10px;color:var(--muted);margin-bottom:10px">${count} exercises · ${cat.name}</div>`;
     html+=`<div class="lib-grid">`;
     libData[libCat].forEach(ex=>{
       const safeId=String(ex.id);
-      const name=ex.name||'Ejercicio';
+      const name=ex.name||'Exercise';
       const imgUrl=ex.images?.[0]?.image||'';
       const isOpen=!!libExpanded[safeId];
       const svgThumb=muscleSVG(libCat,cat.color);
@@ -2431,16 +2431,16 @@ function renderLibrary(){
             :`<div style="border-radius:8px;background:#f8f6f3;height:120px;overflow:hidden;margin-bottom:12px">${muscleSVG(libCat,cat.color)}</div>`}
           ${ex.instructions?.length
             ?`<ol class="lib-steps-ordered">${ex.instructions.map(s=>`<li>${escHtml(s)}</li>`).join('')}</ol>`
-            :`<p style="font-size:12px;color:var(--muted)">Sin instrucciones disponibles.</p>`}
+            :`<p style="font-size:12px;color:var(--muted)">No instructions available.</p>`}
         </div>
       </div>`;
     });
     html+=`</div>`;
   } else if(libData[libCat]!==undefined){
-    html+=`<div class="lib-error">😕 Sin ejercicios para este grupo.<br><br>
-      <button class="data-btn import" onclick="forceFetchLibCat(${libCat})">Reintentar</button></div>`;
+    html+=`<div class="lib-error">😕 No exercises for this group.<br><br>
+      <button class="data-btn import" onclick="forceFetchLibCat(${libCat})">Retry</button></div>`;
   } else {
-    html+=`<div class="lib-loading"><div>Selecciona un grupo muscular</div></div>`;
+    html+=`<div class="lib-loading"><div>Select a muscle group</div></div>`;
   }
   cont.innerHTML=html;
 }
@@ -2572,7 +2572,7 @@ function renderPickerList(){
   if(bar)bar.style.display=anyLoading?'block':'none';
 
   if(!hasAny&&anyLoading){
-    listEl.innerHTML='<div class="picker-status">⏳ Cargando ejercicios…</div>';
+    listEl.innerHTML='<div class="picker-status">⏳ Loading exercises…</div>';
     return;
   }
 
@@ -2600,12 +2600,12 @@ function renderPickerList(){
 
     if(!pickerCat&&!q&&pool.length>5){
       html+=`<button class="picker-see-all" data-cat="${mc.id}" onclick="setPickerCat(${mc.id})">
-        Ver todos los ejercicios de ${mc.name} (${pool.length}) →
+        See all exercises for ${mc.name} (${pool.length}) →
       </button>`;
     }
   });
 
-  listEl.innerHTML=html||'<div class="picker-status">Sin resultados — usa el nombre libre ↓</div>';
+  listEl.innerHTML=html||'<div class="picker-status">No results — use a custom name ↓</div>';
 }
 
 // Reads data-exname from clicked element (avoids JS string-escaping in HTML attributes)
@@ -2618,11 +2618,11 @@ function pickExercise(name){
   sess.exercises.push({id:`ex_${Date.now()}`,name,sets:'3 × 10',note:'',unit:'kg'});
   pickerVisible=false; pickerCat=null;
   renderEditor();
-  showToast('✓ '+name+' añadido');
+  showToast('✓ '+name+' added');
 }
 function addFreeExercise(){
   const q=(document.getElementById('picker-search')?.value||'').trim();
-  pickExercise(q||'Nuevo ejercicio');
+  pickExercise(q||'New exercise');
 }
 
 // Build the full picker panel HTML (returns string, embedded in renderEditor)
@@ -2636,17 +2636,17 @@ function renderPickerPanel(){
   return`<div class="ex-picker">
     <div class="picker-top">
       <input class="picker-search-input" id="picker-search" type="search"
-        placeholder="🔍 Buscar ejercicio…" oninput="onPickerSearch()" autocomplete="off">
+        placeholder="🔍 Search exercise…" oninput="onPickerSearch()" autocomplete="off">
       <button class="picker-cancel-btn" onclick="hideExPicker()">✕</button>
     </div>
     <div id="picker-bar" class="picker-load-bar" style="display:none"></div>
     <div class="picker-cats">${pills}</div>
     <div class="picker-scroll">
-      <div id="picker-list"><div class="picker-status">Cargando…</div></div>
+      <div id="picker-list"><div class="picker-status">Loading…</div></div>
     </div>
     <div class="picker-free-row">
       <button class="picker-free-btn" onclick="addFreeExercise()">
-        ✏️ Añadir con nombre personalizado
+        ✏️ Add with custom name
       </button>
     </div>
   </div>`;
@@ -2659,14 +2659,14 @@ function renderEditor(){
 
   const curGoal=sess.goal||'hypertrophy';
   let html=`<div style="margin-bottom:8px">
-    <button onclick="setView('sesiones',null);document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sesiones</button>
+    <button onclick="setView('sesiones',null);document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sessions</button>
   </div>
   <div class="editor-section">
-    <h3>${sess.label} — Información básica</h3>
-    <p>Nombre y descripción que aparecen en el header.</p>
-    <input class="sess-name-input" type="text" id="ed-label" value="${escHtml(sess.label)}" placeholder="Nombre de la sesión">
-    <input class="sess-sub-input" type="text" id="ed-sub" value="${escHtml(sess.sub)}" placeholder="Descripción">
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px">Objetivo — tiempo de descanso</div>
+    <h3>${sess.label} — Basic info</h3>
+    <p>Name and description shown in the header.</p>
+    <input class="sess-name-input" type="text" id="ed-label" value="${escHtml(sess.label)}" placeholder="Session name">
+    <input class="sess-sub-input" type="text" id="ed-sub" value="${escHtml(sess.sub)}" placeholder="Description">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px">Goal — rest time</div>
     <div class="goal-grid">
       ${Object.entries(REST_BY_GOAL).map(([id,g])=>`
         <div class="goal-card${curGoal===id?' sel':''}" data-goal="${id}" onclick="selectGoal('${id}',this)"
@@ -2679,28 +2679,28 @@ function renderEditor(){
     </div>
   </div>
   <div class="editor-section">
-    <h3>Ejercicios</h3>
-    <p>Edita, reordena o añade ejercicios. El historial existente se conserva siempre.</p>
+    <h3>Exercises</h3>
+    <p>Edit, reorder, or add exercises. Existing history is always preserved.</p>
     <div class="ed-ex-list" id="ed-ex-list">`;
 
   sess.exercises.forEach((ex,idx)=>{ html+=renderEditorRow(ex,idx,sess.exercises.length); });
 
   html+=`</div>
-    ${pickerVisible ? renderPickerPanel() : `<button class="add-ex-btn" onclick="showExPicker()">＋ Añadir ejercicio</button>`}
-    <button class="save-plan-btn" onclick="saveEditorChanges()">💾 Guardar cambios</button>
+    ${pickerVisible ? renderPickerPanel() : `<button class="add-ex-btn" onclick="showExPicker()">＋ Add exercise</button>`}
+    <button class="save-plan-btn" onclick="saveEditorChanges()">💾 Save changes</button>
   </div>
   <div class="editor-section">
-    <h3>💪 Músculos</h3>
-    <p>Grupos musculares cubiertos por los ejercicios de esta sesión.</p>
+    <h3>💪 Muscles</h3>
+    <p>Muscle groups covered by this session's exercises.</p>
     <div style="display:flex;gap:14px;align-items:flex-start">
       ${renderMiniMuscleSVG(sess.exercises,72)||''}
       <div style="flex:1;padding-top:2px">${buildMuscleSummary(sess.exercises)}</div>
     </div>
   </div>
   <div class="editor-section" style="border-color:var(--danger)20">
-    <h3 style="color:var(--danger)">Zona peligrosa</h3>
-    <p>Elimina esta plantilla del programa. El historial de tus entrenamientos se conservará siempre en Historial.</p>
-    <button class="del-sess-btn" onclick="deleteSessionTemplate('${currentSession}')">🗑 Eliminar plantilla «${escHtml(sess.label)}»</button>
+    <h3 style="color:var(--danger)">Danger zone</h3>
+    <p>Delete this template from the program. Your workout history will always be preserved in History.</p>
+    <button class="del-sess-btn" onclick="deleteSessionTemplate('${currentSession}')">🗑 Delete template «${escHtml(sess.label)}»</button>
   </div>`;
   cont.innerHTML=html;
 
@@ -2714,18 +2714,18 @@ function renderEditorRow(ex,idx,total){
       <button class="ed-mv-btn" onclick="moveEditorEx(${idx},+1)" ${idx===total-1?'disabled':''}>▼</button>
     </div>
     <div class="ed-ex-fields">
-      <div class="ed-field"><label>Nombre</label>
+      <div class="ed-field"><label>Name</label>
         <div class="ex-search-wrap">
           <input class="ed-input" data-field="name" data-idx="${idx}" value="${escHtml(ex.name)}"
-            placeholder="Nombre o busca…"
+            placeholder="Name or search…"
             oninput="filterExDropdown(this,${idx})"
             autocomplete="off">
           <div class="ex-dropdown" id="ex-drop-${idx}"></div>
         </div>
       </div>
-      <div class="ed-field"><label>Series</label><input class="ed-input" data-field="sets" data-idx="${idx}" value="${escHtml(ex.sets)}" placeholder="ej: 4 × 8–10"></div>
-      <div class="ed-field"><label>Ref.</label><input class="ed-input" data-field="note" data-idx="${idx}" value="${escHtml(ex.note)}" placeholder="Referencia / peso"></div>
-      <div class="ed-field"><label>Unidad</label>
+      <div class="ed-field"><label>Sets</label><input class="ed-input" data-field="sets" data-idx="${idx}" value="${escHtml(ex.sets)}" placeholder="e.g. 4 × 8–10"></div>
+      <div class="ed-field"><label>Ref.</label><input class="ed-input" data-field="note" data-idx="${idx}" value="${escHtml(ex.note)}" placeholder="Reference / weight"></div>
+      <div class="ed-field"><label>Unit</label>
         <select class="ed-select" data-field="unit" data-idx="${idx}">
           <option value="kg" ${ex.unit==='kg'?'selected':''}>kg</option>
           <option value="min" ${ex.unit==='min'?'selected':''}>min</option>
@@ -2733,7 +2733,7 @@ function renderEditorRow(ex,idx,total){
         </select>
       </div>
     </div>
-    <button class="ed-del-btn" onclick="deleteEditorExercise(${idx})" title="Eliminar">×</button>
+    <button class="ed-del-btn" onclick="deleteEditorExercise(${idx})" title="Delete">×</button>
   </div>`;
 }
 
@@ -2741,9 +2741,9 @@ function addEditorExercise(){showExPicker();} // legacy alias
 
 function deleteEditorExercise(idx){
   const sess=workoutDefs[currentSession];
-  if(sess.exercises.length<=1){showToast('Debe haber al menos 1 ejercicio');return;}
+  if(sess.exercises.length<=1){showToast('Must have at least 1 exercise');return;}
   const ex=sess.exercises[idx];
-  if(!confirm(`¿Eliminar "${ex.name}"? El historial se conserva.`))return;
+  if(!confirm(`Delete "${ex.name}"? History is preserved.`))return;
   sess.exercises.splice(idx,1);
   renderEditor();
 }
@@ -2773,7 +2773,7 @@ function saveEditorChanges(){
     }
   });
   saveWorkoutDefs();
-  showToast('✓ Workout guardado');
+  showToast('✓ Workout saved');
   // Refresh log if on log view
   if(currentView==='log')renderLog();
 }
@@ -2795,7 +2795,7 @@ function renderData(){
     const color=workoutDefs[k]?.color||'var(--muted)';
     return`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px">
       <span style="font-weight:600;color:${color}">${escHtml(label)}</span>
-      <span style="color:var(--muted);font-family:'DM Mono',monospace">${count} entreno${count!==1?'s':''}</span>
+      <span style="color:var(--muted);font-family:'DM Mono',monospace">${count} workout${count!==1?'s':''}</span>
     </div>`;
   }).join('');
   const isStandalone=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
@@ -2803,20 +2803,20 @@ function renderData(){
   let syncSection='';
   if(currentUser){
     const dotCls=cloudStatus==='synced'?'green':cloudStatus==='syncing'?'blue':'red';
-    const syncLabel=cloudStatus==='synced'&&lastSyncTime?`Última sync: ${lastSyncTime.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`:cloudStatus==='syncing'?'Sincronizando…':'Error de sincronización';
+    const syncLabel=cloudStatus==='synced'&&lastSyncTime?`Last sync: ${lastSyncTime.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`:cloudStatus==='syncing'?'Syncing…':'Sync error';
     syncSection=`<div class="data-section">
-      <h3>☁️ Sincronización activa</h3>
+      <h3>☁️ Sync active</h3>
       <div class="sync-info"><div class="sync-dot ${dotCls}"></div><div><b>${currentUser.email}</b><br>${syncLabel}</div></div>
-      <button class="data-btn import" onclick="syncFromCloud()" style="margin-bottom:8px">🔄 Sincronizar ahora</button>
-      <button class="data-btn danger" onclick="signOutUser()">Cerrar sesión</button>
+      <button class="data-btn import" onclick="syncFromCloud()" style="margin-bottom:8px">🔄 Sync now</button>
+      <button class="data-btn danger" onclick="signOutUser()">Sign out</button>
     </div>`;
   } else {
     const pwa=_isStandalone();
     syncSection=`<div class="data-section">
-      <h3>☁️ Activar sincronización</h3>
+      <h3>☁️ Enable sync</h3>
       <p>${pwa
-        ?'Se abrirá una pestaña de Chrome para que inicies sesión. Cuando termines, vuelve aquí y toca "Ya inicié sesión".'
-        :'Inicia sesión con Google para sincronizar entre todos tus dispositivos.'}</p>
+        ?'A Chrome tab will open for you to sign in. When done, come back here and tap "Already signed in".'
+        :'Sign in with Google to sync across all your devices.'}</p>
       <button class="google-btn" onclick="signInWithGoogle()">
         <svg width="18" height="18" viewBox="0 0 48 48">
           <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.8 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.7 20-21 0-1.3-.2-2.7-.5-4z"/>
@@ -2824,48 +2824,48 @@ function renderData(){
           <path fill="#FBBC05" d="M24 45c5.6 0 10.4-1.8 14.1-5l-6.5-5.3C29.6 36.3 27 37 24 37c-5.7 0-10.6-3.1-13.1-7.6l-7 5.4C7.8 40.8 15.3 45 24 45z"/>
           <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.2-2.1 4-3.9 5.2l6.5 5.3c3.8-3.5 6.1-8.7 6.1-15 0-1.3-.2-2.7-.5-4z"/>
         </svg>
-        Iniciar sesión con Google
+        Sign in with Google
       </button>
       ${pwa?`<button class="data-btn import" onclick="recheckAuth()" style="margin-top:8px">
-        ✓ Ya inicié sesión — Actualizar
+        ✓ Already signed in — Refresh
       </button>`:''}
     </div>`;
   }
 
   document.getElementById('page-data').innerHTML=`
     <div class="data-section">
-      <h3>Resumen de datos</h3>
+      <h3>Data summary</h3>
       <div class="data-stats">
-        <div class="ds-item"><div class="ds-val">${total}</div><div class="ds-key">Total entrenos</div></div>
-        <div class="ds-item"><div class="ds-val">${sizeKb}KB</div><div class="ds-key">Tamaño</div></div>
+        <div class="ds-item"><div class="ds-val">${total}</div><div class="ds-key">Total workouts</div></div>
+        <div class="ds-item"><div class="ds-val">${sizeKb}KB</div><div class="ds-key">Size</div></div>
       </div>
       ${sessBreakdown?`<div style="margin-top:12px">${sessBreakdown}</div>`:''}
     </div>
     ${syncSection}
     ${renderWhoopDataSection()}
-    ${!isStandalone?`<div class="data-section"><h3>📱 Instalar en iPhone</h3>
+    ${!isStandalone?`<div class="data-section"><h3>📱 Install on iPhone</h3>
       <div class="install-steps">
-        <div class="install-step"><div class="step-num">1</div><div class="step-text">Toca <b>Compartir ⬆️</b> en Safari</div></div>
-        <div class="install-step"><div class="step-num">2</div><div class="step-text">Selecciona <b>Añadir a pantalla de inicio</b></div></div>
-        <div class="install-step"><div class="step-num">3</div><div class="step-text">Toca <b>Añadir</b></div></div>
+        <div class="install-step"><div class="step-num">1</div><div class="step-text">Tap <b>Share ⬆️</b> in Safari</div></div>
+        <div class="install-step"><div class="step-num">2</div><div class="step-text">Select <b>Add to Home Screen</b></div></div>
+        <div class="install-step"><div class="step-num">3</div><div class="step-text">Tap <b>Add</b></div></div>
       </div></div>`:''}
     <div class="data-section">
-      <h3>📤 Exportar datos</h3>
-      <p>Descarga un backup JSON con todas tus sesiones.</p>
-      <button class="data-btn export" onclick="exportData()">Descargar backup (.json)</button>
+      <h3>📤 Export data</h3>
+      <p>Download a JSON backup with all your sessions.</p>
+      <button class="data-btn export" onclick="exportData()">Download backup (.json)</button>
     </div>
     <div class="data-section">
-      <h3>📥 Importar datos</h3>
-      <p>Fusiona sesiones desde otro dispositivo o backup.</p>
-      <button class="data-btn import" onclick="importFromFile()" style="margin-bottom:8px">Seleccionar archivo .json</button>
-      <textarea class="import-area" id="import-text" placeholder='O pega aquí el JSON…'></textarea>
-      <button class="data-btn export" onclick="importFromText()">Importar datos</button>
+      <h3>📥 Import data</h3>
+      <p>Merge sessions from another device or backup.</p>
+      <button class="data-btn import" onclick="importFromFile()" style="margin-bottom:8px">Select .json file</button>
+      <textarea class="import-area" id="import-text" placeholder='Or paste JSON here…'></textarea>
+      <button class="data-btn export" onclick="importFromText()">Import data</button>
       <div class="msg" id="import-msg"></div>
     </div>
     <div class="data-section">
-      <h3>🗑️ Borrar todos los datos</h3>
-      <p>Elimina permanentemente todas las sesiones locales.</p>
-      <button class="data-btn danger" onclick="clearAllData()">Borrar todos los datos</button>
+      <h3>🗑️ Clear all data</h3>
+      <p>Permanently delete all local sessions.</p>
+      <button class="data-btn danger" onclick="clearAllData()">Clear all data</button>
     </div>`;
 }
 
@@ -2881,10 +2881,10 @@ function exportData(){
 function importFromText(){
   const text=document.getElementById('import-text').value.trim();
   const msg=document.getElementById('import-msg');
-  if(!text){showMsg(msg,'Pega el contenido JSON antes de importar','err');return;}
+  if(!text){showMsg(msg,'Paste JSON content before importing','err');return;}
   try{
     const parsed=JSON.parse(text);const count=Object.keys(parsed).length;
-    if(!count){showMsg(msg,'JSON vacío o formato incorrecto','err');return;}
+    if(!count){showMsg(msg,'Empty JSON or incorrect format','err');return;}
     allLogs={...allLogs,...parsed};saveAll();updateStats();
     if(currentUser&&fbDb){
       const batch=fbDb.batch();
@@ -2892,8 +2892,8 @@ function importFromText(){
       batch.commit().catch(console.error);
     }
     document.getElementById('import-text').value='';
-    showMsg(msg,`✓ ${count} sesiones importadas`,'ok');renderData();
-  }catch(e){showMsg(msg,'JSON inválido','err');}
+    showMsg(msg,`✓ ${count} sessions imported`,'ok');renderData();
+  }catch(e){showMsg(msg,'Invalid JSON','err');}
 }
 function importFromFile(){
   const input=document.createElement('input');input.type='file';input.accept='.json,application/json';
@@ -2903,7 +2903,7 @@ function importFromFile(){
   input.click();
 }
 function clearAllData(){
-  if(!confirm('¿Eliminar TODOS los datos? No se puede deshacer.'))return;
+  if(!confirm('Delete ALL data? This cannot be undone.'))return;
   allLogs={};saveAll();clearDraft();updateStats();renderData();
 }
 function showMsg(el,text,type){
@@ -2951,7 +2951,7 @@ function initFirebase(){
       if(e.code&&e.code!=='auth/no-auth-event'){
         console.error('Redirect error:',e);
         setCloudStatus('error');
-        showToast('⚠️ Error de autenticación: '+e.code);
+        showToast('⚠️ Authentication error: '+e.code);
       }
     });
 
@@ -2973,7 +2973,7 @@ function initFirebase(){
           currentUser=user;
           setCloudStatus('syncing');
           syncFromCloud().then(()=>render());
-          showToast('✓ Sesión detectada: '+user.email);
+          showToast('✓ Session detected: '+user.email);
         }
       }
     });
@@ -3042,10 +3042,10 @@ async function signInWithGoogle(){
     await fbAuth.signInWithPopup(provider);
   }catch(e){
     if(e.code==='auth/popup-blocked'){
-      showToast('Popup bloqueado — redirigiendo a Google…');
+      showToast('Popup blocked — redirecting to Google…');
       setTimeout(()=>fbAuth.signInWithRedirect(provider),400);
     } else if(!['auth/cancelled-popup-request','auth/popup-closed-by-user','auth/user-cancelled'].includes(e.code)){
-      showToast('⚠️ '+(e.message||'Error al iniciar sesión'));
+      showToast('⚠️ '+(e.message||'Sign-in error'));
     }
   }
 }
@@ -3058,14 +3058,14 @@ async function recheckAuth(){
     setCloudStatus('syncing');
     await syncFromCloud();
     render();
-    showToast('✓ Sesión iniciada: '+user.email);
+    showToast('✓ Signed in: '+user.email);
   } else {
-    showToast('Sin sesión detectada — inténtalo de nuevo');
+    showToast('No session detected — please try again');
   }
 }
 async function signOutUser(){
   if(!fbAuth)return;
-  if(!confirm('¿Cerrar sesión? Los datos locales se conservan.'))return;
+  if(!confirm('Sign out? Local data is preserved.'))return;
   await fbAuth.signOut();
 }
 function handleSyncChip(){
@@ -3075,8 +3075,8 @@ function handleSyncChip(){
 function setCloudStatus(status){
   cloudStatus=status;
   const chip=document.getElementById('sync-chip');if(!chip)return;
-  const label={'not-signed-in':'☁️ Iniciar sesión','syncing':'🔄 Sincronizando…',
-    'synced':`✓ ${currentUser?.email?.split('@')[0]??'Sincronizado'}`,'error':'⚠️ Reintentar'};
+  const label={'not-signed-in':'☁️ Sign in','syncing':'🔄 Syncing…',
+    'synced':`✓ ${currentUser?.email?.split('@')[0]??'Synced'}`,'error':'⚠️ Retry'};
   const cls={'not-signed-in':'','syncing':'syncing','synced':'signed-in','error':'error'};
   chip.textContent=label[status]??'';
   chip.className='sync-chip'+(cls[status]?' '+cls[status]:'');
@@ -3103,7 +3103,7 @@ function renderSesiones(){
   const cont=document.getElementById('page-sesiones');if(!cont)return;
 
   const keys=Object.keys(workoutDefs);
-  let html=`<div class="sess-page-title">Mis sesiones</div><div class="sess-cards">`;
+  let html=`<div class="sess-page-title">My sessions</div><div class="sess-cards">`;
 
   keys.forEach(key=>{
     const sess=workoutDefs[key];if(!sess||sess._deleted)return;
@@ -3111,7 +3111,7 @@ function renderSesiones(){
     // Last log for this session
     const logs=Object.values(allLogs).filter(l=>l.session===key).sort((a,b)=>b.date.localeCompare(a.date));
     const lastDate=logs[0]?.date;
-    const lastStr=lastDate?`Última: ${fmtDate(lastDate)}`:`Sin registros aún`;
+    const lastStr=lastDate?`Last: ${fmtDate(lastDate)}`:`No records yet`;
     html+=`<div class="sess-card">
       <div class="sess-card-accent" style="background:${color}"></div>
       <div class="sess-card-body">
@@ -3123,20 +3123,20 @@ function renderSesiones(){
           ${renderMiniMuscleSVG(exercises,52)||''}
         </div>
         <div class="sess-card-meta">
-          <span class="sess-card-pill">${exercises.length} ejercicios</span>
+          <span class="sess-card-pill">${exercises.length} exercises</span>
           <span class="sess-card-pill">${lastStr}</span>
-          ${logs.length?`<span class="sess-card-pill">${logs.length} sesión${logs.length>1?'es':''}</span>`:''}
+          ${logs.length?`<span class="sess-card-pill">${logs.length} session${logs.length>1?'s':''}</span>`:''}
         </div>
         <div class="sess-card-actions">
-          <button class="sess-btn-train" style="background:${color}" onclick="startSession('${key}')">▶ Entrenar</button>
-          <button class="sess-btn-edit" onclick="editSession('${key}')">✏️ Editar</button>
+          <button class="sess-btn-train" style="background:${color}" onclick="startSession('${key}')">▶ Train</button>
+          <button class="sess-btn-edit" onclick="editSession('${key}')">✏️ Edit</button>
         </div>
       </div>
     </div>`;
   });
 
   html+=`</div>
-  <button class="sess-new-btn" onclick="addNewSession()">＋ Nueva sesión</button>`;
+  <button class="sess-new-btn" onclick="addNewSession()">＋ New session</button>`;
   cont.innerHTML=html;
 }
 
@@ -3163,9 +3163,9 @@ function renderHome(){
 
   // Recovery label
   const rLabel=!hasRec?''
-    :r.score>=67?'Óptimo 🟢'
-    :r.score>=34?'Moderado 🟡'
-    :'Bajo 🔴';
+    :r.score>=67?'Optimal 🟢'
+    :r.score>=34?'Moderate 🟡'
+    :'Low 🔴';
 
   // Strain colour (WHOOP 0–21 scale)
   const sClr=lastStrain==null?'var(--muted)'
@@ -3181,7 +3181,7 @@ function renderHome(){
   const sleepM=sl.duration_min!=null?sl.duration_min%60:null;
   const sleepDurTxt=sleepH!=null?`${sleepH}h${sleepM>0?` ${sleepM}m`:''}`:null;
   const sleepConsTxt=sl.consistency!=null?`${Math.round(sl.consistency)}% cons.`:null;
-  const sleepSub=[sleepDurTxt,sleepConsTxt].filter(Boolean).join(' · ')||'anoche';
+  const sleepSub=[sleepDurTxt,sleepConsTxt].filter(Boolean).join(' · ')||'last night';
 
   // Weight: WHOOP body measurement takes priority, then manual
   const whoopKg=body.weight_kilogram;
@@ -3189,9 +3189,9 @@ function renderHome(){
   const weightVal=whoopKg!=null?(Math.round(whoopKg*10)/10)+' kg'
     :manualKg!=null?manualKg+' kg':'—';
   const bodyDate=body.body_date
-    ?new Date(body.body_date+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})
+    ?new Date(body.body_date+'T12:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})
     :null;
-  const weightSub=whoopKg!=null?(bodyDate||'WHOOP'):'toca para editar';
+  const weightSub=whoopKg!=null?(bodyDate||'WHOOP'):'tap to edit';
 
   // ── Hero card ────────────────────────────────────────────────
   let hero='';
@@ -3200,7 +3200,7 @@ function renderHome(){
     <div class="home-hero" style="background:${rBg};border-color:${rClr}40">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div class="home-hero-label">Recovery · Hoy</div>
+          <div class="home-hero-label">Recovery · Today</div>
           <div style="display:flex;align-items:flex-end;gap:3px;margin-top:2px">
             <div class="home-hero-score" style="color:${rClr}">${Math.round(r.score)}</div>
             <div style="font-size:18px;font-weight:700;color:${rClr};margin-bottom:10px">%</div>
@@ -3224,14 +3224,14 @@ function renderHome(){
   } else if(connected){
     hero=`<div class="home-hero" style="text-align:center;padding:24px">
       <div style="font-size:28px;margin-bottom:8px">⌚</div>
-      <div style="font-size:13px;font-weight:600;color:var(--ink2)">Sin datos de WHOOP aún</div>
-      <button onclick="refreshWhoopFromFirestore()" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⟳ Sincronizar</button>
+      <div style="font-size:13px;font-weight:600;color:var(--ink2)">No WHOOP data yet</div>
+      <button onclick="refreshWhoopFromFirestore()" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⟳ Sync</button>
     </div>`;
   } else {
     hero=`<div class="home-hero" style="text-align:center;padding:24px;border-style:dashed">
       <div style="font-size:28px;margin-bottom:8px">⌚</div>
-      <div style="font-size:13px;font-weight:600;color:var(--ink2)">Conecta WHOOP para ver recovery, HRV y sueño</div>
-      <button onclick="setView('data',null)" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Conectar →</button>
+      <div style="font-size:13px;font-weight:600;color:var(--ink2)">Connect WHOOP to see recovery, HRV and sleep</div>
+      <button onclick="setView('data',null)" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Connect →</button>
     </div>`;
   }
 
@@ -3241,18 +3241,18 @@ function renderHome(){
       <div class="home-tile-icon">💥</div>
       <div class="home-tile-val" style="color:${sClr}">${lastStrain!=null?lastStrain.toFixed(1):'—'}</div>
       <div class="home-tile-lbl">Strain</div>
-      <div class="home-tile-sub">${lastWODate?fmtDate(lastWODate):'sin datos'}</div>
+      <div class="home-tile-sub">${lastWODate?fmtDate(lastWODate):'no data'}</div>
     </div>
     <div class="home-tile">
       <div class="home-tile-icon">😴</div>
       <div class="home-tile-val" style="color:${spClr}">${sp!=null?sp+'%':'—'}</div>
-      <div class="home-tile-lbl">Sueño</div>
+      <div class="home-tile-lbl">Sleep</div>
       <div class="home-tile-sub">${sleepSub}</div>
     </div>
     <div class="home-tile" onclick="promptHomeWeight()" style="cursor:pointer">
       <div class="home-tile-icon">⚖️</div>
       <div class="home-tile-val">${weightVal}</div>
-      <div class="home-tile-lbl">Peso</div>
+      <div class="home-tile-lbl">Weight</div>
       <div class="home-tile-sub">${weightSub}</div>
     </div>
   </div>`;
@@ -3271,10 +3271,10 @@ function renderHome(){
 
 function promptHomeWeight(){
   const cur=localStorage.getItem('home_weight')||'';
-  const val=prompt('Introduce tu peso (kg):', cur);
+  const val=prompt('Enter your weight (kg):', cur);
   if(val===null) return;
   const n=parseFloat(val.replace(',','.'));
-  if(isNaN(n)||n<20||n>300){ showToast('Peso no válido'); return; }
+  if(isNaN(n)||n<20||n>300){ showToast('Invalid weight'); return; }
   localStorage.setItem('home_weight', n.toFixed(1));
   renderHome();
 }
@@ -3348,7 +3348,7 @@ async function genPKCE(){
 // ── OAuth flow ──────────────────────────────────────────────────
 async function whoopConnect(){
   try{
-    if(!wls('client_id')){ showToast('Introduce primero el Client ID'); return; }
+    if(!wls('client_id')){ showToast('Enter Client ID first'); return; }
     const {verifier,challenge} = await genPKCE();
     wsave('pkce', verifier);
     const params = {
@@ -3362,7 +3362,7 @@ async function whoopConnect(){
     window.location.href = url;
   }catch(err){
     console.error('[WHOOP] Connect error:', err);
-    showToast('⚠️ Error al conectar WHOOP: '+(err.message||err));
+    showToast('⚠️ Error connecting WHOOP: '+(err.message||err));
   }
 }
 
@@ -3375,11 +3375,11 @@ async function handleWhoopCallback(){
   if(whoopError){
     const desc = decodeURIComponent(p.get('error_description')||whoopError);
     console.error('[WHOOP] Auth rejected:', whoopError, desc);
-    alert('WHOOP rechazó la autorización:\n\n'+desc+'\n\nAsegúrate de que tu cuenta WHOOP está añadida como Test User en el Developer Portal.');
+    alert('WHOOP rejected the authorization:\n\n'+desc+'\n\nMake sure your WHOOP account is added as a Test User in the Developer Portal.');
     return true;
   }
   const code = p.get('code');
-  if(!code){ showToast('⚠️ WHOOP: autorización cancelada'); return true; }
+  if(!code){ showToast('⚠️ WHOOP: authorization cancelled'); return true; }
   try{
     const body = new URLSearchParams({
       grant_type:'authorization_code', code,
@@ -3388,7 +3388,7 @@ async function handleWhoopCallback(){
       code_verifier: wls('pkce'),
     });
     wclear('pkce');
-    if(!wls('worker_url')) throw new Error('Falta la URL del Worker — ver sección WHOOP en Datos');
+    if(!wls('worker_url')) throw new Error('Missing Worker URL — see WHOOP section in Data');
     const r = await fetch(whoopTokenUrl(), {method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
     if(!r.ok) throw new Error('HTTP '+r.status);
@@ -3396,10 +3396,10 @@ async function handleWhoopCallback(){
     wsave('access_token', t.access_token);
     wsave('refresh_token', t.refresh_token||'');
     wsave('token_expiry', Date.now()+(t.expires_in||3600)*1000);
-    showToast('✓ WHOOP conectado correctamente');
+    showToast('✓ WHOOP connected successfully');
     await syncWhoopAll(true);
   }catch(e){
-    showToast('⚠️ Error conectando WHOOP: '+(e.message||e));
+    showToast('⚠️ Error connecting WHOOP: '+(e.message||e));
     console.error('WHOOP token error:', e);
   }
   return true;
@@ -3504,14 +3504,14 @@ async function syncWhoopAll(quiet=false){
       syncWhoopWorkout(yest.toISOString().split('T')[0]),
       syncWhoopWorkout(today()),
     ]);
-    if(!quiet) showToast('✓ WHOOP sincronizado');
+    if(!quiet) showToast('✓ WHOOP synced');
     if(currentView==='home')   renderHome();
     if(currentView==='log')    renderLog();
     if(currentView==='data')   renderData();
     if(currentView==='history')renderHistory();
   }catch(e){
     console.error('WHOOP sync:', e);
-    if(!quiet) showToast('⚠️ Error sincronizando WHOOP');
+    if(!quiet) showToast('⚠️ Error syncing WHOOP');
   }
 }
 
@@ -3519,17 +3519,17 @@ async function saveWhoopCreds(){
   const cid=(document.getElementById('whoop-cid')?.value||'').trim();
   const cs =(document.getElementById('whoop-cs')?.value||'').trim();
   const wu =(document.getElementById('whoop-worker')?.value||'').trim();
-  if(!cid){ showToast('Client ID requerido'); return; }
-  if(!wu){ showToast('Worker URL requerida — despliega el Cloudflare Worker primero'); return; }
+  if(!cid){ showToast('Client ID required'); return; }
+  if(!wu){ showToast('Worker URL required — deploy the Cloudflare Worker first'); return; }
   wsave('client_id', cid); wsave('client_secret', cs); wsave('worker_url', wu);
   await whoopConnect();
 }
 
 function whoopDisconnect(){
-  if(!confirm('¿Desconectar WHOOP? Se borran los tokens del dispositivo.')) return;
+  if(!confirm('Disconnect WHOOP? Tokens will be deleted from this device.')) return;
   wclear('access_token','refresh_token','token_expiry','cache','pkce');
   _whoopCache=null;
-  showToast('WHOOP desconectado');
+  showToast('WHOOP disconnected');
   render();
 }
 
@@ -3544,17 +3544,17 @@ function renderWhoopRecoveryCard(){
   if(!isWhoopConnected()) return'';
   const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{};
   const lastSync=c.lastSync
-    ? new Date(c.lastSync).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}) : '';
+    ? new Date(c.lastSync).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : '';
   const hasData = r.score != null;
   return`<div class="whoop-card${hasData?' connected':''}">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${hasData?12:0}px">
-      <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">⌚ WHOOP · Hoy</span>
+      <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">⌚ WHOOP · Today</span>
       <button onclick="syncWhoopAll()" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit">
         ⟳${lastSync?' '+lastSync:''}
       </button>
     </div>
     ${!hasData
-      ? `<div style="font-size:12px;color:var(--muted)">Sin datos aún — toca ⟳ para sincronizar</div>`
+      ? `<div style="font-size:12px;color:var(--muted)">No data yet — tap ⟳ to sync</div>`
       : `<div style="display:flex;gap:0;align-items:center">
           <div style="text-align:center;padding-right:14px;margin-right:14px;border-right:1px solid var(--line);flex-shrink:0">
             <div style="font-size:38px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;color:${recoveryColor(r.score)}">${Math.round(r.score)}</div>
@@ -3564,7 +3564,7 @@ function renderWhoopRecoveryCard(){
             ${[
               ['HRV', r.hrv!=null?Math.round(r.hrv)+'ms':'—'],
               ['RHR', r.rhr!=null?Math.round(r.rhr)+' bpm':'—'],
-              ['Sueño',sl.performance!=null?Math.round(sl.performance)+'%':'—'],
+              ['Sleep',sl.performance!=null?Math.round(sl.performance)+'%':'—'],
               ['SpO₂', r.spo2!=null?Math.round(r.spo2)+'%':'—'],
             ].map(([l,v])=>`<div class="whoop-metric">
               <div class="whoop-metric-val">${v}</div>
@@ -3588,13 +3588,13 @@ function renderWhoopStrainBadge(date){
 
 // Refresh WHOOP data from Firestore (replaces browser-based syncWhoopAll for UI buttons)
 async function refreshWhoopFromFirestore(){
-  showToast('Actualizando datos WHOOP…',1500);
+  showToast('Updating WHOOP data…',1500);
   try{
     await loadWhoopFromFirestore();
-    showToast('✓ Datos WHOOP actualizados');
+    showToast('✓ WHOOP data updated');
     if(currentView==='data') renderData();
   }catch(e){
-    showToast('⚠️ Error al cargar datos WHOOP');
+    showToast('⚠️ Error loading WHOOP data');
   }
 }
 
@@ -3602,8 +3602,8 @@ function renderWhoopDataSection(){
   const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{}, body=c.body||{};
   const hasData=r.score!=null||sl.performance!=null||body.weight_kilogram!=null;
   const lastSync=c.lastSync
-    ? new Date(c.lastSync).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
-    : 'Nunca';
+    ? new Date(c.lastSync).toLocaleString('en-US',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+    : 'Never';
   return`
     <div class="data-section" style="${hasData?'border-color:#3CE0A070':''}">
       <h3 style="display:flex;align-items:center;justify-content:space-between">
@@ -3611,16 +3611,16 @@ function renderWhoopDataSection(){
         <span style="font-size:10px;color:var(--muted);font-weight:400">sync: ${lastSync}</span>
       </h3>
       <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
-        Los datos llegan automáticamente desde <code>sync.py</code> en tu Mac (cron 6–9h). Toca el botón para refrescar ahora.
+        Data arrives automatically from <code>sync.py</code> on your Mac (cron 6–9h). Tap the button to refresh now.
       </p>
       ${hasData?`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.8">
         ${r.score!=null?`Recovery: <b style="color:${recoveryColor(r.score)}">${Math.round(r.score)}%</b>`:''}
         ${r.hrv!=null?` · HRV: <b>${Math.round(r.hrv)} ms</b>`:''}
         ${r.rhr!=null?` · RHR: <b>${Math.round(r.rhr)} bpm</b>`:''}
-        ${sl.performance!=null?`<br>Sueño: <b>${Math.round(sl.performance)}%</b>`:''}
-        ${body.weight_kilogram!=null?` · Peso: <b>${body.weight_kilogram} kg</b>`:''}
-      </div>`:`<p style="font-size:12px;color:var(--muted)">Sin datos aún. Ejecuta <code>python sync.py</code> en tu Mac.</p>`}
-      <button class="data-btn import" onclick="refreshWhoopFromFirestore()">⟳ Actualizar desde Firestore</button>
+        ${sl.performance!=null?`<br>Sleep: <b>${Math.round(sl.performance)}%</b>`:''}
+        ${body.weight_kilogram!=null?` · Weight: <b>${body.weight_kilogram} kg</b>`:''}
+      </div>`:`<p style="font-size:12px;color:var(--muted)">No data yet. Run <code>python sync.py</code> on your Mac.</p>`}
+      <button class="data-btn import" onclick="refreshWhoopFromFirestore()">⟳ Refresh from Firestore</button>
     </div>`;
 }
 
