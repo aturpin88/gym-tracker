@@ -47,13 +47,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .stab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;}
 .stab:hover:not(.active){color:rgba(232,232,240,.65);}
 
-/* ── VIEW TABS ── */
-.view-tabs{background:#06060C;border-bottom:1px solid var(--line);padding:0 12px;display:flex;gap:0;position:sticky;top:88px;z-index:199;overflow-x:auto;}
-.vtab{background:none;border:none;cursor:pointer;padding:12px 10px;font-size:10px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0;letter-spacing:.8px;text-transform:uppercase;}
-.vtab.active{color:var(--accent);border-bottom-color:var(--accent);}
-
+/* ── VIEW TABS (hidden — bottom nav replaces) ── */
+.view-tabs{display:none;}
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#06060C;border-top:1px solid var(--line);display:flex;align-items:stretch;z-index:249;padding-bottom:env(safe-area-inset-bottom);}
+.bnav-btn{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px 8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;transition:color .15s;-webkit-tap-highlight-color:transparent;min-height:52px;position:relative;}
+.bnav-btn svg{width:21px;height:21px;flex-shrink:0;}
+.bnav-btn span{line-height:1;}
+.bnav-btn.active{color:var(--accent);}
+.bnav-btn.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:20px;height:2px;border-radius:0 0 2px 2px;background:var(--accent);}
 /* ── CONTENT ── */
-.content{padding:16px 16px 110px;}
+.content{padding:16px 16px 140px;}
 .page{display:none;}.page.active{display:block;}
 
 /* ── SESSION BANNER ── */
@@ -186,18 +190,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .goal-card-rest{font-size:11px;margin-top:2px;opacity:.75;font-family:'DM Mono',monospace;}
 .goal-card-desc{font-size:10px;margin-top:3px;opacity:.55;line-height:1.3;}
 
-/* ── WHOOP ── */
-.whoop-card{background:var(--white);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;margin:8px 16px 0;}
-.whoop-card.connected{border-color:#3CE0A070;}
-.whoop-cfg-row{display:flex;flex-direction:column;gap:6px;margin:10px 0;}
-.whoop-cfg-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-.whoop-cfg-input{border:1.5px solid var(--line);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Mono',monospace;color:var(--ink);background:var(--bg);width:100%;}
-.whoop-cfg-input:focus{outline:none;border-color:var(--ink);}
-.whoop-strain-badge{display:inline-flex;align-items:center;gap:5px;background:var(--bg);color:#3CE0A0;border:1px solid rgba(60,224,160,.2);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;}
-.hist-strain-row{display:flex;align-items:center;gap:8px;padding:6px 14px 4px;border-top:1px solid var(--line);}
-.whoop-metric{display:flex;flex-direction:column;gap:1px;}
-.whoop-metric-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);}
-.whoop-metric-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 
 /* ── HOME PAGE ── */
 .home-hero{border-radius:14px;padding:18px 18px 14px;margin-bottom:12px;background:var(--white);border:1px solid var(--line);}
@@ -215,6 +207,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .home-tile-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:800;color:var(--ink);line-height:1.1;}
 .home-tile-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:5px;}
 .home-tile-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+.hist-strain-row{display:flex;align-items:center;gap:8px;padding:6px 14px 4px;border-top:1px solid var(--line);}
+/* ── HOME v2 stat tiles ── */
+.home-stat-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.home-stat-tile{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:14px 10px;text-align:center;}
+.hst-val{font-family:'DM Mono',monospace;font-size:22px;font-weight:700;line-height:1;margin-bottom:5px;}
+.hst-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);}
+.home-sess-card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px;}
 
 /* ── SESIONES PAGE ── */
 .sess-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
@@ -246,7 +245,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* ── SAVE BAR ── */
-.save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--line);padding:12px 16px;z-index:300;padding-bottom:max(12px,env(safe-area-inset-bottom));}
+.save-bar{position:fixed;bottom:calc(52px + env(safe-area-inset-bottom));left:0;right:0;background:var(--white);border-top:1px solid var(--line);padding:12px 16px;z-index:300;}
 .save-btn{width:100%;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;transition:background .3s,transform .1s;font-family:'DM Sans',sans-serif;color:#fff;letter-spacing:.3px;}
 .save-btn:active{transform:scale(.98);}
 
@@ -492,14 +491,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   </div>
 </div>
 
-<div class="view-tabs">
-  <button class="vtab active" onclick="setView('home',event)">🏠 Home</button>
-  <button class="vtab" onclick="setView('sesiones',event)">🗓️ Sessions</button>
-  <button class="vtab" onclick="setView('history',event)">📋 History</button>
-  <button class="vtab" onclick="setView('charts',event)">📈 Progress</button>
-  <button class="vtab" onclick="setView('ejercicios',event)">🏋️ Exercises</button>
-  <button class="vtab" onclick="setView('data',event)">⚙️ Data</button>
-</div>
 
 <div class="content">
   <div class="page active" id="page-home"></div>
@@ -986,17 +977,19 @@ function setSession(s){
   currentSession=s;selectedChartEx=null;adhocExercises=[];adhocShowForm=false;
   loadFormFromLogs();render();
 }
+function setNavActive(v){
+  document.querySelectorAll('.vtab,.bnav-btn').forEach(t=>t.classList.remove('active'));
+  const b=document.getElementById('bnav-'+v);
+  if(b)b.classList.add('active');
+}
 function setView(v,e){
   currentView=v;
-  document.querySelectorAll('.vtab').forEach(t=>t.classList.remove('active'));
-  if(e?.target)e.target.classList.add('active');
+  setNavActive(v);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=document.getElementById('page-'+v);
   if(pg)pg.classList.add('active');
   document.getElementById('save-bar').style.display=v==='log'?'block':'none';
   render();
-  // Auto-refresh WHOOP data from Firestore when navigating to Home
-  if(v==='home') loadWhoopFromFirestore().catch(()=>{});
 }
 // Navigate to log view for a session (called from Sesiones cards)
 function startSession(key){
@@ -1004,7 +997,7 @@ function startSession(key){
   selectedChartEx=null;adhocExercises=[];adhocShowForm=false;
   loadFormFromLogs();
   currentView='log';
-  document.querySelectorAll('.vtab').forEach(t=>t.classList.remove('active'));
+  setNavActive(null);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-log').classList.add('active');
   document.getElementById('save-bar').style.display='block';
@@ -1015,7 +1008,6 @@ function editSession(key){
   currentSession=key;
   selectedChartEx=null;
   setView('ejercicios',null);
-  document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===4));
   ejerciciosSubTab='editar';
   renderEjercicios();
 }
@@ -1153,7 +1145,7 @@ function renderLog(){
 
   let html=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-      <button onclick="setView('sesiones',null);document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sessions</button>
+      <button onclick="setView('sesiones',null)" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sessions</button>
     </div>
     <div class="session-banner" style="background:${color}">
       <div><div class="sb-title">${sess.label}</div><div class="sb-sub">${sess.sub}</div></div>
@@ -1172,7 +1164,6 @@ function renderLog(){
       <span class="sv-label">Session volume</span>
       <span class="sv-val">${sessVol>0?fmtVol(sessVol)+' total':'—'}</span>
     </div>
-    ${renderWhoopRecoveryCard()}
     ${renderRestChip()}
     <div class="sess-time-row">
       <div class="sess-time-block">
@@ -1480,8 +1471,7 @@ function heatmapTap(date){
   const firstSess=d.sessions.slice().sort()[0];
   expandedLog=`${firstSess}_${date}`;
   currentView='history';
-  document.querySelectorAll('.vtab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.vtab').forEach((t,i)=>{if(i===2)t.classList.add('active');});
+  setNavActive('history');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-history').classList.add('active');
   document.getElementById('save-bar').style.display='none';
@@ -1517,7 +1507,7 @@ function renderHistory(){
         <div style="flex:1;min-width:0">
           <div class="hist-date" style="display:flex;align-items:center;gap:7px">
             <span style="font-size:10px;font-weight:800;color:#fff;background:${color};padding:2px 7px;border-radius:4px;flex-shrink:0">${log.session}</span>
-            ${fmtDate(log.date)} ${renderWhoopStrainBadge(log.date,log.manualStrain)}
+            ${fmtDate(log.date)}
           </div>
           <div class="hist-sub">${sess.label} · ${exWithData.length} exercises${totalVol>0?' · '+fmtVol(totalVol):''}</div>
         </div>
@@ -1547,13 +1537,8 @@ function renderHistBody(log,sess,color){
     </div>
     <span class="sess-time-dur" id="hist-dur-${log.session}-${log.date}">${log.startTime&&log.endTime?fmtDuration(log.startTime,log.endTime):''}</span>
   </div>
-  <div class="hist-strain-row">
-    <span class="hist-time-label">STRAIN</span>
-    <input type="number" min="0" max="21" step="0.1" class="hist-time-input" style="width:60px;text-align:center"
-      value="${log.manualStrain??''}" placeholder="0–21"
-      onchange="editLogStrain('${log.session}','${log.date}',this.value)">
-    <span style="font-size:10px;color:var(--muted);margin-left:2px">/ 21</span>
-  </div>`;
+  ${renderHistDailyMetrics(log.date)}
+  `;
   for(const ex of sess.exercises){
     const d=log.data[ex.id];
     if(!d?.sets?.some(s=>s.weight||s.reps))continue;
@@ -1596,42 +1581,6 @@ function renderHistBody(log,sess,color){
       ${vol>0?`<div class="hist-vol">Vol: ${fmtVol(vol)}</div>`:''}
     </div>`;
   }
-  // ── Zonas FC (datos WHOOP para esa fecha) ─────────────────────
-  const wData=(getWhoopCache().workouts||{})[log.date];
-  const wZones=wData?.zones;
-  const maxHR=(getWhoopCache().body||{}).max_heart_rate||190;
-  if(wZones){
-    const total=(wZones.z0||0)+(wZones.z1||0)+(wZones.z2||0)+(wZones.z3||0)+(wZones.z4||0)+(wZones.z5||0);
-    if(total>0){
-      const maxMin=Math.max(wZones.z0||0,wZones.z1||0,wZones.z2||0,wZones.z3||0,wZones.z4||0,wZones.z5||0);
-      const mhr=Math.round(maxHR);
-      const zDef=[
-        {lbl:'Z5',col:'#EF4444',min:wZones.z5||0,range:`>${Math.round(0.95*mhr)} bpm`},
-        {lbl:'Z4',col:'#F97316',min:wZones.z4||0,range:`${Math.round(0.90*mhr)}–${Math.round(0.95*mhr)} bpm`},
-        {lbl:'Z3',col:'#FBBF24',min:wZones.z3||0,range:`${Math.round(0.80*mhr)}–${Math.round(0.90*mhr)} bpm`},
-        {lbl:'Z2',col:'#34D399',min:wZones.z2||0,range:`${Math.round(0.70*mhr)}–${Math.round(0.80*mhr)} bpm`},
-        {lbl:'Z1',col:'#60A5FA',min:wZones.z1||0,range:`${Math.round(0.60*mhr)}–${Math.round(0.70*mhr)} bpm`},
-        {lbl:'Z0',col:'#9CA3AF',min:wZones.z0||0,range:`<${Math.round(0.60*mhr)} bpm`},
-      ];
-      const rows=zDef.map(({lbl,col,min,range})=>{
-        const pct=maxMin>0?Math.round((min/maxMin)*100):0;
-        const minTxt=min>0?`<span style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;padding:0 6px">${min}m</span>`:'';
-        return `<div style="display:grid;grid-template-columns:28px 1fr 90px;gap:6px;align-items:center;margin-bottom:5px">
-          <div style="font-size:10px;font-weight:700;color:${col}">${lbl}</div>
-          <div style="background:#f0f0f0;border-radius:3px;height:20px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:${col};border-radius:3px;display:flex;align-items:center;min-width:${min>0?'8px':'0'}">${minTxt}</div>
-          </div>
-          <div style="font-size:9px;color:var(--muted);text-align:right;line-height:1.4">${range}</div>
-        </div>`;
-      }).join('');
-      const sportLbl=wData.sport?(wData.sport.replace(/_/g,' ')+' · '):'';
-      html+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">⚡ ${sportLbl}HR Zones</div>
-        ${rows}
-      </div>`;
-    }
-  }
-
   html+=`<button class="hist-del-btn" onclick="deleteLog('${log.session}','${log.date}')">🗑 Delete session</button>`;
   return html;
 }
@@ -1652,7 +1601,6 @@ function deleteSessionTemplate(key){
   workoutDefs[key]._archived=true;
   saveWorkoutDefs();
   setView('sesiones',null);
-  document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1));
   renderSesiones();
   showToast('Template archived. Restore it in Sessions.');
 }
@@ -1749,7 +1697,7 @@ function editLogStrain(session,date,val){
   if(!allLogs[key])return;
   const v=parseFloat(val);
   allLogs[key].manualStrain=(isNaN(v)||val==='')?null:Math.min(21,Math.max(0,v));
-  saveAll();saveToCloud(key);renderHistory();
+  saveAll();saveToCloud(key);
 }
 async function updateAdHocSearch(val){
   adhocSearchQuery=val;
@@ -2740,7 +2688,7 @@ function renderEditor(){
 
   const curGoal=sess.goal||'hypertrophy';
   let html=`<div style="margin-bottom:8px">
-    <button onclick="setView('sesiones',null);document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sessions</button>
+    <button onclick="setView('sesiones',null)" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:0;font-family:inherit">← Sessions</button>
   </div>
   <div class="editor-section">
     <h3>${sess.label} — Basic info</h3>
@@ -2923,7 +2871,6 @@ function renderData(){
       ${sessBreakdown?`<div style="margin-top:12px">${sessBreakdown}</div>`:''}
     </div>
     ${syncSection}
-    ${renderWhoopDataSection()}
     ${!isStandalone?`<div class="data-section"><h3>📱 Install on iPhone</h3>
       <div class="install-steps">
         <div class="install-step"><div class="step-num">1</div><div class="step-text">Tap <b>Share ⬆️</b> in Safari</div></div>
@@ -3091,8 +3038,6 @@ async function syncFromCloud(){
     updateStats();render();
     lastSyncTime=new Date();setCloudStatus('synced');
 
-    // Load WHOOP data written by the Python sync script (non-blocking)
-    loadWhoopFromFirestore().catch(()=>{});
   }catch(e){console.error('Sync error:',e);setCloudStatus('error');}
 }
 
@@ -3244,118 +3189,10 @@ function renderSesiones(){
 // HOME PAGE
 // ─────────────────────────────────────────────────────────────────
 function renderHome(){
-  const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{}, body=c.body||{};
-  const hasRec=r.score!=null;
-  // Show WHOOP data if browser-connected OR if Firestore pipeline has written any data
-  const hasAnyData=hasRec||sl.performance!=null||body.weight_kilogram!=null;
-  const connected=isWhoopConnected()||hasAnyData;
-
-  // Last strain: most recent workout date with a strain value
-  const workouts=c.workouts||{};
-  const lastWODate=Object.keys(workouts).sort().reverse().find(d=>workouts[d]?.strain!=null);
-  const lastStrain=lastWODate!=null?workouts[lastWODate].strain:null;
-
-  // Recovery colour helpers
-  const rClr=recoveryColor(r.score);
-  const rBg=hasRec
-    ?`color-mix(in srgb, ${rClr} 12%, var(--white))`
-    :'var(--white)';
-
-  // Recovery label
-  const rLabel=!hasRec?''
-    :r.score>=67?'Optimal 🟢'
-    :r.score>=34?'Moderate 🟡'
-    :'Low 🔴';
-
-  // Strain colour (WHOOP 0–21 scale)
-  const sClr=lastStrain==null?'var(--muted)'
-    :lastStrain>=18?'#E84040'
-    :lastStrain>=14?'#F5A623'
-    :lastStrain>=9?'#F5C842':'#3CE0A0';
-
-  // Sleep colour
-  const sp=sl.performance!=null?Math.round(sl.performance):null;
-  const spClr=sp==null?'var(--muted)':sp>=85?'#3CE0A0':sp>=70?'#F5C842':'#E84040';
-  // Sleep sub: duration + consistency
-  const sleepH=sl.duration_min!=null?Math.floor(sl.duration_min/60):null;
-  const sleepM=sl.duration_min!=null?sl.duration_min%60:null;
-  const sleepDurTxt=sleepH!=null?`${sleepH}h${sleepM>0?` ${sleepM}m`:''}`:null;
-  const sleepConsTxt=sl.consistency!=null?`${Math.round(sl.consistency)}% cons.`:null;
-  const sleepSub=[sleepDurTxt,sleepConsTxt].filter(Boolean).join(' · ')||'last night';
-
-  // Weight: WHOOP body measurement takes priority, then manual
-  const whoopKg=body.weight_kilogram;
-  const manualKg=localStorage.getItem('home_weight');
-  const weightVal=whoopKg!=null?(Math.round(whoopKg*10)/10)+' kg'
-    :manualKg!=null?manualKg+' kg':'—';
-  const bodyDate=body.body_date
-    ?new Date(body.body_date+'T12:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})
-    :null;
-  const weightSub=whoopKg!=null?(bodyDate||'WHOOP'):'tap to edit';
-
-  // ── Hero card ────────────────────────────────────────────────
-  let hero='';
-  if(connected&&hasRec){
-    hero=`
-    <div class="home-hero" style="background:${rBg};border-color:${rClr}40">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <div class="home-hero-label">Recovery · Today</div>
-          <div style="display:flex;align-items:flex-end;gap:3px;margin-top:2px">
-            <div class="home-hero-score" style="color:${rClr}">${Math.round(r.score)}</div>
-            <div style="font-size:18px;font-weight:700;color:${rClr};margin-bottom:10px">%</div>
-          </div>
-          <span style="font-size:11px;font-weight:700;color:${rClr};background:${rClr}18;padding:2px 10px;border-radius:20px;display:inline-block">${rLabel}</span>
-        </div>
-        <button onclick="refreshWhoopFromFirestore()" style="background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit">⟳ sync</button>
-      </div>
-      <hr class="home-hero-divider">
-      <div class="home-hero-metrics">
-        ${[
-          ['HRV', r.hrv!=null?Math.round(r.hrv)+' ms':'—'],
-          ['RHR', r.rhr!=null?Math.round(r.rhr)+' bpm':'—'],
-          ['SpO₂', r.spo2!=null?r.spo2.toFixed(1)+'%':'—'],
-        ].map(([l,v])=>`<div class="home-hero-metric">
-          <div class="home-hero-mval">${v}</div>
-          <div class="home-hero-mlbl">${l}</div>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  } else if(connected){
-    hero=`<div class="home-hero" style="text-align:center;padding:24px">
-      <div style="font-size:28px;margin-bottom:8px">⌚</div>
-      <div style="font-size:13px;font-weight:600;color:var(--ink2)">No WHOOP data yet</div>
-      <button onclick="refreshWhoopFromFirestore()" style="margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⟳ Sync</button>
-    </div>`;
-  } else {
-    hero=`<div class="home-hero" style="text-align:center;padding:24px;border-style:dashed">
-      <div style="font-size:28px;margin-bottom:8px">⌚</div>
-      <div style="font-size:13px;font-weight:600;color:var(--ink2)">Connect WHOOP to see recovery, HRV and sleep</div>
-      <button onclick="setView('data',null)" style="margin-top:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Connect →</button>
-    </div>`;
-  }
-
-  // ── Tiles ─────────────────────────────────────────────────────
-  const tiles=`<div class="home-tiles">
-    <div class="home-tile">
-      <div class="home-tile-icon">💥</div>
-      <div class="home-tile-val" style="color:${sClr}">${lastStrain!=null?lastStrain.toFixed(1):'—'}</div>
-      <div class="home-tile-lbl">Strain</div>
-      <div class="home-tile-sub">${lastWODate?fmtDate(lastWODate):'no data'}</div>
-    </div>
-    <div class="home-tile">
-      <div class="home-tile-icon">😴</div>
-      <div class="home-tile-val" style="color:${spClr}">${sp!=null?sp+'%':'—'}</div>
-      <div class="home-tile-lbl">Sleep</div>
-      <div class="home-tile-sub">${sleepSub}</div>
-    </div>
-    <div class="home-tile" onclick="promptHomeWeight()" style="cursor:pointer">
-      <div class="home-tile-icon">⚖️</div>
-      <div class="home-tile-val">${weightVal}</div>
-      <div class="home-tile-lbl">Weight</div>
-      <div class="home-tile-sub">${weightSub}</div>
-    </div>
-  </div>`;
+  // ── Daily metrics (manual entry) ─────────────────────────────
+  const dm=getDailyMetrics(today());
+  const rClr=recoveryColor(dm.recovery);
+  const sClr=dm.strain==null?'var(--muted)':dm.strain>=18?'#E84040':dm.strain>=14?'#F5A623':dm.strain>=9?'#F5C842':'#3CE0A0';
 
   // ── Greeting ──────────────────────────────────────────────────
   const now=new Date();
@@ -3363,47 +3200,76 @@ function renderHome(){
   const greetWord=hr<12?'morning':hr<18?'afternoon':'evening';
   const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateLabel=`${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+  const dateLabel=`${days[now.getDay()]}, ${months[now.getMonth()].toUpperCase()} ${now.getDate()}`;
   const greeting=`
-    <div style="margin-bottom:22px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">${dateLabel}</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:30px;font-weight:400;color:var(--ink);line-height:1.1">Good <em style="color:var(--accent);font-style:italic">${greetWord}.</em></div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">${dateLabel}</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:40px;font-weight:800;color:var(--ink);line-height:1.05">Good ${greetWord}.</div>
     </div>`;
 
-  // ── Next session hero card ─────────────────────────────────────
+  // ── Daily metrics tiles (tap to edit) ────────────────────────
+  const statTiles=`
+    <div class="home-stat-tiles">
+      <div class="home-stat-tile" onclick="editDailyMetric('recovery')" style="cursor:pointer">
+        <div class="hst-val" style="color:${dm.recovery!=null?rClr:'var(--muted)'}">${dm.recovery!=null?dm.recovery:'—'}</div>
+        <div class="hst-lbl">Recovery</div>
+      </div>
+      <div class="home-stat-tile" onclick="editDailyMetric('sleep')" style="cursor:pointer">
+        <div class="hst-val">${dm.sleep||'—'}</div>
+        <div class="hst-lbl">Sleep</div>
+      </div>
+      <div class="home-stat-tile" onclick="editDailyMetric('strain')" style="cursor:pointer">
+        <div class="hst-val" style="color:${dm.strain!=null?sClr:'var(--muted)'}">${dm.strain!=null?dm.strain.toFixed(1):'—'}</div>
+        <div class="hst-lbl">Strain</div>
+      </div>
+    </div>`;
+
+  // ── Today's session card ──────────────────────────────────────
   const sess=workoutDefs[currentSession];
-  const _sc=sess?.color||'#E85010';
   const exCount=(sess?.exercises||[]).length;
   const lastSessEntry=Object.values(allLogs).filter(l=>l.session===currentSession).sort((a,b)=>b.date.localeCompare(a.date))[0];
   const lastSessDaysAgo=lastSessEntry?Math.round((Date.now()-new Date(lastSessEntry.date+'T12:00').getTime())/(86400000)):null;
-  const lastSessLabel=lastSessDaysAgo===0?'Today':lastSessDaysAgo===1?'Yesterday':lastSessDaysAgo!=null?`${lastSessDaysAgo} days ago`:'Never';
-  const restGoalInfo=getRestGoal();
-  const nextSessionCard=sess?`
-    <div style="border-radius:16px;overflow:hidden;margin-bottom:14px;">
-      <div style="background:${sess.color};padding:18px 18px 16px">
-        <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:4px">Next up</div>
-        <div style="font-size:20px;font-weight:800;color:#fff;line-height:1.1">${sess.label}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">${sess.sub}</div>
-        <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
-          <div style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;color:rgba(255,255,255,.75)">${restGoalInfo.emoji} ${restGoalInfo.label}</div>
-          <div style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;color:rgba(255,255,255,.75)">${exCount} exercises</div>
+  const lastSessLabel=lastSessDaysAgo===0?'Today':lastSessDaysAgo===1?'Yesterday':lastSessDaysAgo!=null?`${lastSessDaysAgo}d ago`:'Never';
+  // Estimate session duration from exercise count + rest goal
+  const restSec=getRestGoal().rest;
+  const estMin=exCount>0?Math.round(exCount*3*(35+restSec)/60):0;
+  // Last session volume
+  const lastVol=lastSessEntry
+    ?(workoutDefs[currentSession]?.exercises||[]).reduce((t,ex)=>{
+        const sets=(lastSessEntry.data||{})[ex.id]?.sets||[];
+        return t+sets.reduce((st,s)=>st+(parseFloat(s.weight)||0)*(parseInt(s.reps)||0),0);
+      },0):0;
+
+  const sessCard=sess?`
+    <div class="home-sess-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted)">Today's Session</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:var(--gold)">${lastSessLabel}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:24px;font-weight:800;color:var(--ink);line-height:1.1">${sess.label}</div>
+        <div style="background:${sess.color};border-radius:8px;padding:6px 10px;text-align:center;flex-shrink:0">
+          <div style="font-family:'DM Mono',monospace;font-size:17px;font-weight:800;color:#fff;line-height:1">${exCount}</div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,.65);letter-spacing:.5px">Ex.</div>
         </div>
       </div>
-      <div style="background:var(--white);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-top:none;border-radius:0 0 16px 16px">
-        <button onclick="setView('log',null)" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.2px">Start session →</button>
-        <div style="text-align:right">
-          <div style="font-size:13px;font-weight:700;color:var(--gold);font-family:'DM Mono',monospace">${lastSessLabel}</div>
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:2px">Last trained</div>
-        </div>
-      </div>
+      <div style="font-size:12px;color:var(--ink2);margin-bottom:${estMin>0||lastVol>0?'12px':'16px'}">${sess.sub}</div>
+      ${estMin>0||lastVol>0?`<div style="display:flex;gap:16px;margin-bottom:16px">
+        ${estMin>0?`<div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+          ~${estMin} min</div>`:''}
+        ${lastVol>0?`<div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2L4 14h8L7.5 22 20 10h-8z"/></svg>
+          ~${fmtVol(lastVol)} last</div>`:''}
+      </div>`:''}
+      <button onclick="setView('log',null)" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:16px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer;text-transform:uppercase;letter-spacing:2px">Start Session</button>
     </div>`:'';
 
-  // ── Heatmap ───────────────────────────────────────────────────
+  // ── GitHub activity heatmap ───────────────────────────────────
   const heatmap=renderHeatmap();
 
-  document.getElementById('page-home').innerHTML=greeting+nextSessionCard+hero+tiles+heatmap;
+  document.getElementById('page-home').innerHTML=greeting+statTiles+sessCard+heatmap;
 
-  // Auto-scroll heatmap to current week
   setTimeout(()=>{
     const el=document.getElementById('hm-scroll');
     if(el) el.scrollLeft=el.scrollWidth;
@@ -3421,353 +3287,72 @@ function promptHomeWeight(){
 }
 
 // ─────────────────────────────────────────────────────────────────
-// WHOOP — Firestore reader (data written by whoop-sync/sync.py)
+// DAILY METRICS — manual entry (Recovery 0-100, Sleep, Strain 0-21)
 // ─────────────────────────────────────────────────────────────────
-async function loadWhoopFromFirestore(){
-  if(!currentUser||!fbDb) return;
-  try{
-    const snap=await fbDb
-      .collection('users').doc(currentUser.uid)
-      .collection('whoop').doc('cache')
-      .get();
-    if(!snap.exists) return;
-    const data=snap.data();
-    // Merge Firestore data into local cache — Firestore wins (freshest data)
-    _whoopCache={...getWhoopCache(),...data, lastSync: data.lastSync
-      ? new Date(data.lastSync).getTime() : Date.now()};
-    try{localStorage.setItem('whoop_cache',JSON.stringify(_whoopCache));}catch(e){}
-    if(currentView==='home')   renderHome();
-    if(currentView==='log')    renderLog();
-    if(currentView==='history')renderHistory();
-    console.log('[WHOOP] Loaded from Firestore, lastSync:', data.lastSync);
-  }catch(e){
-    console.warn('[WHOOP] Could not load from Firestore:', e.message);
+function getDailyMetrics(date){
+  try{return JSON.parse(localStorage.getItem('dailymetrics_'+date)||'{}');}catch(e){return{};}
+}
+function saveDailyMetrics(date,patch){
+  const cur=getDailyMetrics(date);
+  try{localStorage.setItem('dailymetrics_'+date,JSON.stringify({...cur,...patch}));}catch(e){}
+}
+function editDailyMetric(field, date){
+  date=date||today();
+  const dm=getDailyMetrics(date);
+  const prompts={recovery:'Recovery score (0–100):',sleep:'Sleep (e.g. 7h30):',strain:'Strain (0–21):'};
+  const cur=dm[field]!=null?String(dm[field]):'';
+  const val=prompt(prompts[field],cur);
+  if(val===null)return;
+  if(field==='recovery'){
+    const n=parseInt(val);
+    saveDailyMetrics(date,{recovery:val===''||isNaN(n)?null:Math.min(100,Math.max(0,n))});
+  }else if(field==='strain'){
+    const n=parseFloat(val);
+    saveDailyMetrics(date,{strain:val===''||isNaN(n)?null:Math.min(21,Math.max(0,n))});
+  }else{
+    saveDailyMetrics(date,{sleep:val.trim()||null});
   }
+  if(date===today())renderHome();
+  renderHistory();
 }
-
-// ─────────────────────────────────────────────────────────────────
-// WHOOP INTEGRATION
-// ─────────────────────────────────────────────────────────────────
-const WHOOP_AUTH  = 'https://api.prod.whoop.com/oauth/oauth2/auth';
-const WHOOP_SCOPE = 'read:recovery read:sleep read:workout read:profile read:body_measurement';
-
-// Token exchange + API calls go through the Cloudflare Worker (avoids CORS)
-// wls('worker_url') is set by the user in the settings UI
-function whoopTokenUrl(){ return (wls('worker_url')||'').replace(/\/$/,'')+'/token'; }
-function whoopApiBase(){ return (wls('worker_url')||'').replace(/\/$/,'')+'/api/v1'; }
-
-const wls = k => localStorage.getItem('whoop_'+k)||'';
-const wsave = (k,v) => localStorage.setItem('whoop_'+k, v);
-const wclear = (...keys) => keys.forEach(k=>localStorage.removeItem('whoop_'+k));
-
-function isWhoopConnected(){ return !!wls('access_token'); }
-
-let _whoopCache = null;
-function getWhoopCache(){
-  if(_whoopCache) return _whoopCache;
-  try{ _whoopCache = JSON.parse(localStorage.getItem('whoop_cache')||'{}'); }catch(e){ _whoopCache={}; }
-  return _whoopCache;
+function editDailyMetricInline(field,date,val){
+  const n=parseFloat(val);
+  if(field==='strain') saveDailyMetrics(date,{strain:val===''||isNaN(n)?null:Math.min(21,Math.max(0,n))});
+  if(field==='recovery') saveDailyMetrics(date,{recovery:val===''||isNaN(n)?null:Math.min(100,Math.max(0,n))});
+  if(date===today())renderHome();
 }
-function saveWhoopCache(patch){
-  _whoopCache = {...getWhoopCache(), ...patch, lastSync: Date.now()};
-  try{ localStorage.setItem('whoop_cache', JSON.stringify(_whoopCache)); }catch(e){}
-}
-
-// ── PKCE helpers ────────────────────────────────────────────────
-async function genPKCE(){
-  const arr = new Uint8Array(32); crypto.getRandomValues(arr);
-  const enc = v => btoa(String.fromCharCode(...v)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
-  const verifier = enc(arr);
-  if(crypto.subtle){
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-    return { verifier, challenge: enc(new Uint8Array(digest)) };
-  }
-  // Fallback: no PKCE challenge (still uses state for CSRF)
-  return { verifier, challenge: null };
-}
-
-// ── OAuth flow ──────────────────────────────────────────────────
-async function whoopConnect(){
-  try{
-    if(!wls('client_id')){ showToast('Enter Client ID first'); return; }
-    const {verifier,challenge} = await genPKCE();
-    wsave('pkce', verifier);
-    const params = {
-      response_type:'code', client_id:wls('client_id'),
-      redirect_uri: location.origin+location.pathname,
-      scope: WHOOP_SCOPE, state:'whoop_oauth',
-    };
-    if(challenge){ params.code_challenge=challenge; params.code_challenge_method='S256'; }
-    const url = WHOOP_AUTH+'?'+new URLSearchParams(params);
-    console.log('[WHOOP] Redirecting to:', url);
-    window.location.href = url;
-  }catch(err){
-    console.error('[WHOOP] Connect error:', err);
-    showToast('⚠️ Error connecting WHOOP: '+(err.message||err));
-  }
-}
-
-async function handleWhoopCallback(){
-  const p = new URLSearchParams(location.search);
-  if(p.get('state') !== 'whoop_oauth') return false;
-  window.history.replaceState({}, '', location.pathname);
-  // WHOOP sends ?error=... when auth fails (e.g. user not a test user, bad redirect_uri)
-  const whoopError = p.get('error');
-  if(whoopError){
-    const desc = decodeURIComponent(p.get('error_description')||whoopError);
-    console.error('[WHOOP] Auth rejected:', whoopError, desc);
-    alert('WHOOP rejected the authorization:\n\n'+desc+'\n\nMake sure your WHOOP account is added as a Test User in the Developer Portal.');
-    return true;
-  }
-  const code = p.get('code');
-  if(!code){ showToast('⚠️ WHOOP: authorization cancelled'); return true; }
-  try{
-    const body = new URLSearchParams({
-      grant_type:'authorization_code', code,
-      client_id: wls('client_id'), client_secret: wls('client_secret'),
-      redirect_uri: location.origin+location.pathname,
-      code_verifier: wls('pkce'),
-    });
-    wclear('pkce');
-    if(!wls('worker_url')) throw new Error('Missing Worker URL — see WHOOP section in Data');
-    const r = await fetch(whoopTokenUrl(), {method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const t = await r.json();
-    wsave('access_token', t.access_token);
-    wsave('refresh_token', t.refresh_token||'');
-    wsave('token_expiry', Date.now()+(t.expires_in||3600)*1000);
-    showToast('✓ WHOOP connected successfully');
-    await syncWhoopAll(true);
-  }catch(e){
-    showToast('⚠️ Error connecting WHOOP: '+(e.message||e));
-    console.error('WHOOP token error:', e);
-  }
-  return true;
-}
-
-async function whoopRefresh(){
-  const body = new URLSearchParams({
-    grant_type:'refresh_token', refresh_token: wls('refresh_token'),
-    client_id: wls('client_id'), client_secret: wls('client_secret'),
-  });
-  const r = await fetch(whoopTokenUrl(), {method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'}, body});
-  if(!r.ok) throw new Error('Refresh failed '+r.status);
-  const t = await r.json();
-  wsave('access_token', t.access_token);
-  wsave('refresh_token', t.refresh_token||wls('refresh_token'));
-  wsave('token_expiry', Date.now()+(t.expires_in||3600)*1000);
-  return t.access_token;
-}
-
-async function whoopFetch(endpoint){
-  let token = wls('access_token');
-  if(!token) throw new Error('No conectado');
-  if(Date.now() > parseInt(wls('token_expiry'))-60000) token = await whoopRefresh();
-  const base = whoopApiBase();
-  const r = await fetch(base+endpoint, {headers:{Authorization:'Bearer '+token}});
-  if(r.status===401){ token=await whoopRefresh();
-    const r2=await fetch(base+endpoint,{headers:{Authorization:'Bearer '+token}});
-    if(!r2.ok) throw new Error('API '+r2.status); return r2.json(); }
-  if(!r.ok) throw new Error('API '+r.status);
-  return r.json();
-}
-
-// ── Data sync ───────────────────────────────────────────────────
-async function syncWhoopRecovery(){
-  // Use yesterday+today window — WHOOP processes data with ~24h delay
-  const now=new Date();
-  const s=new Date(now); s.setDate(s.getDate()-1); s.setHours(0,0,0,0);
-  const e=new Date(now); e.setHours(23,59,59,999);
-  const qs=`start=${s.toISOString()}&end=${e.toISOString()}&limit=2`;
-
-  // /recovery needs read:recovery ✓  |  /sleep needs read:sleep ✓
-  const [recData, sleepData] = await Promise.allSettled([
-    whoopFetch(`/recovery?${qs}`),
-    whoopFetch(`/sleep?${qs}`),
-  ]);
-
-  const rec  = (recData.status==='fulfilled'   ? recData.value.records?.[0]?.score   : null) || {};
-  const sl   = (sleepData.status==='fulfilled' ? sleepData.value.records?.[0]?.score : null) || {};
-
-  saveWhoopCache({
-    recovery:{
-      score: rec.recovery_score??null,
-      hrv:   rec.hrv_rmssd_milli??null,
-      rhr:   rec.resting_heart_rate??null,
-      spo2:  rec.spo2_percentage??null,
-    },
-    sleep:{
-      performance: sl.sleep_performance_percentage??null,
-    },
-  });
-}
-
-async function syncWhoopWorkout(date){
-  const data=await whoopFetch(
-    `/activity/workout?start=${date}T00:00:00.000Z&end=${date}T23:59:59.999Z`);
-  if(!data.records?.length) return;
-  const w=data.records.reduce((mx,r)=>(r.score?.strain??0)>(mx.score?.strain??0)?r:mx);
-  const sc=w.score||{};
-  const cache=getWhoopCache();
-  const workouts=cache.workouts||{};
-  workouts[date]={
-    strain:   sc.strain??null,
-    avgHr:    sc.average_heart_rate??null,
-    maxHr:    sc.max_heart_rate??null,
-    calories: sc.kilojoule ? Math.round(sc.kilojoule*0.239) : null,
-    duration: w.start_time&&w.end_time ?
-      Math.round((new Date(w.end_time)-new Date(w.start_time))/60000) : null,
-  };
-  saveWhoopCache({workouts});
-}
-
-async function syncWhoopBody(){
-  try{
-    const data=await whoopFetch('/body_measurement');
-    saveWhoopCache({body:{
-      weight_kilogram: data.weight_kilogram??null,
-      height_meter:    data.height_meter??null,
-      max_heart_rate:  data.max_heart_rate??null,
-    }});
-  }catch(e){ console.warn('WHOOP body sync skipped:', e.message); }
-}
-
-async function syncWhoopAll(quiet=false){
-  if(!isWhoopConnected()) return;
-  try{
-    // All syncs in parallel where possible
-    const yest=new Date(); yest.setDate(yest.getDate()-1);
-    await Promise.all([
-      syncWhoopRecovery(),
-      syncWhoopBody(),
-      syncWhoopWorkout(yest.toISOString().split('T')[0]),
-      syncWhoopWorkout(today()),
-    ]);
-    if(!quiet) showToast('✓ WHOOP synced');
-    if(currentView==='home')   renderHome();
-    if(currentView==='log')    renderLog();
-    if(currentView==='data')   renderData();
-    if(currentView==='history')renderHistory();
-  }catch(e){
-    console.error('WHOOP sync:', e);
-    if(!quiet) showToast('⚠️ Error syncing WHOOP');
-  }
-}
-
-async function saveWhoopCreds(){
-  const cid=(document.getElementById('whoop-cid')?.value||'').trim();
-  const cs =(document.getElementById('whoop-cs')?.value||'').trim();
-  const wu =(document.getElementById('whoop-worker')?.value||'').trim();
-  if(!cid){ showToast('Client ID required'); return; }
-  if(!wu){ showToast('Worker URL required — deploy the Cloudflare Worker first'); return; }
-  wsave('client_id', cid); wsave('client_secret', cs); wsave('worker_url', wu);
-  await whoopConnect();
-}
-
-function whoopDisconnect(){
-  if(!confirm('Disconnect WHOOP? Tokens will be deleted from this device.')) return;
-  wclear('access_token','refresh_token','token_expiry','cache','pkce');
-  _whoopCache=null;
-  showToast('WHOOP disconnected');
-  render();
-}
-
-// ── UI helpers ──────────────────────────────────────────────────
-function recoveryColor(s){
-  if(s==null) return'var(--muted)';
-  return s>=67?'#3CE0A0':s>=34?'#F5C842':'#E84040';
-}
-function fmtStrain(s){ return s!=null?s.toFixed(1):'—'; }
-
-function renderWhoopRecoveryCard(){
-  if(!isWhoopConnected()) return'';
-  const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{};
-  const lastSync=c.lastSync
-    ? new Date(c.lastSync).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : '';
-  const hasData = r.score != null;
-  return`<div class="whoop-card${hasData?' connected':''}">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${hasData?12:0}px">
-      <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">⌚ WHOOP · Today</span>
-      <button onclick="syncWhoopAll()" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit">
-        ⟳${lastSync?' '+lastSync:''}
-      </button>
-    </div>
-    ${!hasData
-      ? `<div style="font-size:12px;color:var(--muted)">No data yet — tap ⟳ to sync</div>`
-      : `<div style="display:flex;gap:0;align-items:center">
-          <div style="text-align:center;padding-right:14px;margin-right:14px;border-right:1px solid var(--line);flex-shrink:0">
-            <div style="font-size:38px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;color:${recoveryColor(r.score)}">${Math.round(r.score)}</div>
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;color:${recoveryColor(r.score)}">Recovery</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;flex:1">
-            ${[
-              ['HRV', r.hrv!=null?Math.round(r.hrv)+'ms':'—'],
-              ['RHR', r.rhr!=null?Math.round(r.rhr)+' bpm':'—'],
-              ['Sleep',sl.performance!=null?Math.round(sl.performance)+'%':'—'],
-              ['SpO₂', r.spo2!=null?Math.round(r.spo2)+'%':'—'],
-            ].map(([l,v])=>`<div class="whoop-metric">
-              <div class="whoop-metric-val">${v}</div>
-              <div class="whoop-metric-lbl">${l}</div>
-            </div>`).join('')}
-          </div>
-        </div>`
-    }
+function renderHistDailyMetrics(date){
+  const dm=getDailyMetrics(date);
+  const rcVal=dm.recovery!=null
+    ?`<span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:${recoveryColor(dm.recovery)}">${dm.recovery}</span><span style="font-size:10px;color:var(--muted);margin-left:2px">/100</span>`
+    :`<span style="color:var(--muted);font-size:13px">—</span>`;
+  const slVal=dm.sleep
+    ?`<span style="font-family:'DM Mono',monospace;font-size:13px">${dm.sleep}</span>`
+    :`<span style="color:var(--muted);font-size:13px">—</span>`;
+  return`<div class="hist-strain-row">
+    <span class="hist-time-label" style="cursor:pointer" onclick="editDailyMetric('recovery','${date}')">RECOVERY</span>
+    <span style="cursor:pointer;display:inline-flex;align-items:center;gap:2px" onclick="editDailyMetric('recovery','${date}')">${rcVal}</span>
+    <span style="flex:1"></span>
+    <span class="hist-time-label" style="cursor:pointer;margin-left:8px" onclick="editDailyMetric('sleep','${date}')">SLEEP</span>
+    <span style="cursor:pointer;margin-left:4px" onclick="editDailyMetric('sleep','${date}')">${slVal}</span>
+  </div>
+  <div class="hist-strain-row">
+    <span class="hist-time-label" style="cursor:pointer" onclick="editDailyMetric('strain','${date}')">STRAIN</span>
+    <input type="number" min="0" max="21" step="0.1" class="hist-time-input" style="width:60px;text-align:center"
+      value="${dm.strain??''}" placeholder="0–21"
+      onchange="editDailyMetricInline('strain','${date}',this.value)">
+    <span style="font-size:10px;color:var(--muted);margin-left:2px">/ 21</span>
   </div>`;
 }
-
-function renderWhoopStrainBadge(date,manualStrain){
-  if(isWhoopConnected()){
-    const w=(getWhoopCache().workouts||{})[date];
-    if(w?.strain!=null){
-      const parts=[`💥 ${fmtStrain(w.strain)}`];
-      if(w.avgHr) parts.push(`~${Math.round(w.avgHr)}bpm`);
-      if(w.duration) parts.push(`${w.duration}min`);
-      return`<span class="whoop-strain-badge">${parts.join(' · ')}</span>`;
-    }
-  }
-  if(manualStrain!=null) return`<span class="whoop-strain-badge">💥 ${fmtStrain(manualStrain)}</span>`;
-  return'';
+function recoveryColor(s){
+  if(s==null)return'var(--muted)';
+  return s>=67?'#3CE0A0':s>=34?'#F5C842':'#E84040';
 }
+function fmtStrain(s){return s!=null?s.toFixed(1):'—';}
 
-// Refresh WHOOP data from Firestore (replaces browser-based syncWhoopAll for UI buttons)
-async function refreshWhoopFromFirestore(){
-  showToast('Updating WHOOP data…',1500);
-  try{
-    await loadWhoopFromFirestore();
-    showToast('✓ WHOOP data updated');
-    if(currentView==='data') renderData();
-  }catch(e){
-    showToast('⚠️ Error loading WHOOP data');
-  }
-}
+async function loadWhoopFromFirestore(){ }
 
-function renderWhoopDataSection(){
-  const c=getWhoopCache(), r=c.recovery||{}, sl=c.sleep||{}, body=c.body||{};
-  const hasData=r.score!=null||sl.performance!=null||body.weight_kilogram!=null;
-  const lastSync=c.lastSync
-    ? new Date(c.lastSync).toLocaleString('en-US',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
-    : 'Never';
-  return`
-    <div class="data-section" style="${hasData?'border-color:#3CE0A070':''}">
-      <h3 style="display:flex;align-items:center;justify-content:space-between">
-        ⌚ WHOOP
-        <span style="font-size:10px;color:var(--muted);font-weight:400">sync: ${lastSync}</span>
-      </h3>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
-        Data arrives automatically from <code>sync.py</code> on your Mac (cron 6–9h). Tap the button to refresh now.
-      </p>
-      ${hasData?`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.8">
-        ${r.score!=null?`Recovery: <b style="color:${recoveryColor(r.score)}">${Math.round(r.score)}%</b>`:''}
-        ${r.hrv!=null?` · HRV: <b>${Math.round(r.hrv)} ms</b>`:''}
-        ${r.rhr!=null?` · RHR: <b>${Math.round(r.rhr)} bpm</b>`:''}
-        ${sl.performance!=null?`<br>Sleep: <b>${Math.round(sl.performance)}%</b>`:''}
-        ${body.weight_kilogram!=null?` · Weight: <b>${body.weight_kilogram} kg</b>`:''}
-      </div>`:`<p style="font-size:12px;color:var(--muted)">No data yet. Run <code>python sync.py</code> on your Mac.</p>`}
-      <button class="data-btn import" onclick="refreshWhoopFromFirestore()">⟳ Refresh from Firestore</button>
-    </div>`;
-}
+
 
 // ─────────────────────────────────────────────────────────────────
 // INIT
@@ -3780,11 +3365,9 @@ loadExPhotos();
 loadFormFromLogs();
 updateStats();
 render();
-document.getElementById('save-bar').style.display='block';
+document.getElementById('save-bar').style.display=currentView==='log'?'block':'none';
 maybeShowInstallBanner();
 initFirebase();
-// Handle WHOOP OAuth callback (kept for legacy compatibility)
-handleWhoopCallback().catch(()=>{});
 // Pre-load the exercise database and all 6 categories silently
 setTimeout(async()=>{
   const ok=await ensureFreeExDb();
@@ -3802,6 +3385,33 @@ setTimeout(async()=>{
   if(pickerVisible)renderPickerList();
 },1500);
 </script>
+
+<nav class="bottom-nav">
+  <button class="bnav-btn active" id="bnav-home" onclick="setView('home',event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 4l9 8"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="bnav-btn" id="bnav-sesiones" onclick="setView('sesiones',event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="3" height="16" rx="1.5"/><rect x="15" y="4" width="3" height="16" rx="1.5"/><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+    <span>Sessions</span>
+  </button>
+  <button class="bnav-btn" id="bnav-history" onclick="setView('history',event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+    <span>History</span>
+  </button>
+  <button class="bnav-btn" id="bnav-charts" onclick="setView('charts',event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="20" x2="21" y2="20"/><rect x="5" y="14" width="3" height="6"/><rect x="10" y="8" width="4" height="12"/><rect x="17" y="4" width="3" height="16"/></svg>
+    <span>Progress</span>
+  </button>
+  <button class="bnav-btn" id="bnav-ejercicios" onclick="setView('ejercicios',event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="5" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="5" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span>Exercises</span>
+  </button>
+  <button class="bnav-btn" id="bnav-data" onclick="setView('data',event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
+    <span>Data</span>
+  </button>
+</nav>
 
 <script>
 if('serviceWorker' in navigator){
