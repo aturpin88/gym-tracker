@@ -251,7 +251,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
 /* ── HISTORY ── */
 .hist-item{background:var(--white);border:1px solid var(--line);border-left:3px solid var(--sess-color);border-radius:7px;overflow:hidden;margin-bottom:10px;}
-.hist-toggle{width:100%;background:none;border:none;cursor:pointer;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;}
+.hist-toggle-row{display:flex;align-items:stretch;}
+.hist-toggle{flex:1;min-width:0;background:none;border:none;cursor:pointer;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;}
+.hist-strain-btn{flex-shrink:0;background:none;border:none;border-left:1px solid var(--line);cursor:pointer;padding:8px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:52px;font-family:'DM Sans',sans-serif;}
 .hist-date{font-size:14px;font-weight:600;color:var(--ink);}
 .hist-sub{font-size:11px;color:var(--muted);margin-top:2px;}
 .hist-arrow{font-size:14px;color:var(--muted);}
@@ -1470,7 +1472,39 @@ function renderHeatmap(){
 function heatmapTap(date){
   const d=buildHeatmapData()[date];
   if(!d||!d.sessions.length)return;
-  // Navigate to history and open the first session on that date
+  document.getElementById('heatmap-popup')?.remove();
+  const rows=d.sessions.map(sessKey=>{
+    const log=allLogs[`${sessKey}_${date}`];
+    const sess=workoutDefs[sessKey];
+    const name=sess?.label||sessKey;
+    const color=sess?.color||'var(--accent)';
+    const strain=log?.manualStrain;
+    const sc=strain!=null?(strain>=18?'#E84040':strain>=14?'#F5A623':strain>=9?'#F5C842':'#3CE0A0'):'var(--muted)';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)">
+      <span style="background:${color};color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;flex-shrink:0">${sessKey}</span>
+      <span style="flex:1;font-size:14px;font-weight:600;color:var(--ink)">${escHtml(name)}</span>
+      <div onclick="promptStrain('${sessKey}','${date}')" style="text-align:right;cursor:pointer;min-width:44px">
+        <div style="font-size:16px;font-weight:700;color:${sc};font-family:'DM Mono',monospace;line-height:1.1">${strain!=null?strain.toFixed(1):'—'}</div>
+        <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">strain</div>
+      </div>
+    </div>`;
+  }).join('');
+  const pop=document.createElement('div');
+  pop.id='heatmap-popup';
+  pop.style.cssText='position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;justify-content:flex-end;';
+  pop.innerHTML=`
+    <div onclick="document.getElementById('heatmap-popup').remove()" style="position:absolute;inset:0;background:rgba(0,0,0,.5)"></div>
+    <div style="position:relative;background:var(--white);border-radius:20px 20px 0 0;padding:16px 20px 32px;z-index:1;max-height:70vh;overflow-y:auto">
+      <div style="width:36px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 14px"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${fmtDate(date)}</div>
+      ${rows}
+      <button onclick="document.getElementById('heatmap-popup').remove();heatmapNav('${date}')" style="width:100%;margin-top:16px;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">View in History</button>
+    </div>`;
+  document.body.appendChild(pop);
+}
+function heatmapNav(date){
+  const d=buildHeatmapData()[date];
+  if(!d||!d.sessions.length)return;
   const firstSess=d.sessions.slice().sort()[0];
   expandedLog=`${firstSess}_${date}`;
   currentView='history';
@@ -1482,7 +1516,6 @@ function heatmapTap(date){
   setTimeout(()=>{
     const el=document.getElementById(`hist-${firstSess}-${date}`);
     if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
-    else{const s=document.getElementById('hm-scroll');if(s)s.scrollLeft=s.scrollWidth;}
   },80);
 }
 
@@ -1505,17 +1538,26 @@ function renderHistory(){
     const totalVol=exWithData.reduce((t,ex)=>t+calcExVolume(ex.id,log.data[ex.id]),0);
     const logKey=`${log.session}_${log.date}`;
     const isOpen=expandedLog===logKey;
+    const sc=log.manualStrain!=null?(log.manualStrain>=18?'#E84040':log.manualStrain>=14?'#F5A623':log.manualStrain>=9?'#F5C842':'#3CE0A0'):'var(--muted)';
     html+=`<div class="hist-item" id="hist-${log.session}-${log.date}" style="--sess-color:${color}">
-      <button class="hist-toggle" onclick="toggleLog('${log.session}','${log.date}')">
-        <div style="flex:1;min-width:0">
-          <div class="hist-date" style="display:flex;align-items:center;gap:7px">
-            <span style="font-size:10px;font-weight:800;color:#fff;background:${color};padding:2px 7px;border-radius:4px;flex-shrink:0">${log.session}</span>
-            ${fmtDate(log.date)}
+      <div class="hist-toggle-row">
+        <button class="hist-toggle" onclick="toggleLog('${log.session}','${log.date}')">
+          <div style="flex:1;min-width:0">
+            <div class="hist-date" style="display:flex;align-items:center;gap:7px">
+              <span style="font-size:10px;font-weight:800;color:#fff;background:${color};padding:2px 7px;border-radius:4px;flex-shrink:0">${log.session}</span>
+              ${fmtDate(log.date)}
+            </div>
+            <div class="hist-sub">${sess.label} · ${exWithData.length} exercises${totalVol>0?' · '+fmtVol(totalVol):''}</div>
           </div>
-          <div class="hist-sub">${sess.label} · ${exWithData.length} exercises${totalVol>0?' · '+fmtVol(totalVol):''}</div>
-        </div>
-        <div class="hist-arrow">${isOpen?'▲':'▼'}</div>
-      </button>
+          <div class="hist-arrow">${isOpen?'▲':'▼'}</div>
+        </button>
+        <button class="hist-strain-btn" onclick="promptStrain('${log.session}','${log.date}')">
+          ${log.manualStrain!=null
+            ?`<div style="font-size:13px;font-weight:700;color:${sc};font-family:'DM Mono',monospace;line-height:1.1">${log.manualStrain.toFixed(1)}</div>`
+            :`<div style="font-size:18px;color:var(--line);line-height:1">＋</div>`}
+          <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">strain</div>
+        </button>
+      </div>
       ${isOpen?`<div class="hist-body">${renderHistBody(log,sess,color)}</div>`:''}
     </div>`;
   }
@@ -1701,6 +1743,17 @@ function editLogStrain(session,date,val){
   const v=parseFloat(val);
   allLogs[key].manualStrain=(isNaN(v)||val==='')?null:Math.min(21,Math.max(0,v));
   saveAll();saveToCloud(key);
+}
+function promptStrain(session,date){
+  document.getElementById('heatmap-popup')?.remove();
+  const key=`${session}_${date}`;
+  if(!allLogs[key])return;
+  const cur=allLogs[key].manualStrain;
+  const val=prompt(`Strain for ${session} on ${fmtDate(date)} (0–21):`,cur!=null?String(cur):'');
+  if(val===null)return;
+  editLogStrain(session,date,val);
+  renderHistory();
+  if(currentView==='home')renderHome();
 }
 async function updateAdHocSearch(val){
   adhocSearchQuery=val;
