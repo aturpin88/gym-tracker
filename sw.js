@@ -1,4 +1,4 @@
-const CACHE = 'gymtracker-v41';
+const CACHE = 'gymtracker-v42';
 const PRECACHE = [
   './index.html',
   './manifest.json',

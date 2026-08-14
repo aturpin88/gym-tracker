@@ -1982,7 +1982,7 @@ function renderMuscleFull(){
     const grpHasSel=muscleSelType==='sub'&&MUSCLE_SM[muscleSel]?.grp===grp;
     const iFade=muscleSel?(isGrp||grpHasSel?1:0.2):1;
     const d=muscleArcPath(cx,cy,iR,iri,ang+gap/2,ang+gsw-gap/2);
-    if(d)svgPaths+=`<path d="${d}" fill="${MUSCLE_GC[grp]}" opacity="${iFade}" class="muscle-seg" onclick="pickMuscleSeg('${grp}','group')"><title>${grp}</title></path>`;
+    if(d)svgPaths+=`<path d="${d}" fill="${MUSCLE_GC[grp]}" opacity="${iFade}" class="muscle-seg" onclick="pickMuscleSeg('${grp}','group')" ontouchstart="pickMuscleSeg('${grp}','group')"><title>${grp}</title></path>`;
     const grpSMs=Object.entries(smT).filter(([id])=>MUSCLE_SM[id]?.grp===grp);
     const smSum=grpSMs.reduce((s,[,v])=>s+v,0);
     let sa=ang;
@@ -1991,7 +1991,7 @@ function renderMuscleFull(){
       const isSm=muscleSel===sid&&muscleSelType==='sub';
       const oFade=muscleSel?(isSm||isGrp?1:grpHasSel?0.6:0.2):1;
       const od=muscleArcPath(cx,cy,oR,ori,sa+gap/2,sa+ssw-gap/2);
-      if(od)svgPaths+=`<path d="${od}" fill="${MUSCLE_SM[sid].c}" opacity="${oFade}" class="muscle-seg" onclick="pickMuscleSeg('${sid}','sub')"><title>${MUSCLE_SM[sid].lab}</title></path>`;
+      if(od)svgPaths+=`<path d="${od}" fill="${MUSCLE_SM[sid].c}" opacity="${oFade}" class="muscle-seg" onclick="pickMuscleSeg('${sid}','sub')" ontouchstart="pickMuscleSeg('${sid}','sub')"><title>${MUSCLE_SM[sid].lab}</title></path>`;
       sa+=ssw;
     }
     ang+=gsw;
@@ -2008,7 +2008,7 @@ function renderMuscleFull(){
     cb=`${Math.round((smT[muscleSel]||0)/grand*100)}%`;
   }
   const svgHtml=`<svg width="164" height="164" viewBox="0 0 164 164" style="flex-shrink:0">${svgPaths}
-    <circle cx="${cx}" cy="${cy}" r="${iri-2}" fill="var(--white)" style="cursor:pointer" onclick="pickMuscleSeg(null,null)"/>
+    <circle cx="${cx}" cy="${cy}" r="${iri-2}" fill="var(--white)" style="cursor:pointer" onclick="pickMuscleSeg(null,null)" ontouchstart="pickMuscleSeg(null,null)"/>
     <text x="${cx}" y="${cy-5}" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="var(--muted)">${escHtml(ct)}</text>
     <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="13" font-weight="700" font-family="DM Sans,sans-serif" fill="var(--ink)">${escHtml(cb)}</text>
   </svg>`;
@@ -2915,6 +2915,22 @@ function renderData(){
     </div>`;
   }
 
+  const archivedKeys=Object.keys(workoutDefs).filter(k=>workoutDefs[k]&&!workoutDefs[k]._deleted&&workoutDefs[k]._archived);
+  const archivedSection=archivedKeys.length?`<div class="data-section">
+    <h3>📦 Archived sessions (${archivedKeys.length})</h3>
+    ${archivedKeys.map(key=>{
+      const sess=workoutDefs[key];
+      const logs=Object.values(allLogs).filter(l=>l.session===key);
+      return`<div class="archived-sess-row">
+        <div>
+          <span class="archived-sess-name">${escHtml(sess.label)}</span>
+          <span class="archived-sess-meta">${logs.length} session${logs.length!==1?'s':''}</span>
+        </div>
+        <button class="archived-restore-btn" onclick="restoreSessionTemplate('${key}')">Restore</button>
+      </div>`;
+    }).join('')}
+  </div>`:'';
+
   document.getElementById('page-data').innerHTML=`
     <div class="data-section">
       <h3>Data summary</h3>
@@ -2925,6 +2941,7 @@ function renderData(){
       ${sessBreakdown?`<div style="margin-top:12px">${sessBreakdown}</div>`:''}
     </div>
     ${syncSection}
+    ${archivedSection}
     ${!isStandalone?`<div class="data-section"><h3>📱 Install on iPhone</h3>
       <div class="install-steps">
         <div class="install-step"><div class="step-num">1</div><div class="step-text">Tap <b>Share ⬆️</b> in Safari</div></div>
@@ -3219,23 +3236,6 @@ function renderSesiones(){
   html+=`</div>
   <button class="sess-new-btn" onclick="addNewSession()">＋ New session</button>`;
 
-  if(archivedKeys.length){
-    html+=`<div class="archived-sess-section">
-      <div class="archived-sess-title">📦 Archived (${archivedKeys.length})</div>`;
-    archivedKeys.forEach(key=>{
-      const sess=workoutDefs[key];
-      const logs=Object.values(allLogs).filter(l=>l.session===key);
-      html+=`<div class="archived-sess-row">
-        <div>
-          <span class="archived-sess-name">${escHtml(sess.label)}</span>
-          <span class="archived-sess-meta">${logs.length} session${logs.length!==1?'s':''}</span>
-        </div>
-        <button class="archived-restore-btn" onclick="restoreSessionTemplate('${key}')">Restore</button>
-      </div>`;
-    });
-    html+=`</div>`;
-  }
-
   cont.innerHTML=html;
 }
 
@@ -3302,7 +3302,7 @@ function renderHome(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
         <div style="min-width:0;flex:1">
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
-            <span style="font-size:10px;font-weight:800;color:#fff;background:${sess.color};padding:2px 7px;border-radius:4px;flex-shrink:0">${key}</span>
+            <span style="font-size:10px;font-weight:800;color:#fff;background:var(--accent);padding:2px 7px;border-radius:4px;flex-shrink:0">${key}</span>
             <span style="font-size:17px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(sess.label)}</span>
           </div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${escHtml(sess.sub)}</div>
