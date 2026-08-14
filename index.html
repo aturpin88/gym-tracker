@@ -3280,7 +3280,8 @@ function renderHome(){
 
   // ── Session cards (all non-archived) ─────────────────────────
   const restSec=getRestGoal().rest;
-  const nonArchivedSessions=Object.entries(workoutDefs).filter(([,s])=>!s._archived);
+  // Mirror Sessions tab filter exactly: skip _deleted and _archived
+  const nonArchivedSessions=Object.entries(workoutDefs).filter(([,s])=>!s._deleted&&!s._archived);
   const sessCards=nonArchivedSessions.map(([key,sess])=>{
     const logs=Object.values(allLogs).filter(l=>l.session===key).sort((a,b)=>b.date.localeCompare(a.date));
     const lastLog=logs[0];
@@ -3295,7 +3296,8 @@ function renderHome(){
     // Fallback estimate
     const exCount=(sess.exercises||[]).length;
     const estMin=!avgMin&&exCount>0?Math.round(exCount*3*(35+restSec)/60):null;
-    const timeLabel=avgMin?`~${avgMin} min`:estMin?`~${estMin} min`:null;
+    const timeLabel=avgMin?`~${avgMin} min`:estMin?`~${estMin} min est.`:null;
+    const strainColor=avgStrain!=null?(avgStrain>=18?'#E84040':avgStrain>=14?'#F5A623':avgStrain>=9?'#F5C842':'#3CE0A0'):'var(--muted)';
     return`<div class="home-sess-card" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
         <div style="min-width:0;flex:1">
@@ -3306,7 +3308,7 @@ function renderHome(){
           <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${escHtml(sess.sub)}</div>
           <div style="display:flex;gap:12px;flex-wrap:wrap">
             <div style="font-size:10px;color:var(--muted)">Last: <b style="color:var(--ink)">${lastLabel}</b></div>
-            ${avgStrain!=null?`<div style="font-size:10px;color:var(--muted)">Avg strain: <b style="font-family:'DM Mono',monospace;color:#F5A623">${avgStrain.toFixed(1)}</b></div>`:''}
+            <div style="font-size:10px;color:var(--muted)">Avg strain: <b style="font-family:'DM Mono',monospace;color:${strainColor}">${avgStrain!=null?avgStrain.toFixed(1):'—'}</b></div>
             ${timeLabel?`<div style="font-size:10px;color:var(--muted)">Avg time: <b style="color:var(--ink)">${timeLabel}</b></div>`:''}
           </div>
         </div>
