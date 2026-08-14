@@ -194,6 +194,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .whoop-cfg-input{border:1.5px solid var(--line);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Mono',monospace;color:var(--ink);background:var(--bg);width:100%;}
 .whoop-cfg-input:focus{outline:none;border-color:var(--ink);}
 .whoop-strain-badge{display:inline-flex;align-items:center;gap:5px;background:#111318;color:#3CE0A0;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;}
+.hist-strain-row{display:flex;align-items:center;gap:8px;padding:6px 14px 4px;border-top:1px solid var(--line);}
 .whoop-metric{display:flex;flex-direction:column;gap:1px;}
 .whoop-metric-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ink);}
 .whoop-metric-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
@@ -217,6 +218,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
 /* ── SESIONES PAGE ── */
 .sess-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.archived-sess-section{margin-top:24px;border-top:1px solid var(--line);padding-top:16px;}
+.archived-sess-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px;}
+.archived-sess-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border-radius:10px;margin-bottom:8px;}
+.archived-sess-name{font-size:14px;font-weight:600;color:var(--ink);}
+.archived-sess-meta{font-size:11px;color:var(--muted);margin-left:8px;}
+.archived-restore-btn{border:none;background:var(--white);color:var(--ink);font-size:12px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer;border:1px solid var(--line);font-family:inherit;}
 .sess-card{background:var(--white);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);}
 .sess-card-accent{height:5px;}
 .sess-card-body{padding:14px 16px 12px;}
@@ -515,6 +522,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   <div class="photo-modal-row" onclick="event.stopPropagation()">
     <button class="photo-modal-btn" style="background:rgba(255,255,255,.15);color:#fff" onclick="pickExPhoto(photoPendingExId)">📷 Change</button>
     <button class="photo-modal-btn" style="background:#fff;color:var(--ink)" onclick="closePhotoModal()">Close</button>
+  </div>
+</div>
+<div id="focus-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1001;align-items:center;justify-content:center" onclick="closeFocusModal()">
+  <div style="background:var(--white);border-radius:20px;padding:32px 28px;text-align:center;min-width:260px;max-width:340px;width:90%" onclick="event.stopPropagation()">
+    <div id="focus-ex-name" style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px"></div>
+    <div id="focus-set-label" style="font-size:22px;font-weight:800;color:var(--ink);margin-bottom:20px;font-family:'DM Mono',monospace"></div>
+    <div id="focus-timer" style="font-size:64px;font-weight:800;font-family:'DM Mono',monospace;color:var(--ink);line-height:1;margin-bottom:6px">0:00</div>
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:28px">elapsed</div>
+    <button onclick="closeFocusModal()" style="background:var(--ink);color:var(--white);border:none;border-radius:12px;padding:14px 0;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;width:100%">Done ✓</button>
   </div>
 </div>
 
@@ -924,6 +940,13 @@ function removeAdHocExercise(id){
   delete formData[id];
   renderLog();
 }
+function moveAdHocExercise(id,delta){
+  const idx=adhocExercises.findIndex(e=>e.id===id);
+  if(idx<0)return;
+  const ni=idx+delta;if(ni<0||ni>=adhocExercises.length)return;
+  [adhocExercises[idx],adhocExercises[ni]]=[adhocExercises[ni],adhocExercises[idx]];
+  saveDraft();renderLog();
+}
 
 // ─────────────────────────────────────────────────────────────────
 // CROSS-SESSION HELPERS
@@ -1034,6 +1057,16 @@ function loadFormFromLogs(){
     return;
   }
   formData={};adhocExercises=[];
+  const _ps=workoutDefs[currentSession];
+  if(_ps?.exercises){
+    for(const _ex of _ps.exercises){
+      const _last=getLastSessionData(_ex.id);
+      if(_last){
+        const _sets=_last.data.sets.filter(s=>s.weight||s.reps);
+        if(_sets.length>0)formData[_ex.id]={sets:_sets.map(s=>({weight:s.weight||'',reps:s.reps||''})),notes:''};
+      }
+    }
+  }
 }
 function getExData(exId){
   if(!formData[exId])formData[exId]={sets:[{weight:'',reps:''}],notes:''};
@@ -1061,11 +1094,11 @@ function onSetBlur(exId,idx){
 function addSet(exId){
   const d=getExData(exId);const last=d.sets[d.sets.length-1]||{};
   d.sets.push({weight:last.weight||'',reps:last.reps||''});
-  renderSetsFor(exId);saveDraft();
+  renderSetsFor(exId);updateExVolume(exId);updateSessionVolume();saveDraft();
 }
 function removeSet(exId,idx){
   const d=getExData(exId);if(d.sets.length<=1)return;
-  d.sets.splice(idx,1);renderSetsFor(exId);saveDraft();
+  d.sets.splice(idx,1);renderSetsFor(exId);updateExVolume(exId);updateSessionVolume();saveDraft();
 }
 function hasData(exId){return formData[exId]?.sets?.some(s=>s.weight||s.reps);}
 function updateExVolume(exId){
@@ -1231,11 +1264,14 @@ function renderExCard(ex,color,bg,isAdhoc=false){
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        ${!isAdhoc?`<div style="display:flex;flex-direction:column;gap:2px;margin-right:2px">
-          <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',-1)" title="Move up">▲</button>
-          <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',+1)" title="Move down">▼</button>
-        </div>`:''}
-        ${filled&&!isAdhoc?'<span style="font-size:14px">✅</span>':''}
+        <div style="display:flex;flex-direction:column;gap:2px;margin-right:2px">
+          ${isAdhoc
+            ?`<button class="ex-mv-btn" onclick="moveAdHocExercise('${ex.id}',-1)" title="Move up">▲</button>
+               <button class="ex-mv-btn" onclick="moveAdHocExercise('${ex.id}',+1)" title="Move down">▼</button>`
+            :`<button class="ex-mv-btn" onclick="moveExercise('${ex.id}',-1)" title="Move up">▲</button>
+               <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',+1)" title="Move down">▼</button>`}
+        </div>
+        ${filled?'<span style="font-size:14px">✅</span>':''}
         ${isAdhoc?`<button onclick="removeAdHocExercise('${ex.id}')" style="background:none;border:none;color:#ccc;font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>`:''}
       </div>
     </div>
@@ -1246,7 +1282,7 @@ function renderExCard(ex,color,bg,isAdhoc=false){
     </div>
     <div class="sets-body" id="sets-${ex.id}">${renderSetRows(ex.id,d.sets,color)}</div>
     <div class="ex-footer">
-      <button class="add-set-btn" style="--sess-color:${color}" onclick="addSet('${ex.id}')">+ Serie</button>
+      <button class="add-set-btn" style="--sess-color:${color}" onclick="addSet('${ex.id}')">+ Set</button>
       <div class="notes-label">💬 Comments</div>
       <input class="notes-input" type="text" value="${escHtml(d.notes||'')}" placeholder="Add a comment about this exercise…" oninput="updateNotes('${ex.id}',this.value)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
@@ -1480,7 +1516,7 @@ function renderHistory(){
         <div style="flex:1;min-width:0">
           <div class="hist-date" style="display:flex;align-items:center;gap:7px">
             <span style="font-size:10px;font-weight:800;color:#fff;background:${color};padding:2px 7px;border-radius:4px;flex-shrink:0">${log.session}</span>
-            ${fmtDate(log.date)} ${renderWhoopStrainBadge(log.date)}
+            ${fmtDate(log.date)} ${renderWhoopStrainBadge(log.date,log.manualStrain)}
           </div>
           <div class="hist-sub">${sess.label} · ${exWithData.length} exercises${totalVol>0?' · '+fmtVol(totalVol):''}</div>
         </div>
@@ -1509,6 +1545,13 @@ function renderHistBody(log,sess,color){
         onchange="editLogTime('${log.session}','${log.date}','end',this.value)">
     </div>
     <span class="sess-time-dur" id="hist-dur-${log.session}-${log.date}">${log.startTime&&log.endTime?fmtDuration(log.startTime,log.endTime):''}</span>
+  </div>
+  <div class="hist-strain-row">
+    <span class="hist-time-label">STRAIN</span>
+    <input type="number" min="0" max="21" step="0.1" class="hist-time-input" style="width:60px;text-align:center"
+      value="${log.manualStrain??''}" placeholder="0–21"
+      onchange="editLogStrain('${log.session}','${log.date}',this.value)">
+    <span style="font-size:10px;color:var(--muted);margin-left:2px">/ 21</span>
   </div>`;
   for(const ex of sess.exercises){
     const d=log.data[ex.id];
@@ -1604,13 +1647,20 @@ function deleteLog(session,date){
 }
 
 function deleteSessionTemplate(key){
-  if(!confirm(`Delete template "${workoutDefs[key]?.label}"?\n\nYour workout history in History will be preserved.`))return;
-  workoutDefs[key]._deleted=true;
+  if(!confirm(`Archive template "${workoutDefs[key]?.label}"?\n\nHistory is preserved and you can restore it any time from Sessions.`))return;
+  workoutDefs[key]._archived=true;
   saveWorkoutDefs();
   setView('sesiones',null);
   document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===1));
   renderSesiones();
-  showToast('Template deleted. History is preserved.');
+  showToast('Template archived. Restore it in Sessions.');
+}
+function restoreSessionTemplate(key){
+  if(!workoutDefs[key])return;
+  workoutDefs[key]._archived=false;
+  saveWorkoutDefs();
+  renderSesiones();
+  showToast('Template restored.');
 }
 function moveExercise(exId,delta){
   const sess=workoutDefs[currentSession];
@@ -1623,6 +1673,29 @@ function moveExercise(exId,delta){
   saveWorkoutDefs();
   renderLog();
 }
+let _focusInterval=null;
+function showFocusModal(exId,idx){
+  const ex=(workoutDefs[currentSession]?.exercises||[]).find(e=>e.id===exId)||adhocExercises.find(e=>e.id===exId);
+  const s=formData[exId]?.sets[idx];if(!s)return;
+  clearInterval(_focusInterval);
+  document.getElementById('focus-ex-name').textContent=ex?.name||'Exercise';
+  const wt=s.weight?`${s.weight}${ex?.unit||'kg'}`:'—';
+  const rp=s.reps?` × ${s.reps} reps`:'';
+  document.getElementById('focus-set-label').textContent=`Set ${idx+1}  ${wt}${rp}`;
+  const t0=s.t_start?new Date(s.t_start).getTime():Date.now();
+  function tick(){
+    const sec=Math.floor((Date.now()-t0)/1000);
+    const m=Math.floor(sec/60),ss=sec%60;
+    const el=document.getElementById('focus-timer');
+    if(el)el.textContent=`${m}:${String(ss).padStart(2,'0')}`;
+  }
+  tick();_focusInterval=setInterval(tick,1000);
+  const fm=document.getElementById('focus-modal');if(fm)fm.style.display='flex';
+}
+function closeFocusModal(){
+  clearInterval(_focusInterval);
+  const fm=document.getElementById('focus-modal');if(fm)fm.style.display='none';
+}
 function startSet(exId,idx){
   const d=getExData(exId);
   if(!d.sets[idx])return;
@@ -1630,7 +1703,7 @@ function startSet(exId,idx){
   if(!sessionStartTime)sessionStartTime=d.sets[idx].t_start;
   saveDraft();
   renderSetsFor(exId);
-  showToast(`Set ${idx+1} started`);
+  showFocusModal(exId,idx);
 }
 function setWorkoutStart(){
   sessionStartTime=new Date().toISOString();
@@ -1670,6 +1743,13 @@ function editLogTime(session,date,which,timeVal){
   if(dur&&allLogs[key].startTime&&allLogs[key].endTime)
     dur.textContent=fmtDuration(allLogs[key].startTime,allLogs[key].endTime);
 }
+function editLogStrain(session,date,val){
+  const key=`${session}_${date}`;
+  if(!allLogs[key])return;
+  const v=parseFloat(val);
+  allLogs[key].manualStrain=(isNaN(v)||val==='')?null:Math.min(21,Math.max(0,v));
+  saveAll();saveToCloud(key);renderHistory();
+}
 async function updateAdHocSearch(val){
   adhocSearchQuery=val;
   const container=document.getElementById('adhoc-search-results');
@@ -1678,7 +1758,7 @@ async function updateAdHocSearch(val){
   const q=val.toLowerCase();
   const results=[];const seen=new Set();
   for(const sess of Object.values(workoutDefs)){
-    if(sess._deleted)continue;
+    if(sess._deleted||sess._archived)continue;
     for(const ex of (sess.exercises||[])){
       if(ex.name.toLowerCase().includes(q)&&!seen.has(ex.name)){
         seen.add(ex.name);results.push({name:ex.name,unit:ex.unit||'kg',source:'session'});
@@ -1893,7 +1973,7 @@ function renderMuscleFull(){
   if(!container)return;
   let exercises;
   if(muscleMode==='global'){
-    exercises=Object.values(workoutDefs).filter(s=>!s._deleted).flatMap(s=>s.exercises||[]);
+    exercises=Object.values(workoutDefs).filter(s=>!s._deleted&&!s._archived).flatMap(s=>s.exercises||[]);
   }else{
     exercises=(workoutDefs[currentSession]?.exercises)||[];
   }
@@ -2698,9 +2778,9 @@ function renderEditor(){
     </div>
   </div>
   <div class="editor-section" style="border-color:var(--danger)20">
-    <h3 style="color:var(--danger)">Danger zone</h3>
-    <p>Delete this template from the program. Your workout history will always be preserved in History.</p>
-    <button class="del-sess-btn" onclick="deleteSessionTemplate('${currentSession}')">🗑 Delete template «${escHtml(sess.label)}»</button>
+    <h3 style="color:var(--danger)">Archive</h3>
+    <p>Archive this template. Your workout history is always preserved and you can restore the template any time.</p>
+    <button class="del-sess-btn" onclick="deleteSessionTemplate('${currentSession}')">📦 Archive template «${escHtml(sess.label)}»</button>
   </div>`;
   cont.innerHTML=html;
 
@@ -3104,11 +3184,12 @@ function renderSesiones(){
 
   const keys=Object.keys(workoutDefs);
   let html=`<div class="sess-page-title">My sessions</div><div class="sess-cards">`;
+  const archivedKeys=[];
 
   keys.forEach(key=>{
     const sess=workoutDefs[key];if(!sess||sess._deleted)return;
+    if(sess._archived){archivedKeys.push(key);return;}
     const {label,sub,color,exercises=[]}=sess;
-    // Last log for this session
     const logs=Object.values(allLogs).filter(l=>l.session===key).sort((a,b)=>b.date.localeCompare(a.date));
     const lastDate=logs[0]?.date;
     const lastStr=lastDate?`Last: ${fmtDate(lastDate)}`:`No records yet`;
@@ -3137,6 +3218,24 @@ function renderSesiones(){
 
   html+=`</div>
   <button class="sess-new-btn" onclick="addNewSession()">＋ New session</button>`;
+
+  if(archivedKeys.length){
+    html+=`<div class="archived-sess-section">
+      <div class="archived-sess-title">📦 Archived (${archivedKeys.length})</div>`;
+    archivedKeys.forEach(key=>{
+      const sess=workoutDefs[key];
+      const logs=Object.values(allLogs).filter(l=>l.session===key);
+      html+=`<div class="archived-sess-row">
+        <div>
+          <span class="archived-sess-name">${escHtml(sess.label)}</span>
+          <span class="archived-sess-meta">${logs.length} session${logs.length!==1?'s':''}</span>
+        </div>
+        <button class="archived-restore-btn" onclick="restoreSessionTemplate('${key}')">Restore</button>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
   cont.innerHTML=html;
 }
 
@@ -3576,14 +3675,18 @@ function renderWhoopRecoveryCard(){
   </div>`;
 }
 
-function renderWhoopStrainBadge(date){
-  if(!isWhoopConnected()) return'';
-  const w=(getWhoopCache().workouts||{})[date];
-  if(!w||w.strain==null) return'';
-  const parts=[`💥 ${fmtStrain(w.strain)}`];
-  if(w.avgHr) parts.push(`~${Math.round(w.avgHr)}bpm`);
-  if(w.duration) parts.push(`${w.duration}min`);
-  return`<span class="whoop-strain-badge">${parts.join(' · ')}</span>`;
+function renderWhoopStrainBadge(date,manualStrain){
+  if(isWhoopConnected()){
+    const w=(getWhoopCache().workouts||{})[date];
+    if(w?.strain!=null){
+      const parts=[`💥 ${fmtStrain(w.strain)}`];
+      if(w.avgHr) parts.push(`~${Math.round(w.avgHr)}bpm`);
+      if(w.duration) parts.push(`${w.duration}min`);
+      return`<span class="whoop-strain-badge">${parts.join(' · ')}</span>`;
+    }
+  }
+  if(manualStrain!=null) return`<span class="whoop-strain-badge">💥 ${fmtStrain(manualStrain)}</span>`;
+  return'';
 }
 
 // Refresh WHOOP data from Firestore (replaces browser-based syncWhoopAll for UI buttons)
