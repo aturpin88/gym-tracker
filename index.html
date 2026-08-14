@@ -623,6 +623,9 @@ let chartsSubTab='ejercicios';    // 'ejercicios' | 'musculos'
 let muscleMode='session';         // 'session' | 'global'
 let muscleSel=null;
 let muscleSelType=null;
+let chartSession='A';             // session shown in progress view (independent of currentSession)
+let chartsSearchQuery='';         // exercise search filter in progress view
+let libSearchQuery='';            // name search in exercise library
 
 // ─────────────────────────────────────────────────────────────────
 // STORAGE
@@ -1537,7 +1540,7 @@ function renderHistBody(log,sess,color){
     </div>
     <span class="sess-time-dur" id="hist-dur-${log.session}-${log.date}">${log.startTime&&log.endTime?fmtDuration(log.startTime,log.endTime):''}</span>
   </div>
-  ${renderHistDailyMetrics(log.date)}
+  ${renderHistDailyMetrics(log.date,log.session)}
   `;
   for(const ex of sess.exercises){
     const d=log.data[ex.id];
@@ -1755,27 +1758,48 @@ function selectAdHocFromSearch(name,unit){
 // ─────────────────────────────────────────────────────────────────
 // RENDER CHARTS
 // ─────────────────────────────────────────────────────────────────
-function getChartData(exId){
+function getChartData(exId, sessKey){
+  const sk=sessKey||currentSession;
   return Object.values(allLogs)
-    .filter(l=>l.session===currentSession&&l.data[exId]?.sets?.some(s=>s.weight))
+    .filter(l=>l.session===sk&&l.data[exId]?.sets?.some(s=>s.weight))
     .sort((a,b)=>a.date.localeCompare(b.date))
     .map(l=>{
       const sets=l.data[exId].sets||[];
       const weights=sets.map(s=>parseFloat(s.weight)||0).filter(w=>w>0);
       const reps=sets.map(s=>parseInt(s.reps)||0).filter(r=>r>0);
-      const ex=workoutDefs[currentSession]?.exercises.find(e=>e.id===exId);
+      const ex=workoutDefs[sk]?.exercises.find(e=>e.id===exId);
       return{date:l.date,weight:weights.length?Math.max(...weights):0,
         reps:reps.length?Math.round(reps.reduce((a,b)=>a+b,0)/reps.length):0,unit:ex?.unit||'kg'};
     });
 }
 function renderCharts(){
-  const sess=workoutDefs[currentSession];if(!sess)return;
+  // Ensure chartSession is valid
+  const nonArchived=Object.entries(workoutDefs).filter(([,s])=>!s._archived);
+  if(!workoutDefs[chartSession]||workoutDefs[chartSession]._archived){
+    chartSession=nonArchived[0]?.[0]||'A';
+  }
+  const sess=workoutDefs[chartSession];
+  if(!sess||!nonArchived.length){
+    document.getElementById('page-charts').innerHTML='<div class="empty"><div class="empty-title">No sessions yet</div></div>';return;
+  }
   const {color}=sess;
-  let html=`<div class="session-banner" style="background:${color}"><div><div class="sb-title">${sess.label}</div><div class="sb-sub">Training analysis</div></div></div>
-    <div class="sub-tabs">
-      <button class="subtab${chartsSubTab==='ejercicios'?' active':''}" onclick="setChartsTab('ejercicios')">📈 Progress</button>
-      <button class="subtab${chartsSubTab==='musculos'?' active':''}" onclick="setChartsTab('musculos')">💪 Muscles</button>
-    </div>`;
+
+  // Session picker chips
+  let html=`<div style="margin-bottom:14px">
+    <div style="font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Session</div>
+    <div class="ex-selector">
+      ${nonArchived.map(([key,s])=>`<button class="ex-chip${chartSession===key?' active':''}"
+        style="${chartSession===key?`background:${s.color};border-color:${s.color};color:#fff`:''}"
+        onclick="chartSession='${key}';selectedChartEx=null;chartsSearchQuery='';renderCharts()">
+        <span style="font-size:9px;font-weight:800;opacity:.7">${key} · </span>${escHtml(s.label)}
+      </button>`).join('')}
+    </div>
+  </div>
+  <div class="sub-tabs">
+    <button class="subtab${chartsSubTab==='ejercicios'?' active':''}" onclick="setChartsTab('ejercicios')">📈 Progress</button>
+    <button class="subtab${chartsSubTab==='musculos'?' active':''}" onclick="setChartsTab('musculos')">💪 Muscles</button>
+  </div>`;
+
   if(chartsSubTab==='musculos'){
     html+=`<div class="muscle-mode-tabs">
       <button class="muscle-mode-tab${muscleMode==='session'?' active':''}" onclick="setMuscleMode('session')">This session</button>
@@ -1785,23 +1809,40 @@ function renderCharts(){
     renderMuscleFull();
     return;
   }
-  html+=`<div style="font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Select exercise</div>
-    <div class="ex-selector">`;
-  for(const ex of sess.exercises){
-    const data=getChartData(ex.id);
+
+  // Exercise search input
+  html+=`<div style="margin-bottom:10px">
+    <input type="text" id="charts-search-input" placeholder="Search exercises in ${escHtml(sess.label)}…"
+      value="${escHtml(chartsSearchQuery)}"
+      oninput="chartsSearchQuery=this.value;renderCharts();document.getElementById('charts-search-input')?.focus()"
+      style="width:100%;box-sizing:border-box;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink);font-family:inherit;font-size:13px;outline:none">
+  </div>`;
+
+  const allEx=sess.exercises||[];
+  const filteredEx=chartsSearchQuery
+    ?allEx.filter(ex=>ex.name.toLowerCase().includes(chartsSearchQuery.toLowerCase()))
+    :allEx;
+
+  html+=`<div class="ex-selector">`;
+  for(const ex of filteredEx){
+    const data=getChartData(ex.id,chartSession);
     const isActive=selectedChartEx===ex.id;
     html+=`<button class="ex-chip${isActive?' active':''}" style="${isActive?`background:${color};border-color:${color};color:#fff`:''}" onclick="selectChartEx('${ex.id}')">
-      ${ex.name}${data.length?`<span class="chip-count">(${data.length})</span>`:''}
+      ${escHtml(ex.name)}${data.length?`<span class="chip-count">(${data.length})</span>`:''}
     </button>`;
   }
   html+=`</div>`;
+
   if(!selectedChartEx){
-    html+=`<div class="empty"><div class="empty-icon">👆</div><div class="empty-title">Select an exercise</div></div>`;
+    html+=filteredEx.length===0
+      ?`<div class="empty"><div class="empty-title">No exercises match</div></div>`
+      :`<div class="empty"><div class="empty-icon">👆</div><div class="empty-title">Select an exercise</div></div>`;
     document.getElementById('page-charts').innerHTML=html;return;
   }
-  const data=getChartData(selectedChartEx);
-  const ex=sess.exercises.find(e=>e.id===selectedChartEx);
-  if(!data.length){
+
+  const data=getChartData(selectedChartEx,chartSession);
+  const ex=allEx.find(e=>e.id===selectedChartEx);
+  if(!ex||!data.length){
     html+=`<div class="empty"><div class="empty-icon">📈</div><div class="empty-title">No data yet</div></div>`;
     document.getElementById('page-charts').innerHTML=html;return;
   }
@@ -1814,9 +1855,9 @@ function renderCharts(){
     <div class="cs-item"><div class="cs-val">${minW}${ex.unit}</div><div class="cs-key">Minimum</div></div>
     <div class="cs-item"><div class="cs-val">${pct>0?'+':''}${pct}%</div><div class="cs-key">Progress</div></div>
   </div>
-  <div class="chart-box"><div class="chart-title">${ex.name} — Max weight</div>${renderSVGChart(data,'weight',ex.unit,color)}</div>`;
+  <div class="chart-box"><div class="chart-title">${escHtml(ex.name)} — Max weight</div>${renderSVGChart(data,'weight',ex.unit,color)}</div>`;
   if(data.some(d=>d.reps>0))
-    html+=`<div class="chart-box"><div class="chart-title">${ex.name} — Avg reps</div>${renderSVGChart(data,'reps','reps','#c8a96e')}</div>`;
+    html+=`<div class="chart-box"><div class="chart-title">${escHtml(ex.name)} — Avg reps</div>${renderSVGChart(data,'reps','reps','#c8a96e')}</div>`;
   document.getElementById('page-charts').innerHTML=html;
 }
 function renderSVGChart(data,key,unit,color){
@@ -1924,7 +1965,7 @@ function renderMuscleFull(){
   if(muscleMode==='global'){
     exercises=Object.values(workoutDefs).filter(s=>!s._deleted&&!s._archived).flatMap(s=>s.exercises||[]);
   }else{
-    exercises=(workoutDefs[currentSession]?.exercises)||[];
+    exercises=(workoutDefs[chartSession]?.exercises)||(workoutDefs[currentSession]?.exercises)||[];
   }
   const{smT,grpT}=calcMuscleData(exercises);
   const grand=Object.values(grpT).reduce((a,b)=>a+b,0);
@@ -1957,7 +1998,7 @@ function renderMuscleFull(){
   }
   let ct='',cb='';
   if(!muscleSel){
-    ct=muscleMode==='global'?'Global':(workoutDefs[currentSession]?.label?.split(' ').slice(0,2).join(' ')||'');
+    ct=muscleMode==='global'?'Global':((workoutDefs[chartSession]||workoutDefs[currentSession])?.label?.split(' ').slice(0,2).join(' ')||'');
     cb=`${exercises.length} exercises`;
   }else if(muscleSelType==='group'){
     ct=muscleSel;cb=`${Math.round((grpT[muscleSel]||0)/grand*100)}%`;
@@ -2415,19 +2456,29 @@ function renderLibrary(){
   if(libData[libCat]===undefined&&!libLoading[libCat]){fetchLibCat(libCat);return;}
   const cat=MUSCLE_CATS.find(c=>c.id===libCat)||MUSCLE_CATS[0];
 
-  let html=`<div class="muscle-tabs">`;
+  let html=`<div style="margin-bottom:10px">
+    <input type="text" id="lib-search-input" placeholder="Search exercises by name…"
+      value="${escHtml(libSearchQuery)}"
+      oninput="libSearchQuery=this.value;renderLibrary();document.getElementById('lib-search-input')?.focus()"
+      style="width:100%;box-sizing:border-box;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink);font-family:inherit;font-size:13px;outline:none">
+  </div>
+  <div class="muscle-tabs">`;
   MUSCLE_CATS.forEach(c=>{
-    html+=`<button class="mtab${c.id===libCat?' active':''}" style="${c.id===libCat?`background:${c.color};color:#fff`:''}" onclick="selectLibCat(${c.id})">${c.emoji} ${c.name}</button>`;
+    html+=`<button class="mtab${c.id===libCat?' active':''}" style="${c.id===libCat?`background:${c.color};color:#fff`:''}" onclick="libSearchQuery='';selectLibCat(${c.id})">${c.emoji} ${c.name}</button>`;
   });
   html+=`</div>`;
 
   if(libLoading[libCat]){
     html+=`<div class="lib-fetch-bar"></div><div class="lib-loading"><div class="spin">⏳</div><div>Loading database…</div></div>`;
   } else if(libData[libCat]?.length){
-    const count=libData[libCat].length;
-    html+=`<div style="font-size:10px;color:var(--muted);margin-bottom:10px">${count} exercises · ${cat.name}</div>`;
+    const allExercises=libData[libCat];
+    const filtered=libSearchQuery
+      ?allExercises.filter(ex=>(ex.name||'').toLowerCase().includes(libSearchQuery.toLowerCase()))
+      :allExercises;
+    const count=filtered.length;
+    html+=`<div style="font-size:10px;color:var(--muted);margin-bottom:10px">${count}${libSearchQuery?' results':''} · ${cat.name}</div>`;
     html+=`<div class="lib-grid">`;
-    libData[libCat].forEach(ex=>{
+    filtered.forEach(ex=>{
       const safeId=String(ex.id);
       const name=ex.name||'Exercise';
       const imgUrl=ex.images?.[0]?.image||'';
@@ -2464,6 +2515,9 @@ function renderLibrary(){
         </div>
       </div>`;
     });
+    if(!filtered.length){
+      html+=`<div class="empty" style="padding:24px 0"><div class="empty-icon">🔍</div><div class="empty-title">No exercises match "${escHtml(libSearchQuery)}"</div></div>`;
+    }
     html+=`</div>`;
   } else if(libData[libCat]!==undefined){
     html+=`<div class="lib-error">😕 No exercises for this group.<br><br>
@@ -3224,56 +3278,63 @@ function renderHome(){
       </div>
     </div>`;
 
-  // ── Today's session card ──────────────────────────────────────
-  const sess=workoutDefs[currentSession];
-  const exCount=(sess?.exercises||[]).length;
-  const lastSessEntry=Object.values(allLogs).filter(l=>l.session===currentSession).sort((a,b)=>b.date.localeCompare(a.date))[0];
-  const lastSessDaysAgo=lastSessEntry?Math.round((Date.now()-new Date(lastSessEntry.date+'T12:00').getTime())/(86400000)):null;
-  const lastSessLabel=lastSessDaysAgo===0?'Today':lastSessDaysAgo===1?'Yesterday':lastSessDaysAgo!=null?`${lastSessDaysAgo}d ago`:'Never';
-  // Estimate session duration from exercise count + rest goal
+  // ── Session cards (all non-archived) ─────────────────────────
   const restSec=getRestGoal().rest;
-  const estMin=exCount>0?Math.round(exCount*3*(35+restSec)/60):0;
-  // Last session volume
-  const lastVol=lastSessEntry
-    ?(workoutDefs[currentSession]?.exercises||[]).reduce((t,ex)=>{
-        const sets=(lastSessEntry.data||{})[ex.id]?.sets||[];
-        return t+sets.reduce((st,s)=>st+(parseFloat(s.weight)||0)*(parseInt(s.reps)||0),0);
-      },0):0;
-
-  const sessCard=sess?`
-    <div class="home-sess-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted)">Today's Session</div>
-        <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:var(--gold)">${lastSessLabel}</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-        <div style="font-size:24px;font-weight:800;color:var(--ink);line-height:1.1">${sess.label}</div>
-        <div style="background:${sess.color};border-radius:8px;padding:6px 10px;text-align:center;flex-shrink:0">
-          <div style="font-family:'DM Mono',monospace;font-size:17px;font-weight:800;color:#fff;line-height:1">${exCount}</div>
-          <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,.65);letter-spacing:.5px">Ex.</div>
+  const nonArchivedSessions=Object.entries(workoutDefs).filter(([,s])=>!s._archived);
+  const sessCards=nonArchivedSessions.map(([key,sess])=>{
+    const logs=Object.values(allLogs).filter(l=>l.session===key).sort((a,b)=>b.date.localeCompare(a.date));
+    const lastLog=logs[0];
+    const daysAgo=lastLog?Math.round((Date.now()-new Date(lastLog.date+'T12:00').getTime())/86400000):null;
+    const lastLabel=daysAgo===0?'Today':daysAgo===1?'Yesterday':daysAgo!=null?daysAgo+'d ago':'Never';
+    // Average strain from per-session manualStrain
+    const strainLogs=logs.filter(l=>l.manualStrain!=null);
+    const avgStrain=strainLogs.length?(strainLogs.reduce((t,l)=>t+l.manualStrain,0)/strainLogs.length):null;
+    // Average session duration from timed logs
+    const timedLogs=logs.filter(l=>l.startTime&&l.endTime);
+    const avgMin=timedLogs.length?Math.round(timedLogs.reduce((t,l)=>t+(new Date(l.endTime)-new Date(l.startTime))/60000,0)/timedLogs.length):null;
+    // Fallback estimate
+    const exCount=(sess.exercises||[]).length;
+    const estMin=!avgMin&&exCount>0?Math.round(exCount*3*(35+restSec)/60):null;
+    const timeLabel=avgMin?`~${avgMin} min`:estMin?`~${estMin} min`:null;
+    return`<div class="home-sess-card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:800;color:#fff;background:${sess.color};padding:2px 7px;border-radius:4px;flex-shrink:0">${key}</span>
+            <span style="font-size:17px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(sess.label)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${escHtml(sess.sub)}</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="font-size:10px;color:var(--muted)">Last: <b style="color:var(--ink)">${lastLabel}</b></div>
+            ${avgStrain!=null?`<div style="font-size:10px;color:var(--muted)">Avg strain: <b style="font-family:'DM Mono',monospace;color:#F5A623">${avgStrain.toFixed(1)}</b></div>`:''}
+            ${timeLabel?`<div style="font-size:10px;color:var(--muted)">Avg time: <b style="color:var(--ink)">${timeLabel}</b></div>`:''}
+          </div>
         </div>
+        <button onclick="startSession('${key}')" style="background:var(--accent);border:none;border-radius:12px;width:46px;height:46px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><polygon points="5,3 19,12 5,21"/></svg>
+        </button>
       </div>
-      <div style="font-size:12px;color:var(--ink2);margin-bottom:${estMin>0||lastVol>0?'12px':'16px'}">${sess.sub}</div>
-      ${estMin>0||lastVol>0?`<div style="display:flex;gap:16px;margin-bottom:16px">
-        ${estMin>0?`<div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
-          ~${estMin} min</div>`:''}
-        ${lastVol>0?`<div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2L4 14h8L7.5 22 20 10h-8z"/></svg>
-          ~${fmtVol(lastVol)} last</div>`:''}
-      </div>`:''}
-      <button onclick="setView('log',null)" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:16px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer;text-transform:uppercase;letter-spacing:2px">Start Session</button>
-    </div>`:'';
+    </div>`;
+  }).join('');
+
+  const sessSection=nonArchivedSessions.length
+    ?`<div style="margin-bottom:16px">${sessCards}</div>`
+    :`<div class="home-sess-card"><div style="color:var(--muted);font-size:13px;text-align:center;padding:8px 0">No sessions yet — create one in Sessions</div></div>`;
 
   // ── GitHub activity heatmap ───────────────────────────────────
   const heatmap=renderHeatmap();
 
-  document.getElementById('page-home').innerHTML=greeting+statTiles+sessCard+heatmap;
+  document.getElementById('page-home').innerHTML=greeting+statTiles+sessSection+heatmap;
 
   setTimeout(()=>{
     const el=document.getElementById('hm-scroll');
     if(el) el.scrollLeft=el.scrollWidth;
   },50);
+}
+
+function startSession(key){
+  currentSession=key;
+  setView('log',null);
 }
 
 function promptHomeWeight(){
@@ -3321,8 +3382,9 @@ function editDailyMetricInline(field,date,val){
   if(field==='recovery') saveDailyMetrics(date,{recovery:val===''||isNaN(n)?null:Math.min(100,Math.max(0,n))});
   if(date===today())renderHome();
 }
-function renderHistDailyMetrics(date){
+function renderHistDailyMetrics(date, sessKey){
   const dm=getDailyMetrics(date);
+  const logEntry=sessKey?allLogs[`${sessKey}_${date}`]:null;
   const rcVal=dm.recovery!=null
     ?`<span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:${recoveryColor(dm.recovery)}">${dm.recovery}</span><span style="font-size:10px;color:var(--muted);margin-left:2px">/100</span>`
     :`<span style="color:var(--muted);font-size:13px">—</span>`;
@@ -3337,10 +3399,10 @@ function renderHistDailyMetrics(date){
     <span style="cursor:pointer;margin-left:4px" onclick="editDailyMetric('sleep','${date}')">${slVal}</span>
   </div>
   <div class="hist-strain-row">
-    <span class="hist-time-label" style="cursor:pointer" onclick="editDailyMetric('strain','${date}')">STRAIN</span>
+    <span class="hist-time-label">STRAIN</span>
     <input type="number" min="0" max="21" step="0.1" class="hist-time-input" style="width:60px;text-align:center"
-      value="${dm.strain??''}" placeholder="0–21"
-      onchange="editDailyMetricInline('strain','${date}',this.value)">
+      value="${logEntry?.manualStrain??''}" placeholder="0–21"
+      onchange="editLogStrain('${sessKey??''}','${date}',this.value)">
     <span style="font-size:10px;color:var(--muted);margin-left:2px">/ 21</span>
   </div>`;
 }
