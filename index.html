@@ -248,6 +248,35 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .save-btn{width:100%;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;transition:background .3s,transform .1s;font-family:'DM Sans',sans-serif;color:#fff;letter-spacing:.3px;}
 .save-btn:active{transform:scale(.98);}
 .set-row.pf .set-input{opacity:.4;font-style:italic;}
+.exs-wrap{position:fixed;inset:0;z-index:1100;display:flex;flex-direction:column;justify-content:flex-end;}
+.exs-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);}
+.exs-panel{position:relative;background:var(--white);border-radius:20px 20px 0 0;padding:12px 16px calc(24px + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.exs-grab{width:36px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 12px;}
+.exs-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.exs-img{width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#222;}
+.exs-title{font-size:18px;font-weight:800;color:var(--ink);line-height:1.2;}
+.exs-subtitle{font-size:11px;color:var(--ink2);margin-top:2px;}
+.exs-close{background:none;border:none;color:var(--ink2);font-size:26px;line-height:1;cursor:pointer;padding:4px 6px;}
+.exs-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin-bottom:14px;}
+.exs-tile{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center;}
+.exs-tile-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:600;color:var(--ink);}
+.exs-tile-lab{font-size:9px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.6px;margin-top:3px;}
+.exs-tile-sub{font-size:10px;color:var(--ink2);margin-top:2px;}
+.exs-list{margin-top:6px;}
+.exs-row{padding:11px 0;border-bottom:1px solid var(--line);}
+.exs-row-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+.exs-date{font-size:12px;font-weight:700;color:var(--ink);}
+.exs-sess{font-size:11px;color:var(--ink2);}
+.exs-pr{font-size:10px;font-weight:700;color:var(--gold);}
+.exs-sets{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);}
+.exs-notes{font-size:11px;color:var(--ink2);margin-top:3px;font-style:italic;}
+.ex-name-link{cursor:pointer;}
+.ex-name-link .ex-hist-ico{font-size:11px;opacity:.6;margin-left:4px;}
+.mine-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;font-family:inherit;color:var(--ink);}
+.mine-name{flex:1;min-width:0;font-size:14px;font-weight:600;}
+.mine-meta{font-size:11px;color:var(--ink2);white-space:nowrap;}
+.lib-section-title{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin:4px 0 8px;}
+.lib-hist-btn{width:100%;margin-top:10px;background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:10px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;}
 .save-btn-secondary{flex:1;background:transparent;border:1px solid var(--muted);color:var(--ink);}
 
 /* ── HISTORY ── */
@@ -656,7 +685,9 @@ function buildLog(){
   for(const [id,d] of Object.entries(formData)){
     const sets=(d.sets||[]).filter(s=>!s.pf);
     if(!sets.length&&!d.notes)continue;
-    data[id]={...JSON.parse(JSON.stringify(d)),sets:JSON.parse(JSON.stringify(sets))};
+    // Store the name too: logs otherwise only hold ids, and a name is lost once the exercise leaves its template
+    const name=adhocExercises.find(e=>e.id===id)?.name||workoutDefs[currentSession]?.exercises?.find(e=>e.id===id)?.name||findExerciseName(id)||d.name;
+    data[id]={...JSON.parse(JSON.stringify(d)),sets:JSON.parse(JSON.stringify(sets)),...(name?{name}:{})};
   }
   return {...(allLogs[logKey()]||{}),session:currentSession,date:currentDate,data,
     adhocExercises:JSON.parse(JSON.stringify(adhocExercises)),startTime:sessionStartTime,endTime:sessionEndTime};
@@ -1300,7 +1331,7 @@ function renderExCard(ex,color,bg,isAdhoc=false){
         :`<div class="ex-photo-btn" onclick="pickExPhoto('${ex.id}')">📷</div>`}
       <div style="flex:1;min-width:0">
         <div class="ex-name-row">
-          <span class="ex-name">${ex.name}</span>
+          <span class="ex-name ex-name-link" data-exname="${escHtml(ex.name)}" onclick="showExerciseSheet(this.dataset.exname)">${ex.name}<span class="ex-hist-ico">📈</span></span>
           ${isAdhoc?'<span class="adhoc-badge">EXTRA</span>':''}
           <span class="pr-badge${isPR?' show':''}" data-pr="${ex.id}">🏆 PR</span>
         </div>
@@ -1529,6 +1560,108 @@ function renderHeatmap(){
     </div>`;
 }
 
+// ─────────────────────────────────────────────────────────────────
+// EXERCISE DETAIL: one exercise across every session and one-off use
+// ─────────────────────────────────────────────────────────────────
+// Template exercises, extra exercises and the defaults all use different ids, so an exercise is identified by name
+function exNameIn(log,id){
+  return log.data?.[id]?.name||log.adhocExercises?.find(e=>e.id===id)?.name||findExerciseName(id);
+}
+function exUnitByName(name){
+  const n=name.toLowerCase();
+  for(const s of Object.values(workoutDefs)){const ex=s.exercises?.find(e=>e.name.toLowerCase()===n);if(ex)return ex.unit||'kg';}
+  for(const l of Object.values(allLogs)){const a=l.adhocExercises?.find(e=>e.name?.toLowerCase()===n);if(a)return a.unit||'kg';}
+  return 'kg';
+}
+function getExerciseHistory(name){
+  const n=name.trim().toLowerCase(),out=[];
+  for(const l of Object.values(allLogs)){
+    for(const [id,d] of Object.entries(l.data||{})){
+      const sets=(d.sets||[]).filter(s=>s.weight||s.reps);
+      if(!sets.length||(exNameIn(l,id)||'').toLowerCase()!==n)continue;
+      out.push({date:l.date,session:l.session,extra:!!l.adhocExercises?.some(e=>e.id===id),sets,notes:d.notes||''});
+    }
+  }
+  return out.sort((a,b)=>b.date.localeCompare(a.date)||a.session.localeCompare(b.session));
+}
+// Every exercise you have logged, most recent first
+function getMyExercises(){
+  const map={};
+  for(const l of Object.values(allLogs)){
+    for(const [id,d] of Object.entries(l.data||{})){
+      if(!d.sets?.some(s=>s.weight||s.reps))continue;
+      const name=exNameIn(l,id);if(!name)continue;
+      const e=map[name.toLowerCase()]||(map[name.toLowerCase()]={name,count:0,last:''});
+      e.count++;if(l.date>e.last)e.last=l.date;
+    }
+  }
+  return Object.values(map).sort((a,b)=>b.last.localeCompare(a.last)||a.name.localeCompare(b.name));
+}
+function exLibImage(name){
+  const n=name.toLowerCase(),ex=(_freeExAll||[]).find(e=>e.name?.toLowerCase()===n);
+  return ex?.images?.[0]?FREE_EX_IMG+ex.images[0]:'';
+}
+function closeExerciseSheet(){document.getElementById('ex-sheet')?.remove();}
+function showExerciseSheet(name){
+  closeExerciseSheet();
+  const hist=getExerciseHistory(name),unit=exUnitByName(name);
+  const isLoad=unit==='kg'||unit==='lb';
+  const w=s=>parseFloat(s.weight)||0,r=s=>parseInt(s.reps)||0;
+  const byDate={};
+  hist.forEach(h=>{byDate[h.date]=Math.max(byDate[h.date]||0,...h.sets.map(w));});
+  const chart=Object.keys(byDate).sort().filter(d=>byDate[d]>0).map(d=>({date:d,weight:byDate[d]}));
+  // A day is a record when its top weight beats every earlier day
+  const recordDates=new Set();let top=0;
+  chart.forEach(c=>{if(c.weight>top){if(top>0)recordDates.add(c.date);top=c.weight;}});
+  let best=null,best1rm=null;
+  hist.forEach(h=>h.sets.forEach(s=>{
+    if(w(s)&&(!best||w(s)>best.w||(w(s)===best.w&&r(s)>best.r)))best={w:w(s),r:r(s),date:h.date};
+    if(isLoad&&w(s)&&r(s)&&r(s)<=15){const e=w(s)*(1+r(s)/30);if(!best1rm||e>best1rm.v)best1rm={v:e,date:h.date};} // Epley; unreliable above ~15 reps
+  }));
+  const fmtSet=s=>`${s.weight?s.weight+unit:'—'}${s.reps?' × '+s.reps:''}`;
+  const tile=(label,val,sub)=>`<div class="exs-tile"><div class="exs-tile-val">${val}</div><div class="exs-tile-lab">${label}</div>${sub?`<div class="exs-tile-sub">${sub}</div>`:''}</div>`;
+  const img=exLibImage(name);
+  const rows=hist.map(h=>{
+    const sess=workoutDefs[h.session];
+    return`<div class="exs-row">
+      <div class="exs-row-head">
+        <span class="exs-date">${fmtDate(h.date)}</span>
+        <span class="exs-sess">${escHtml(sess?.label||h.session)}</span>
+        ${h.extra?'<span class="adhoc-badge">EXTRA</span>':''}
+        ${recordDates.has(h.date)&&Math.max(...h.sets.map(w))===byDate[h.date]?'<span class="exs-pr">🏆 Record</span>':''}
+      </div>
+      <div class="exs-sets">${h.sets.map(fmtSet).join(' · ')}</div>
+      ${h.notes?`<div class="exs-notes">${escHtml(h.notes)}</div>`:''}
+    </div>`;
+  }).join('');
+  const el=document.createElement('div');
+  el.id='ex-sheet';
+  el.className='exs-wrap';
+  el.innerHTML=`
+    <div class="exs-backdrop" onclick="closeExerciseSheet()"></div>
+    <div class="exs-panel">
+      <div class="exs-grab"></div>
+      <div class="exs-head">
+        ${img?`<img class="exs-img" src="${img}" alt="" onerror="this.remove()">`:''}
+        <div style="flex:1;min-width:0"><div class="exs-title">${escHtml(name)}</div>
+        <div class="exs-subtitle">All sessions and one-off use</div></div>
+        <button class="exs-close" onclick="closeExerciseSheet()" aria-label="Close">×</button>
+      </div>
+      ${hist.length?`
+      <div class="exs-tiles">
+        ${tile('Heaviest',best?best.w+unit:'—',best?`× ${best.r} · ${fmtShort(best.date)}`:'')}
+        ${isLoad?tile('Est. 1RM',best1rm?Math.round(best1rm.v)+unit:'—',best1rm?fmtShort(best1rm.date):''):''}
+        ${tile('Sessions',hist.length,'')}
+        ${tile('Last',fmtShort(hist[0].date),'')}
+      </div>
+      ${chart.length>1?`<div class="chart-box"><div class="chart-title">Top ${isLoad?'weight':unit} per day</div>${renderSVGChart(chart,'weight',unit,'#E85010')}</div>`:''}
+      <div class="exs-list">${rows}</div>`
+      :`<div class="empty" style="padding:28px 0"><div class="empty-icon">📈</div><div class="empty-title">Not logged yet</div></div>`}
+    </div>`;
+  document.body.appendChild(el);
+  if(!img&&!_freeExAll)ensureFreeExDb().then(()=>{const u=exLibImage(name);const h=el.querySelector('.exs-head');if(u&&h&&el.isConnected)h.insertAdjacentHTML('afterbegin',`<img class="exs-img" src="${u}" alt="" onerror="this.remove()">`);});
+}
+
 function heatmapTap(date){
   const d=buildHeatmapData()[date];
   if(!d||!d.sessions.length)return;
@@ -1661,7 +1794,7 @@ function renderHistBody(log,sess,color){
     const hist=Object.values(allLogs).filter(l=>l.session===sess.label.slice(-1)&&l.date<log.date).flatMap(l=>(l.data[ex.id]?.sets||[]).map(s=>parseFloat(s.weight)||0)).reduce((mx,w)=>Math.max(mx,w),0);
     const wasPR=maxW>0&&maxW>hist;
     html+=`<div class="hist-ex">
-      <div class="hist-ex-name">${ex.name}${wasPR?'<span class="pr-badge show" style="font-size:9px">🏆 PR</span>':''}</div>
+      <div class="hist-ex-name ex-name-link" data-exname="${escHtml(ex.name)}" onclick="showExerciseSheet(this.dataset.exname)">${ex.name}<span class="ex-hist-ico">📈</span>${wasPR?'<span class="pr-badge show" style="font-size:9px">🏆 PR</span>':''}</div>
       <div class="hist-sets">${setsStr}</div>
       ${d.notes?`<div class="hist-notes">${d.notes}</div>`:''}
       ${vol>0?`<div class="hist-vol">Vol: ${fmtVol(vol)}</div>`:''}
@@ -1680,7 +1813,7 @@ function renderHistBody(log,sess,color){
     }).join('  ·  ');
     const vol=filled.reduce((t,s)=>t+((parseFloat(s.weight)||0)*(parseInt(s.reps)||0)),0);
     html+=`<div class="hist-ex">
-      <div class="hist-ex-name">${escHtml(adEx.name)} <span class="adhoc-badge">EXTRA</span></div>
+      <div class="hist-ex-name ex-name-link" data-exname="${escHtml(adEx.name)}" onclick="showExerciseSheet(this.dataset.exname)">${escHtml(adEx.name)}<span class="ex-hist-ico">📈</span> <span class="adhoc-badge">EXTRA</span></div>
       <div class="hist-sets">${setsStr}</div>
       ${d.notes?`<div class="hist-notes">${escHtml(d.notes)}</div>`:''}
       ${vol>0?`<div class="hist-vol">Vol: ${fmtVol(vol)}</div>`:''}
@@ -1971,6 +2104,7 @@ function renderCharts(){
   <div class="chart-box"><div class="chart-title">${escHtml(ex.name)} — Max weight</div>${renderSVGChart(data,'weight',ex.unit,color)}</div>`;
   if(data.some(d=>d.reps>0))
     html+=`<div class="chart-box"><div class="chart-title">${escHtml(ex.name)} — Avg reps</div>${renderSVGChart(data,'reps','reps','#c8a96e')}</div>`;
+  html+=`<button class="lib-hist-btn" data-exname="${escHtml(ex.name)}" onclick="showExerciseSheet(this.dataset.exname)">📈 History across all sessions</button>`;
   document.getElementById('page-charts').innerHTML=html;
 }
 function renderSVGChart(data,key,unit,color){
@@ -2572,80 +2706,108 @@ function renderEjercicios(){
 }
 
 // ── LIBRARY ──
+function libCardHtml(ex,cat,histCount){
+  const safeId=String(ex.id);
+  const name=ex.name||'Exercise';
+  const imgUrl=ex.images?.[0]?.image||'';
+  const isOpen=!!libExpanded[safeId];
+  const svgThumb=muscleSVG(cat.id,cat.color);
+  const lvlColor={beginner:'#2e8b57',intermediate:'#1e6ba0',expert:'#c0392b'}[ex.level]||'#888';
+  return`<div class="lib-card">
+    <div class="lib-card-head" data-libid="${escHtml(safeId)}" onclick="toggleLibExEl(this)">
+      ${imgUrl
+        ?`<img class="lib-thumb" src="${imgUrl}" alt="${escHtml(name)}"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        :''}
+      <div class="lib-muscle-svg" style="${imgUrl?'display:none':'display:flex'}">${svgThumb}</div>
+      <div class="lib-info">
+        <div class="lib-name">${escHtml(name)}</div>
+        <div class="lib-card-meta">
+          <span class="muscle-pill" style="background:${cat.color}33;color:${textTint(cat.color)}">${cat.emoji} ${cat.name}</span>
+          ${ex.level?`<span class="lib-level" style="background:${lvlColor}22;color:${lvlColor}">${ex.level}</span>`:''}
+          ${ex.equipment?`<span class="lib-equip">${escHtml(ex.equipment)}</span>`:''}
+          ${histCount?`<span class="lib-equip" style="color:var(--accent)">📈 ${histCount}×</span>`:''}
+        </div>
+        ${ex.primaryMuscles?.length?`<div class="lib-muscles"><b>Primary:</b> ${ex.primaryMuscles.map(m=>escHtml(m)).join(', ')}</div>`:''}
+        ${ex.secondaryMuscles?.length?`<div class="lib-muscles" style="opacity:.65"><b>Secondary:</b> ${ex.secondaryMuscles.map(m=>escHtml(m)).join(', ')}</div>`:''}
+      </div>
+    </div>
+    <div class="lib-expand${isOpen?' open':''}" id="lib-ex-${safeId}">
+      ${ex.allImages?.length
+        ?`<div class="lib-img-row">${ex.allImages.slice(0,2).map(u=>`<img src="${u}" loading="lazy" alt="${escHtml(name)}">`).join('')}</div>`
+        :imgUrl?`<img src="${imgUrl}" style="width:100%;border-radius:8px;margin-bottom:12px;max-height:200px;object-fit:cover" loading="lazy">`
+        :`<div style="border-radius:8px;background:#f8f6f3;height:120px;overflow:hidden;margin-bottom:12px">${muscleSVG(cat.id,cat.color)}</div>`}
+      ${ex.instructions?.length
+        ?`<ol class="lib-steps-ordered">${ex.instructions.map(st=>`<li>${escHtml(st)}</li>`).join('')}</ol>`
+        :`<p style="font-size:12px;color:var(--muted)">No instructions available.</p>`}
+      <button class="lib-hist-btn" data-exname="${escHtml(name)}" onclick="event.stopPropagation();showExerciseSheet(this.dataset.exname)">📈 ${histCount?`Your history (${histCount} session${histCount>1?'s':''})`:'Your history'}</button>
+    </div>
+  </div>`;
+}
+function mineRowsHtml(list){
+  return list.map(e=>`<button class="mine-row" data-exname="${escHtml(e.name)}" onclick="showExerciseSheet(this.dataset.exname)">
+    <span class="mine-name">${escHtml(e.name)}</span>
+    <span class="mine-meta">${e.count}× · ${fmtShort(e.last)}</span><span style="color:var(--ink2)">›</span>
+  </button>`).join('');
+}
+const OTHER_CAT={id:0,name:'Other',emoji:'•',color:'#555555'};
 function renderLibrary(){
   const cont=document.getElementById('ej-sub-content');if(!cont)return;
-  // Auto-fetch the active category if data isn't loaded yet
-  if(libData[libCat]===undefined&&!libLoading[libCat]){fetchLibCat(libCat);return;}
-  const cat=MUSCLE_CATS.find(c=>c.id===libCat)||MUSCLE_CATS[0];
+  const q=libSearchQuery.trim().toLowerCase();
+  // Auto-fetch the active category if data isn't loaded yet (not needed for Mine or for a search)
+  if(!q&&libCat!=='mine'&&libData[libCat]===undefined&&!libLoading[libCat]){fetchLibCat(libCat);return;}
+  const mine=getMyExercises();
+  const histCount=Object.fromEntries(mine.map(e=>[e.name.toLowerCase(),e.count]));
 
   let html=`<div style="margin-bottom:10px">
-    <input type="text" id="lib-search-input" placeholder="Search exercises by name…"
+    <input type="text" id="lib-search-input" placeholder="Search all exercises by name…"
       value="${escHtml(libSearchQuery)}"
-      oninput="libSearchQuery=this.value;renderLibrary();document.getElementById('lib-search-input')?.focus()"
+      oninput="libSearchQuery=this.value;renderLibrary();const i=document.getElementById('lib-search-input');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}"
       style="width:100%;box-sizing:border-box;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink);font-family:inherit;font-size:13px;outline:none">
   </div>
-  <div class="muscle-tabs">`;
+  <div class="muscle-tabs">
+    <button class="mtab${libCat==='mine'&&!q?' active':''}" style="${libCat==='mine'&&!q?'background:var(--accent);color:#fff':''}" onclick="libSearchQuery='';selectLibCat('mine')">⭐ Mine</button>`;
   MUSCLE_CATS.forEach(c=>{
-    html+=`<button class="mtab${c.id===libCat?' active':''}" style="${c.id===libCat?`background:${c.color};color:#fff`:''}" onclick="libSearchQuery='';selectLibCat(${c.id})">${c.emoji} ${c.name}</button>`;
+    const on=c.id===libCat&&!q;
+    html+=`<button class="mtab${on?' active':''}" style="${on?`background:${c.color};color:#fff`:''}" onclick="libSearchQuery='';selectLibCat(${c.id})">${c.emoji} ${c.name}</button>`;
   });
   html+=`</div>`;
 
-  if(libLoading[libCat]){
-    html+=`<div class="lib-fetch-bar"></div><div class="lib-loading"><div class="spin">⏳</div><div>Loading database…</div></div>`;
-  } else if(libData[libCat]?.length){
-    const allExercises=libData[libCat];
-    const filtered=libSearchQuery
-      ?allExercises.filter(ex=>(ex.name||'').toLowerCase().includes(libSearchQuery.toLowerCase()))
-      :allExercises;
-    const count=filtered.length;
-    html+=`<div style="font-size:10px;color:var(--muted);margin-bottom:10px">${count}${libSearchQuery?' results':''} · ${cat.name}</div>`;
-    html+=`<div class="lib-grid">`;
-    filtered.forEach(ex=>{
-      const safeId=String(ex.id);
-      const name=ex.name||'Exercise';
-      const imgUrl=ex.images?.[0]?.image||'';
-      const isOpen=!!libExpanded[safeId];
-      const svgThumb=muscleSVG(libCat,cat.color);
-      const lvlColor={beginner:'#2e8b57',intermediate:'#1e6ba0',expert:'#c0392b'}[ex.level]||'#888';
-
-      html+=`<div class="lib-card">
-        <div class="lib-card-head" data-libid="${escHtml(safeId)}" onclick="toggleLibExEl(this)">
-          ${imgUrl
-            ?`<img class="lib-thumb" src="${imgUrl}" alt="${escHtml(name)}"
-                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-            :''}
-          <div class="lib-muscle-svg" style="${imgUrl?'display:none':'display:flex'}">${svgThumb}</div>
-          <div class="lib-info">
-            <div class="lib-name">${escHtml(name)}</div>
-            <div class="lib-card-meta">
-              <span class="muscle-pill" style="background:${cat.color}33;color:${textTint(cat.color)}">${cat.emoji} ${cat.name}</span>
-              ${ex.level?`<span class="lib-level" style="background:${lvlColor}22;color:${lvlColor}">${ex.level}</span>`:''}
-              ${ex.equipment?`<span class="lib-equip">${escHtml(ex.equipment)}</span>`:''}
-            </div>
-            ${ex.primaryMuscles?.length?`<div class="lib-muscles"><b>Primary:</b> ${ex.primaryMuscles.map(m=>escHtml(m)).join(', ')}</div>`:''}
-            ${ex.secondaryMuscles?.length?`<div class="lib-muscles" style="opacity:.65"><b>Secondary:</b> ${ex.secondaryMuscles.map(m=>escHtml(m)).join(', ')}</div>`:''}
-          </div>
-        </div>
-        <div class="lib-expand${isOpen?' open':''}" id="lib-ex-${safeId}">
-          ${ex.allImages?.length
-            ?`<div class="lib-img-row">${ex.allImages.slice(0,2).map(u=>`<img src="${u}" loading="lazy" alt="${escHtml(name)}">`).join('')}</div>`
-            :imgUrl?`<img src="${imgUrl}" style="width:100%;border-radius:8px;margin-bottom:12px;max-height:200px;object-fit:cover" loading="lazy">`
-            :`<div style="border-radius:8px;background:#f8f6f3;height:120px;overflow:hidden;margin-bottom:12px">${muscleSVG(libCat,cat.color)}</div>`}
-          ${ex.instructions?.length
-            ?`<ol class="lib-steps-ordered">${ex.instructions.map(s=>`<li>${escHtml(s)}</li>`).join('')}</ol>`
-            :`<p style="font-size:12px;color:var(--muted)">No instructions available.</p>`}
-        </div>
-      </div>`;
-    });
-    if(!filtered.length){
-      html+=`<div class="empty" style="padding:24px 0"><div class="empty-icon">🔍</div><div class="empty-title">No exercises match "${escHtml(libSearchQuery)}"</div></div>`;
+  if(q){
+    // Search: your own exercises first, then the whole library across every muscle group
+    const myHits=mine.filter(e=>e.name.toLowerCase().includes(q));
+    if(myHits.length)html+=`<div class="lib-section-title">Your exercises (${myHits.length})</div>${mineRowsHtml(myHits)}`;
+    if(!_freeExAll){
+      html+=`<div class="lib-loading"><div class="spin">⏳</div><div>Loading library…</div></div>`;
+      ensureFreeExDb().then(()=>{if(libSearchQuery.trim())renderLibrary();});
+    }else{
+      const hits=_freeExAll.filter(ex=>(ex.name||'').toLowerCase().includes(q));
+      html+=`<div class="lib-section-title" style="margin-top:14px">Library · ${hits.length} result${hits.length===1?'':'s'}${hits.length>60?' (showing 60)':''}</div><div class="lib-grid">`;
+      hits.slice(0,60).forEach(raw=>{
+        const cat=MUSCLE_CATS.find(c=>c.id===exToCatId(raw))||OTHER_CAT;
+        html+=libCardHtml(freeExToLibEntry(raw),cat,histCount[(raw.name||'').toLowerCase()]);
+      });
+      html+=`</div>`;
+      if(!hits.length&&!myHits.length)html+=`<div class="empty" style="padding:24px 0"><div class="empty-icon">🔍</div><div class="empty-title">No exercises match "${escHtml(libSearchQuery)}"</div></div>`;
     }
-    html+=`</div>`;
-  } else if(libData[libCat]!==undefined){
-    html+=`<div class="lib-error">😕 No exercises for this group.<br><br>
-      <button class="data-btn import" onclick="forceFetchLibCat(${libCat})">Retry</button></div>`;
+  } else if(libCat==='mine'){
+    html+=mine.length
+      ?`<div class="lib-section-title">${mine.length} exercises you've logged · tap for history</div>${mineRowsHtml(mine)}`
+      :`<div class="empty" style="padding:24px 0"><div class="empty-icon">📈</div><div class="empty-title">Nothing logged yet</div></div>`;
   } else {
-    html+=`<div class="lib-loading"><div>Select a muscle group</div></div>`;
+    const cat=MUSCLE_CATS.find(c=>c.id===libCat)||MUSCLE_CATS[0];
+    if(libLoading[libCat]){
+      html+=`<div class="lib-fetch-bar"></div><div class="lib-loading"><div class="spin">⏳</div><div>Loading database…</div></div>`;
+    } else if(libData[libCat]?.length){
+      html+=`<div style="font-size:10px;color:var(--muted);margin-bottom:10px">${libData[libCat].length} · ${cat.name}</div><div class="lib-grid">`;
+      libData[libCat].forEach(ex=>{html+=libCardHtml(ex,cat,histCount[(ex.name||'').toLowerCase()]);});
+      html+=`</div>`;
+    } else if(libData[libCat]!==undefined){
+      html+=`<div class="lib-error">😕 No exercises for this group.<br><br>
+        <button class="data-btn import" onclick="forceFetchLibCat(${libCat})">Retry</button></div>`;
+    } else {
+      html+=`<div class="lib-loading"><div>Select a muscle group</div></div>`;
+    }
   }
   cont.innerHTML=html;
 }
@@ -2661,6 +2823,7 @@ function toggleLibEx(id){libExpanded[id]=!libExpanded[id];document.getElementByI
 
 async function selectLibCat(catId){
   libCat=catId;
+  if(catId==='mine'){renderLibrary();return;}
   if(!libData[catId]&&!libLoading[catId]) await fetchLibCat(catId);
   else renderLibrary();
 }
