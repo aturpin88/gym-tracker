@@ -271,12 +271,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .exs-sets{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);}
 .exs-notes{font-size:11px;color:var(--ink2);margin-top:3px;font-style:italic;}
 .ex-name-link{cursor:pointer;}
+.exs-howto{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
+.exs-howto summary{font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;}
+.exs-howto[open] summary{margin-bottom:10px;}
+.exs-howto .lib-steps-ordered li{color:var(--ink2);}
 .ex-name-link .ex-hist-ico{font-size:11px;opacity:.6;margin-left:4px;}
 .mine-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;font-family:inherit;color:var(--ink);}
 .mine-name{flex:1;min-width:0;font-size:14px;font-weight:600;}
 .mine-meta{font-size:11px;color:var(--ink2);white-space:nowrap;}
 .lib-section-title{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin:4px 0 8px;}
 .lib-hist-btn{width:100%;margin-top:10px;background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:10px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;}
+.focus-wrap{position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.92);align-items:stretch;justify-content:center;}
+.focus-panel{background:var(--bg);width:100%;max-width:520px;display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));overflow-y:auto;}
+.focus-panel.zoom{animation:focusZoom .22s ease-out;}
+@keyframes focusZoom{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.focus-top{text-align:center;position:relative;padding:8px 0 18px;}
+.focus-close{position:absolute;top:0;right:0;background:none;border:none;color:var(--ink2);font-size:30px;line-height:1;cursor:pointer;padding:4px 8px;}
+.focus-ex{font-size:20px;font-weight:800;color:var(--ink);padding:0 36px;line-height:1.2;}
+.focus-setlab{font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin-top:6px;}
+.focus-timer{font-family:'DM Mono',monospace;font-size:84px;font-weight:600;color:var(--ink);line-height:1;margin-top:14px;}
+.focus-sub{font-size:10px;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin-top:6px;}
+.focus-sets{flex:1;}
+.focus-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--white);}
+.focus-row.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+.focus-row.pf .focus-in{opacity:.4;font-style:italic;}
+.focus-num{width:22px;text-align:center;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink2);}
+.focus-in{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:'DM Mono',monospace;font-size:22px;font-weight:600;text-align:center;padding:10px 4px;outline:none;}
+.focus-in:focus{border-color:var(--accent);}
+.focus-times{color:var(--ink2);font-size:16px;}
+.focus-go{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink2);font-size:15px;cursor:pointer;flex-shrink:0;}
+.focus-go.running{color:var(--accent);border-color:var(--accent);}
+.focus-go.done{color:var(--green);border-color:var(--green);}
+.focus-add{width:100%;background:none;border:1px dashed var(--line);color:var(--ink2);border-radius:12px;padding:10px;font-family:inherit;font-size:13px;cursor:pointer;}
+.focus-done{width:100%;margin-top:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
 .save-btn-secondary{flex:1;background:transparent;border:1px solid var(--muted);color:var(--ink);}
 
 /* ── HISTORY ── */
@@ -551,14 +578,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <button class="photo-modal-btn" style="background:#fff;color:var(--ink)" onclick="closePhotoModal()">Close</button>
   </div>
 </div>
-<div id="focus-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1001;align-items:center;justify-content:center" onclick="closeFocusModal()">
-  <div style="background:var(--white);border-radius:20px;padding:32px 28px;text-align:center;min-width:260px;max-width:340px;width:90%" onclick="event.stopPropagation()">
-    <div id="focus-ex-name" style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px"></div>
-    <div id="focus-set-label" style="font-size:22px;font-weight:800;color:var(--ink);margin-bottom:20px;font-family:'DM Mono',monospace"></div>
-    <div id="focus-timer" style="font-size:64px;font-weight:800;font-family:'DM Mono',monospace;color:var(--ink);line-height:1;margin-bottom:6px">0:00</div>
-    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:28px">elapsed</div>
-    <button onclick="closeFocusModal()" style="background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px 0;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;width:100%">Done ✓</button>
-  </div>
+<div id="focus-modal" class="focus-wrap" style="display:none" onclick="if(event.target===this)closeFocusModal()">
+  <div class="focus-panel" id="focus-panel"></div>
 </div>
 
 <script>
@@ -690,7 +711,8 @@ function buildLog(){
     data[id]={...JSON.parse(JSON.stringify(d)),sets:JSON.parse(JSON.stringify(sets)),...(name?{name}:{})};
   }
   return {...(allLogs[logKey()]||{}),session:currentSession,date:currentDate,data,
-    adhocExercises:JSON.parse(JSON.stringify(adhocExercises)),startTime:sessionStartTime,endTime:sessionEndTime};
+    adhocExercises:JSON.parse(JSON.stringify(adhocExercises)),startTime:sessionStartTime,endTime:sessionEndTime,
+    ...(exOrder?{order:exOrder}:{})};
 }
 function persistLog(cloudNow){
   clearTimeout(draftTimer);
@@ -1006,17 +1028,30 @@ function removeAdHocExercise(id){
   delete formData[id];
   renderLog();
 }
-function moveAdHocExercise(id,delta){
-  const idx=adhocExercises.findIndex(e=>e.id===id);
-  if(idx<0)return;
-  const ni=idx+delta;if(ni<0||ni>=adhocExercises.length)return;
-  [adhocExercises[idx],adhocExercises[ni]]=[adhocExercises[ni],adhocExercises[idx]];
-  saveDraft();renderLog();
-}
 
 // ─────────────────────────────────────────────────────────────────
 // CROSS-SESSION HELPERS
 // ─────────────────────────────────────────────────────────────────
+// This workout's exercise order (plan + extras), set once something is moved; saved with the log
+let exOrder=null;
+function workoutExercises(){
+  const list=[...(workoutDefs[currentSession]?.exercises||[]).map(ex=>({ex,isAdhoc:false})),...adhocExercises.map(ex=>({ex,isAdhoc:true}))];
+  if(!exOrder)return list;
+  const pos=id=>{const i=exOrder.indexOf(id);return i<0?1e6:i;}; // exercises added later go to the end
+  return list.map((it,i)=>({...it,i})).sort((a,b)=>(pos(a.ex.id)-pos(b.ex.id))||(a.i-b.i));
+}
+function moveInWorkout(id,delta){
+  const list=workoutExercises(),i=list.findIndex(it=>it.ex.id===id),j=i+delta;
+  if(i<0||j<0||j>=list.length)return;
+  // Two plan exercises also swap in the plan, so the next session keeps the order
+  if(!list[i].isAdhoc&&!list[j].isAdhoc){
+    const exs=workoutDefs[currentSession].exercises,a=exs.findIndex(e=>e.id===id),b=exs.findIndex(e=>e.id===list[j].ex.id);
+    [exs[a],exs[b]]=[exs[b],exs[a]];saveWorkoutDefs();
+  }
+  [list[i],list[j]]=[list[j],list[i]];
+  exOrder=list.map(it=>it.ex.id);
+  saveDraft();renderLog();
+}
 function findExerciseName(exId){
   for(const sess of Object.values(workoutDefs)){
     const ex=sess.exercises?.find(e=>e.id===exId);
@@ -1108,7 +1143,7 @@ function setEjerciciosSubTab(tab){
 // ─────────────────────────────────────────────────────────────────
 function loadFormFromLogs(){
   const key=logKey();
-  sessionStartTime=null;sessionEndTime=null;
+  sessionStartTime=null;sessionEndTime=null;exOrder=allLogs[key]?.order||null;
   if(allLogs[key]){
     formData=JSON.parse(JSON.stringify(allLogs[key].data));
     adhocExercises=JSON.parse(JSON.stringify(allLogs[key].adhocExercises||[]));
@@ -1267,8 +1302,8 @@ function renderLog(){
       ${sessionStartTime&&sessionEndTime?`<span class="sess-time-dur">${fmtDuration(sessionStartTime,sessionEndTime)}</span>`:''}
     </div>`;
 
-  for(const ex of sess.exercises)html+=renderExCard(ex,color,bg);
-  for(const ex of adhocExercises)html+=renderExCard(ex,color,bg,true);
+  for(const {ex,isAdhoc} of workoutExercises())html+=renderExCard(ex,color,bg,isAdhoc);
+  if(!_freeExAll)ensureFreeExDb().then(fillLibPhotos);
   if(adhocShowForm){
     html+=`<div class="adhoc-form">
       <div class="adhoc-form-title">+ Extra exercise</div>
@@ -1323,12 +1358,14 @@ function renderExCard(ex,color,bg,isAdhoc=false){
     lastHtml=`<div class="last-time">↩ ${fmtShort(last.log.date)}: <span>${escHtml(str)}</span></div>`;
   }
 
-  const photo=exPhotos[ex.id];
+  const photo=exPhotos[ex.id],libImg=photo?'':exLibImage(ex.name);
   return`<div class="ex-card${filled?' has-data':''}" data-card="${ex.id}" style="--sess-color:${color};--sess-bg:${bg}">
     <div class="ex-head" style="gap:10px">
       ${photo
         ?`<img class="ex-photo" src="${photo}" onclick="showPhotoModal('${ex.id}')" alt="">`
-        :`<div class="ex-photo-btn" onclick="pickExPhoto('${ex.id}')">📷</div>`}
+        :libImg
+        ?`<img class="ex-photo" src="${libImg}" data-exname="${escHtml(ex.name)}" onclick="showExerciseSheet(this.dataset.exname)" alt="" onerror="this.remove()">`
+        :`<div class="ex-photo-btn" data-exname="${escHtml(ex.name)}" onclick="pickExPhoto('${ex.id}')">📷</div>`}
       <div style="flex:1;min-width:0">
         <div class="ex-name-row">
           <span class="ex-name ex-name-link" data-exname="${escHtml(ex.name)}" onclick="showExerciseSheet(this.dataset.exname)">${ex.name}<span class="ex-hist-ico">📈</span></span>
@@ -1342,11 +1379,8 @@ function renderExCard(ex,color,bg,isAdhoc=false){
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
         <div style="display:flex;flex-direction:column;gap:2px;margin-right:2px">
-          ${isAdhoc
-            ?`<button class="ex-mv-btn" onclick="moveAdHocExercise('${ex.id}',-1)" title="Move up">▲</button>
-               <button class="ex-mv-btn" onclick="moveAdHocExercise('${ex.id}',+1)" title="Move down">▼</button>`
-            :`<button class="ex-mv-btn" onclick="moveExercise('${ex.id}',-1)" title="Move up">▲</button>
-               <button class="ex-mv-btn" onclick="moveExercise('${ex.id}',+1)" title="Move down">▼</button>`}
+          <button class="ex-mv-btn" onclick="moveInWorkout('${ex.id}',-1)" title="Move up">▲</button>
+          <button class="ex-mv-btn" onclick="moveInWorkout('${ex.id}',+1)" title="Move down">▼</button>
         </div>
         ${filled?'<span style="font-size:14px">✅</span>':''}
         ${isAdhoc?`<button onclick="removeAdHocExercise('${ex.id}')" style="background:none;border:none;color:#ccc;font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>`:''}
@@ -1597,9 +1631,20 @@ function getMyExercises(){
   }
   return Object.values(map).sort((a,b)=>b.last.localeCompare(a.last)||a.name.localeCompare(b.name));
 }
+function exLibEntry(name){
+  const n=(name||'').toLowerCase();
+  return (_freeExAll||[]).find(e=>e.name?.toLowerCase()===n)||null;
+}
 function exLibImage(name){
-  const n=name.toLowerCase(),ex=(_freeExAll||[]).find(e=>e.name?.toLowerCase()===n);
+  const ex=exLibEntry(name);
   return ex?.images?.[0]?FREE_EX_IMG+ex.images[0]:'';
+}
+// The library loads in the background; swap the 📷 placeholders for library photos once it arrives
+function fillLibPhotos(){
+  document.querySelectorAll('.ex-photo-btn[data-exname]').forEach(el=>{
+    const u=exLibImage(el.dataset.exname);if(!u)return;
+    el.outerHTML=`<img class="ex-photo" src="${u}" data-exname="${escHtml(el.dataset.exname)}" onclick="showExerciseSheet(this.dataset.exname)" alt="" onerror="this.remove()">`;
+  });
 }
 function closeExerciseSheet(){document.getElementById('ex-sheet')?.remove();}
 function showExerciseSheet(name){
@@ -1620,7 +1665,12 @@ function showExerciseSheet(name){
   }));
   const fmtSet=s=>`${s.weight?s.weight+unit:'—'}${s.reps?' × '+s.reps:''}`;
   const tile=(label,val,sub)=>`<div class="exs-tile"><div class="exs-tile-val">${val}</div><div class="exs-tile-lab">${label}</div>${sub?`<div class="exs-tile-sub">${sub}</div>`:''}</div>`;
-  const img=exLibImage(name);
+  const img=exLibImage(name),lib=exLibEntry(name);
+  const libImgs=(lib?.images||[]).slice(0,2).map(p=>FREE_EX_IMG+p);
+  const howTo=lib&&(libImgs.length||lib.instructions?.length)?`<details class="exs-howto"><summary>How to do it</summary>
+      ${libImgs.length?`<div class="lib-img-row">${libImgs.map(u=>`<img src="${u}" loading="lazy" alt="">`).join('')}</div>`:''}
+      ${lib.instructions?.length?`<ol class="lib-steps-ordered">${lib.instructions.map(t=>`<li>${escHtml(t)}</li>`).join('')}</ol>`:''}
+    </details>`:'';
   const rows=hist.map(h=>{
     const sess=workoutDefs[h.session];
     return`<div class="exs-row">
@@ -1647,6 +1697,7 @@ function showExerciseSheet(name){
         <div class="exs-subtitle">All sessions and one-off use</div></div>
         <button class="exs-close" onclick="closeExerciseSheet()" aria-label="Close">×</button>
       </div>
+      ${howTo}
       ${hist.length?`
       <div class="exs-tiles">
         ${tile('Heaviest',best?best.w+unit:'—',best?`× ${best.r} · ${fmtShort(best.date)}`:'')}
@@ -1659,7 +1710,7 @@ function showExerciseSheet(name){
       :`<div class="empty" style="padding:28px 0"><div class="empty-icon">📈</div><div class="empty-title">Not logged yet</div></div>`}
     </div>`;
   document.body.appendChild(el);
-  if(!img&&!_freeExAll)ensureFreeExDb().then(()=>{const u=exLibImage(name);const h=el.querySelector('.exs-head');if(u&&h&&el.isConnected)h.insertAdjacentHTML('afterbegin',`<img class="exs-img" src="${u}" alt="" onerror="this.remove()">`);});
+  if(!_freeExAll)ensureFreeExDb().then(()=>{if(el.isConnected&&exLibEntry(name))showExerciseSheet(name);});
 }
 
 function heatmapTap(date){
@@ -1849,39 +1900,65 @@ function restoreSessionTemplate(key){
   renderSesiones();
   showToast('Template restored.');
 }
-function moveExercise(exId,delta){
-  const sess=workoutDefs[currentSession];
-  const exs=sess.exercises;
-  const idx=exs.findIndex(e=>e.id===exId);
-  if(idx<0)return;
-  const ni=idx+delta;
-  if(ni<0||ni>=exs.length)return;
-  [exs[idx],exs[ni]]=[exs[ni],exs[idx]];
-  saveWorkoutDefs();
-  renderLog();
-}
 let _focusInterval=null;
+// Focus: zooms into one exercise while a set runs — big timer, then just that exercise's sets
+let focusState=null;
 function showFocusModal(exId,idx){
-  const ex=(workoutDefs[currentSession]?.exercises||[]).find(e=>e.id===exId)||adhocExercises.find(e=>e.id===exId);
-  const s=formData[exId]?.sets[idx];if(!s)return;
+  const ex=workoutExercises().find(it=>it.ex.id===exId)?.ex;
+  const d=getExData(exId);if(!d.sets[idx])return;
+  focusState={exId,idx};
   clearInterval(_focusInterval);
-  document.getElementById('focus-ex-name').textContent=ex?.name||'Exercise';
-  const wt=s.weight?`${s.weight}${ex?.unit||'kg'}`:'—';
-  const rp=s.reps?` × ${s.reps} reps`:'';
-  document.getElementById('focus-set-label').textContent=`Set ${idx+1}  ${wt}${rp}`;
-  const t0=s.t_start?new Date(s.t_start).getTime():Date.now();
+  const unit=ex?.unit||'kg';
+  const rows=d.sets.map((s,i)=>`
+    <div class="focus-row${i===idx?' on':''}${s.pf?' pf':''}">
+      <span class="focus-num">${i+1}</span>
+      <input type="number" inputmode="decimal" step="0.5" class="focus-in" value="${s.weight||''}" placeholder="${unit}"
+        oninput="updateWeight('${exId}',${i},this.value);this.closest('.focus-row').classList.remove('pf')">
+      <span class="focus-times">×</span>
+      <input type="number" inputmode="numeric" class="focus-in" value="${s.reps||''}" placeholder="reps"
+        oninput="updateReps('${exId}',${i},this.value);this.closest('.focus-row').classList.remove('pf')">
+      <button class="focus-go${s.t_end?' done':s.t_start?' running':''}" onclick="${s.t_start?`showFocusModal('${exId}',${i})`:`startSet('${exId}',${i})`}"
+        title="${s.t_start?'Show this set':'Start this set'}">${s.t_end?'✓':s.t_start?'●':'▶'}</button>
+    </div>`).join('');
+  document.getElementById('focus-panel').innerHTML=`
+    <div class="focus-top">
+      <button class="focus-close" onclick="closeFocusModal()" aria-label="Close">×</button>
+      <div class="focus-ex">${escHtml(ex?.name||'Exercise')}</div>
+      <div class="focus-setlab">Set ${idx+1} of ${d.sets.length}</div>
+      <div id="focus-timer" class="focus-timer">0:00</div>
+      <div class="focus-sub" id="focus-sub"></div>
+    </div>
+    <div class="focus-sets">${rows}
+      <button class="focus-add" onclick="addSet('${exId}');showFocusModal('${exId}',${idx})">+ Set</button>
+    </div>
+    <button class="focus-done" onclick="finishFocusSet()">${d.sets[idx].t_end?'Close':'Set done ✓'}</button>`;
   function tick(){
-    const sec=Math.floor((Date.now()-t0)/1000);
-    const m=Math.floor(sec/60),ss=sec%60;
+    const s=formData[exId]?.sets[idx];if(!s)return;
+    const t0=s.t_start?Date.parse(s.t_start):Date.now();
+    const t1=s.t_end?Date.parse(s.t_end):Date.now();
+    const sec=Math.max(0,Math.floor((t1-t0)/1000));
     const el=document.getElementById('focus-timer');
-    if(el)el.textContent=`${m}:${String(ss).padStart(2,'0')}`;
+    if(el)el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+    const sub=document.getElementById('focus-sub');
+    if(sub)sub.textContent=s.t_end?'set time':s.t_start?'elapsed':'not started';
   }
   tick();_focusInterval=setInterval(tick,1000);
-  const fm=document.getElementById('focus-modal');if(fm)fm.style.display='flex';
+  const fm=document.getElementById('focus-modal');
+  fm.style.display='flex';
+  fm.querySelector('.focus-panel').classList.remove('zoom');void fm.offsetWidth;fm.querySelector('.focus-panel').classList.add('zoom');
+}
+// Set done: record when it ended, then back to the workout
+function finishFocusSet(){
+  const s=focusState&&formData[focusState.exId]?.sets[focusState.idx];
+  if(s&&s.t_start&&!s.t_end){s.t_end=new Date().toISOString();delete s.pf;saveDraft();}
+  closeFocusModal();
 }
 function closeFocusModal(){
   clearInterval(_focusInterval);
   const fm=document.getElementById('focus-modal');if(fm)fm.style.display='none';
+  // the focus view edits sets directly, so bring the workout page back in sync
+  if(focusState){const id=focusState.exId;focusState=null;renderSetsFor(id);updateExVolume(id);updatePRBadge(id);updateSessionVolume();
+    document.querySelector(`[data-card="${id}"]`)?.classList.toggle('has-data',hasData(id));}
 }
 function startSet(exId,idx){
   const d=getExData(exId);
