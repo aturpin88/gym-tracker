@@ -3054,8 +3054,29 @@ function importFromFile(){
     reader.readAsText(file);};
   input.click();
 }
-function clearAllData(){
-  if(!confirm('Delete ALL data? This cannot be undone.'))return;
+async function clearAllData(){
+  const signedIn=currentUser&&fbDb;
+  const warn=signedIn
+    ?'Delete ALL workout logs on this device and in the cloud? This cannot be undone.'
+    :'Delete ALL workout logs on this device? This cannot be undone.\n\nYou are signed out: any copy synced to the cloud will come back the next time you sign in.';
+  if(!confirm(warn))return;
+  if(signedIn){
+    // Cloud first: syncFromCloud merges cloud logs back in, so a local-only wipe would be undone
+    try{
+      setCloudStatus('syncing');
+      const snap=await sessionsRef().get();
+      for(let i=0;i<snap.docs.length;i+=500){
+        const batch=fbDb.batch();
+        snap.docs.slice(i,i+500).forEach(d=>batch.delete(d.ref));
+        await batch.commit();
+      }
+      setCloudStatus('synced');
+    }catch(e){
+      console.error('Cloud clear error:',e);setCloudStatus('error');
+      alert('Could not delete your cloud data, so nothing was deleted. Check your connection and try again.');
+      return;
+    }
+  }
   allLogs={};saveAll();clearDraft();updateStats();renderData();
 }
 function showMsg(el,text,type){
