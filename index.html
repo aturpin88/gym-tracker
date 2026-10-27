@@ -218,6 +218,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .sess-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
 .archived-sess-section{margin-top:24px;border-top:1px solid var(--line);padding-top:16px;}
 .archived-sess-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px;}
+.archived-delete-btn{color:var(--danger)!important;border-color:rgba(255,85,85,.4)!important;}
 .archived-sess-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border-radius:10px;margin-bottom:8px;}
 .archived-sess-name{font-size:14px;font-weight:600;color:var(--ink);}
 .archived-sess-meta{font-size:11px;color:var(--muted);margin-left:8px;}
@@ -1897,8 +1898,29 @@ function restoreSessionTemplate(key){
   if(!workoutDefs[key])return;
   workoutDefs[key]._archived=false;
   saveWorkoutDefs();
-  renderSesiones();
-  showToast('Template restored.');
+  setView('sesiones',null);
+  showToast(`"${workoutDefs[key].label}" is back in Sessions`);
+}
+// Permanent delete: the template and every workout logged with it, here and in the cloud.
+// The template stays as a {_deleted} marker so a cloud merge or another device can't bring it back.
+function purgeSessionPermanently(key){
+  const sess=workoutDefs[key];if(!sess||sess._deleted)return;
+  const keys=Object.keys(allLogs).filter(k=>allLogs[k].session===key);
+  if(!confirm(`Permanently delete "${sess.label}" and its ${keys.length} logged workout${keys.length===1?'':'s'}?\n\nThis removes them from this device and the cloud and cannot be undone.`))return;
+  workoutDefs[key]={_deleted:true};
+  saveWorkoutDefs();
+  keys.forEach(k=>{delete allLogs[k];deleteFromCloud(k);});
+  saveAll();updateStats();
+  if(currentSession===key)currentSession=Object.keys(workoutDefs).find(k=>!workoutDefs[k]._deleted&&!workoutDefs[k]._archived)||currentSession;
+  renderData();
+  showToast(`Deleted "${sess.label}"${keys.length?` and ${keys.length} workout${keys.length===1?'':'s'}`:''}`);
+}
+// Workouts of a deleted session can still exist on another device or in the cloud; drop them wherever they turn up
+function purgeDeletedSessionLogs(){
+  const dead=Object.keys(allLogs).filter(k=>workoutDefs[allLogs[k].session]?._deleted);
+  if(!dead.length)return;
+  dead.forEach(k=>{delete allLogs[k];deleteFromCloud(k);});
+  saveAll();updateStats();
 }
 let _focusInterval=null;
 // Focus: zooms into one exercise while a set runs — big timer, then just that exercise's sets
@@ -2097,8 +2119,8 @@ function getChartData(exId, sessKey){
 }
 function renderCharts(){
   // Ensure chartSession is valid
-  const nonArchived=Object.entries(workoutDefs).filter(([,s])=>!s._archived);
-  if(!workoutDefs[chartSession]||workoutDefs[chartSession]._archived){
+  const nonArchived=Object.entries(workoutDefs).filter(([,s])=>!s._archived&&!s._deleted);
+  if(!workoutDefs[chartSession]||workoutDefs[chartSession]._archived||workoutDefs[chartSession]._deleted){
     chartSession=nonArchived[0]?.[0]||'A';
   }
   const sess=workoutDefs[chartSession];
@@ -3234,7 +3256,7 @@ function renderData(){
   const total=Object.keys(allLogs).length;
   const sizeKb=(JSON.stringify(allLogs).length/1024).toFixed(1);
   // Dynamic per-session counts
-  const sessBreakdown=Object.keys(workoutDefs).map(k=>{
+  const sessBreakdown=Object.keys(workoutDefs).filter(k=>!workoutDefs[k]._deleted).map(k=>{
     const count=Object.values(allLogs).filter(l=>l.session===k).length;
     const label=workoutDefs[k]?.label||k;
     const color=workoutDefs[k]?.color||'var(--muted)';
@@ -3288,7 +3310,10 @@ function renderData(){
           <span class="archived-sess-name">${escHtml(sess.label)}</span>
           <span class="archived-sess-meta">${logs.length} session${logs.length!==1?'s':''}</span>
         </div>
-        <button class="archived-restore-btn" onclick="restoreSessionTemplate('${key}')">Restore</button>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="archived-restore-btn" onclick="restoreSessionTemplate('${key}')">Restore</button>
+          <button class="archived-restore-btn archived-delete-btn" onclick="purgeSessionPermanently('${key}')">Delete</button>
+        </div>
       </div>`;
     }).join('')}
   </div>`:'';
@@ -3470,7 +3495,7 @@ async function syncFromCloud(){
     // Sync sessions
     const snap=await sessionsRef().get();
     const cloudLogs={};snap.forEach(doc=>{cloudLogs[doc.id]=doc.data();});
-    const localOnlyKeys=Object.keys(allLogs).filter(k=>!cloudLogs[k]);
+    const localOnlyKeys=Object.keys(allLogs).filter(k=>!cloudLogs[k]&&!workoutDefs[allLogs[k].session]?._deleted);
     if(localOnlyKeys.length>0){
       const batch=fbDb.batch();
       localOnlyKeys.forEach(k=>batch.set(sessionsRef().doc(k),allLogs[k]));
@@ -3483,11 +3508,14 @@ async function syncFromCloud(){
       const wSnap=await fbDb.collection('users').doc(currentUser.uid).collection('config').doc('workouts').get();
       if(wSnap.exists){
         const cloudDefs=wSnap.data();
-        // Merge: cloud wins
+        // Merge: cloud wins, except a session deleted here (e.g. while offline) stays deleted
+        const localDeleted=Object.keys(workoutDefs).filter(k=>workoutDefs[k]._deleted&&!cloudDefs[k]?._deleted);
         workoutDefs={...workoutDefs,...cloudDefs};
-        localStorage.setItem(WORKOUT_KEY,JSON.stringify(workoutDefs));
+        localDeleted.forEach(k=>{workoutDefs[k]={_deleted:true};});
+        if(localDeleted.length)saveWorkoutDefs();else localStorage.setItem(WORKOUT_KEY,JSON.stringify(workoutDefs));
       }
     }catch(e){}
+    purgeDeletedSessionLogs();
 
     updateStats();render();
     lastSyncTime=new Date();setCloudStatus('synced');
@@ -3801,6 +3829,7 @@ loadWorkoutDefs();
 // v2 palette migration: replace old blue session colors with orange/green
 (()=>{const m={'#1e3a5f':'#E85010','#2d5a8e':'#C04010','#1a5c3a':'#2ECC9A'};let ch=false;for(const k of Object.keys(workoutDefs)){if(m[workoutDefs[k].color]){workoutDefs[k].color=m[workoutDefs[k].color];ch=true;}}if(ch)saveWorkoutDefs();})();
 allLogs=loadAll();
+purgeDeletedSessionLogs();
 loadExPhotos();
 loadFormFromLogs();
 updateStats();
