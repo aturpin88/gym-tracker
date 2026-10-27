@@ -695,7 +695,47 @@ const WORKOUT_KEY   = 'gymtracker_workouts';
 const LIB_CACHE_PRE = 'gymtracker_lib2_';
 
 function loadAll(){try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):{}}catch(e){return{}}}
-function saveAll(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(allLogs))}catch(e){alert('Error saving: '+e.message)}}
+function saveAll(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(allLogsWithCopies()))}catch(e){alert('Error saving: '+e.message)}}
+// ── Hidden copies ──
+// Until v46 a bug saved the 20 May Session A exercises into every workout started from Home.
+// Those copied entries are kept out of allLogs (so nothing shows or counts them) but stay stored
+// unchanged: they are merged back in whenever logs are written to storage, the cloud or an export.
+const COPY_BUG_LAST_DAY='2026-10-27'; // the bug was fixed that day; later workouts are never checked
+let hiddenCopies={};
+function withCopies(key,log){
+  const h=hiddenCopies[key];
+  return h&&log?{...log,data:{...h,...log.data}}:log;
+}
+function allLogsWithCopies(){
+  return Object.fromEntries(Object.entries(allLogs).map(([k,l])=>[k,withCopies(k,l)]));
+}
+// A copy: an exercise with no set times whose exact numbers also appear for that exercise in another
+// session, either earlier, or anywhere when the rest of that workout was timed (real sets since August are)
+function splitCopies(){
+  const all=allLogsWithCopies();
+  const filled=d=>(d?.sets||[]).filter(s=>s.weight||s.reps);
+  const sig=d=>JSON.stringify(filled(d).map(s=>[String(s.weight||''),String(s.reps||'')]));
+  const timed=d=>(d?.sets||[]).some(s=>s.t_start);
+  const occ={};
+  for(const l of Object.values(all))for(const [id,d] of Object.entries(l.data||{}))
+    if(filled(d).length)(occ[id+'|'+sig(d)]||(occ[id+'|'+sig(d)]=[])).push(l);
+  hiddenCopies={};
+  for(const [k,l] of Object.entries(all)){
+    if(l.date>COPY_BUG_LAST_DAY){allLogs[k]=l;continue;}
+    const logTimed=Object.values(l.data||{}).some(timed);
+    const keep={};
+    for(const [id,d] of Object.entries(l.data||{})){
+      let copy=false;
+      if(filled(d).length&&!timed(d)){
+        const others=occ[id+'|'+sig(d)].filter(o=>o!==l&&o.session!==l.session);
+        copy=others.some(o=>o.date<l.date)||(logTimed&&others.length>0);
+      }
+      if(copy)(hiddenCopies[k]||(hiddenCopies[k]={}))[id]=d;else keep[id]=d;
+    }
+    allLogs[k]={...l,data:keep};
+  }
+}
+function forgetLog(key){delete allLogs[key];delete hiddenCopies[key];}
 // Autosave: every change goes straight into the session's log (and to the cloud a few seconds later)
 function saveDraft(){
   clearTimeout(draftTimer);
@@ -1883,7 +1923,7 @@ function toggleLog(session,date){
 function deleteLog(session,date){
   if(!confirm(`Delete session ${session} from ${fmtDate(date)}?`))return;
   const key=`${session}_${date}`;
-  delete allLogs[key];saveAll();deleteFromCloud(key);updateStats();expandedLog=null;renderHistory();
+  forgetLog(key);saveAll();deleteFromCloud(key);updateStats();expandedLog=null;renderHistory();
 }
 
 function deleteSessionTemplate(key){
@@ -1909,7 +1949,7 @@ function purgeSessionPermanently(key){
   if(!confirm(`Permanently delete "${sess.label}" and its ${keys.length} logged workout${keys.length===1?'':'s'}?\n\nThis removes them from this device and the cloud and cannot be undone.`))return;
   workoutDefs[key]={_deleted:true};
   saveWorkoutDefs();
-  keys.forEach(k=>{delete allLogs[k];deleteFromCloud(k);});
+  keys.forEach(k=>{forgetLog(k);deleteFromCloud(k);});
   saveAll();updateStats();
   if(currentSession===key)currentSession=Object.keys(workoutDefs).find(k=>!workoutDefs[k]._deleted&&!workoutDefs[k]._archived)||currentSession;
   renderData();
@@ -1919,7 +1959,7 @@ function purgeSessionPermanently(key){
 function purgeDeletedSessionLogs(){
   const dead=Object.keys(allLogs).filter(k=>workoutDefs[allLogs[k].session]?._deleted);
   if(!dead.length)return;
-  dead.forEach(k=>{delete allLogs[k];deleteFromCloud(k);});
+  dead.forEach(k=>{forgetLog(k);deleteFromCloud(k);});
   saveAll();updateStats();
 }
 let _focusInterval=null;
@@ -3359,7 +3399,7 @@ function renderData(){
 // EXPORT / IMPORT
 // ─────────────────────────────────────────────────────────────────
 function exportData(){
-  const blob=new Blob([JSON.stringify(allLogs,null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify(allLogsWithCopies(),null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`gymtracker_backup_${today()}.json`;a.click();
   URL.revokeObjectURL(url);
@@ -3371,7 +3411,7 @@ function importFromText(){
   try{
     const parsed=JSON.parse(text);const count=Object.keys(parsed).length;
     if(!count){showMsg(msg,'Empty JSON or incorrect format','err');return;}
-    allLogs={...allLogs,...parsed};saveAll();updateStats();
+    allLogs={...allLogs,...parsed};splitCopies();saveAll();updateStats();
     if(currentUser&&fbDb){
       const batch=fbDb.batch();
       Object.keys(parsed).forEach(k=>batch.set(sessionsRef().doc(k),parsed[k]));
@@ -3411,7 +3451,7 @@ async function clearAllData(){
       return;
     }
   }
-  allLogs={};saveAll();clearDraft();updateStats();renderData();
+  allLogs={};hiddenCopies={};saveAll();clearDraft();updateStats();renderData();
 }
 function showMsg(el,text,type){
   el.textContent=text;el.className=`msg ${type}`;el.style.display='block';
@@ -3498,10 +3538,10 @@ async function syncFromCloud(){
     const localOnlyKeys=Object.keys(allLogs).filter(k=>!cloudLogs[k]&&!workoutDefs[allLogs[k].session]?._deleted);
     if(localOnlyKeys.length>0){
       const batch=fbDb.batch();
-      localOnlyKeys.forEach(k=>batch.set(sessionsRef().doc(k),allLogs[k]));
+      localOnlyKeys.forEach(k=>batch.set(sessionsRef().doc(k),withCopies(k,allLogs[k])));
       await batch.commit();
     }
-    allLogs={...allLogs,...cloudLogs};saveAll();
+    allLogs={...allLogs,...cloudLogs};splitCopies();saveAll();
 
     // Sync workout defs
     try{
@@ -3525,7 +3565,7 @@ async function syncFromCloud(){
 
 async function saveToCloud(key){
   if(!currentUser||!fbDb)return;
-  try{await sessionsRef().doc(key).set(allLogs[key]);lastSyncTime=new Date();setCloudStatus('synced');}
+  try{await sessionsRef().doc(key).set(withCopies(key,allLogs[key]));lastSyncTime=new Date();setCloudStatus('synced');}
   catch(e){console.error('Cloud save error:',e);setCloudStatus('error');}
 }
 async function deleteFromCloud(key){
@@ -3829,6 +3869,7 @@ loadWorkoutDefs();
 // v2 palette migration: replace old blue session colors with orange/green
 (()=>{const m={'#1e3a5f':'#E85010','#2d5a8e':'#C04010','#1a5c3a':'#2ECC9A'};let ch=false;for(const k of Object.keys(workoutDefs)){if(m[workoutDefs[k].color]){workoutDefs[k].color=m[workoutDefs[k].color];ch=true;}}if(ch)saveWorkoutDefs();})();
 allLogs=loadAll();
+splitCopies();
 purgeDeletedSessionLogs();
 loadExPhotos();
 loadFormFromLogs();
