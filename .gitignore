@@ -2,3 +2,5 @@
 .claude/
 sync.log
 *.log
+gymtracker_backup_*.json
+*.backup.json

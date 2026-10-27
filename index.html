@@ -77,7 +77,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .date-row label{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
 .date-input{border:1px solid var(--line);border-radius:5px;padding:6px 10px;font-size:13px;background:var(--white);color:var(--ink);font-family:'DM Mono',monospace;}
 .saved-badge{font-size:11px;color:var(--green);font-weight:700;background:rgba(46,204,154,.1);border:1px solid rgba(46,204,154,.3);padding:3px 8px;border-radius:3px;}
-.draft-badge{font-size:11px;color:var(--gold);font-weight:700;background:rgba(232,160,48,.1);border:1px solid rgba(232,160,48,.3);padding:3px 8px;border-radius:3px;display:none;}
 
 /* ── EXERCISE CARDS ── */
 .ex-card{background:var(--white);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:10px;transition:border-color .2s;}
@@ -248,6 +247,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .save-bar{position:fixed;bottom:calc(52px + env(safe-area-inset-bottom));left:0;right:0;background:var(--white);border-top:1px solid var(--line);padding:12px 16px;z-index:300;}
 .save-btn{width:100%;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;transition:background .3s,transform .1s;font-family:'DM Sans',sans-serif;color:#fff;letter-spacing:.3px;}
 .save-btn:active{transform:scale(.98);}
+.set-row.pf .set-input{opacity:.4;font-style:italic;}
+.save-btn-secondary{flex:1;background:transparent;border:1px solid var(--muted);color:var(--ink);}
 
 /* ── HISTORY ── */
 .hist-item{background:var(--white);border:1px solid var(--line);border-left:3px solid var(--sess-color);border-radius:7px;overflow:hidden;margin-bottom:10px;}
@@ -505,7 +506,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 </div>
 
 <div class="save-bar" id="save-bar" style="display:none">
-  <button class="save-btn" id="save-btn" onclick="saveSession()">Save session</button>
+  <div style="display:flex;gap:8px">
+    <button class="save-btn save-btn-secondary" id="save-btn" onclick="saveSession()">Save</button>
+    <button class="save-btn" id="finish-btn" style="flex:2" onclick="finishSession()">Finish session</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -606,11 +610,12 @@ let workoutDefs = {};         // mutable, loaded from localStorage
 let currentSession='A';
 let currentView='home';
 let currentDate=today();
+let dateChosenManually=false;
 let formData={};
 let allLogs={};
 let expandedLog=null;
 let selectedChartEx=null;
-let draftTimer=null;
+let draftTimer=null,cloudTimer=null;
 let setNoteOpen={};
 let adhocExercises=[];
 let adhocShowForm=false;
@@ -640,12 +645,38 @@ const LIB_CACHE_PRE = 'gymtracker_lib2_';
 
 function loadAll(){try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):{}}catch(e){return{}}}
 function saveAll(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(allLogs))}catch(e){alert('Error saving: '+e.message)}}
+// Autosave: every change goes straight into the session's log (and to the cloud a few seconds later)
 function saveDraft(){
   clearTimeout(draftTimer);
-  draftTimer=setTimeout(()=>{
-    try{localStorage.setItem(DRAFT_KEY,JSON.stringify({session:currentSession,date:currentDate,data:formData,adhocExercises,sessionStartTime,sessionEndTime}));
-    const el=document.getElementById('draft-badge');if(el)el.style.display='inline-block';}catch(e){}
-  },400);
+  draftTimer=setTimeout(()=>persistLog(false),400);
+}
+// Pre-filled suggestions (pf) are never stored; only sets you edited or started count
+function buildLog(){
+  const data={};
+  for(const [id,d] of Object.entries(formData)){
+    const sets=(d.sets||[]).filter(s=>!s.pf);
+    if(!sets.length&&!d.notes)continue;
+    data[id]={...JSON.parse(JSON.stringify(d)),sets:JSON.parse(JSON.stringify(sets))};
+  }
+  return {...(allLogs[logKey()]||{}),session:currentSession,date:currentDate,data,
+    adhocExercises:JSON.parse(JSON.stringify(adhocExercises)),startTime:sessionStartTime,endTime:sessionEndTime};
+}
+function persistLog(cloudNow){
+  clearTimeout(draftTimer);
+  const key=logKey(),log=buildLog();
+  const hasAny=Object.values(log.data).some(d=>d.sets.some(s=>s.weight||s.reps||s.t_start))||log.adhocExercises.length;
+  if(!hasAny&&!allLogs[key])return false; // nothing logged yet: don't create an empty session
+  allLogs[key]=log;saveAll();clearDraft();updateStats();
+  clearTimeout(cloudTimer);
+  if(cloudNow)saveToCloud(key);else cloudTimer=setTimeout(()=>saveToCloud(key),3000);
+  updateSaveBadge();
+  return true;
+}
+function updateSaveBadge(){
+  const b=document.getElementById('saved-badge');if(!b)return;
+  const log=allLogs[logKey()];
+  b.textContent=log?.finished?'✓ Finished':'✓ Saved';
+  b.style.display=log?'inline-block':'none';
 }
 function loadDraft(){try{const r=localStorage.getItem(DRAFT_KEY);return r?JSON.parse(r):null}catch(e){return null}}
 function clearDraft(){localStorage.removeItem(DRAFT_KEY)}
@@ -695,13 +726,15 @@ function startTimer(exName){
   timerState.active=true;
   timerState.duration=dur;
   timerState.remaining=dur;
+  timerState.endsAt=Date.now()+dur*1000; // iOS pauses intervals in the background, so time comes from the clock
   timerState.total=dur;
   timerState.exName=exName;
   renderTimerOverlay();
   timerState.interval=setInterval(tickTimer,1000);
 }
 function tickTimer(){
-  timerState.remaining--;
+  if(!timerState.active)return;
+  timerState.remaining=Math.max(0,Math.ceil((timerState.endsAt-Date.now())/1000));
   if(timerState.remaining<=0){
     timerState.remaining=0;
     clearInterval(timerState.interval);
@@ -717,6 +750,7 @@ function stopTimer(){
 }
 function adjustTimer(delta){
   timerState.remaining=Math.max(5,Math.min(600,timerState.remaining+delta));
+  timerState.endsAt=Date.now()+timerState.remaining*1000;
   timerState.total=Math.max(timerState.total,timerState.remaining);
   renderTimerOverlay();
 }
@@ -806,14 +840,14 @@ function getHistoricMax(exId,excludeDate){
     .reduce((mx,w)=>Math.max(mx,w),0);
 }
 function getCurrentMax(exId){
-  return(formData[exId]?.sets||[]).map(s=>parseFloat(s.weight)||0).reduce((mx,w)=>Math.max(mx,w),0);
+  return(formData[exId]?.sets||[]).filter(s=>!s.pf).map(s=>parseFloat(s.weight)||0).reduce((mx,w)=>Math.max(mx,w),0);
 }
 function isCurrentPR(exId){
   const cur=getCurrentMax(exId);
   if(!cur)return false;
   return cur>getHistoricMax(exId,currentDate);
 }
-function detectAndShowPRs(){
+function detectAndShowPRs(silent){
   const sess=workoutDefs[currentSession];
   const prs=[];
   sess.exercises.forEach(ex=>{
@@ -822,12 +856,13 @@ function detectAndShowPRs(){
     const hist=getHistoricMax(ex.id,currentDate);
     if(cur>hist)prs.push({name:ex.name,weight:cur,unit:ex.unit});
   });
-  if(prs.length>0){
+  if(prs.length>0&&!silent){
     const msg=prs.length===1
       ?`🏆 PR: ${prs[0].name} — ${prs[0].weight}${prs[0].unit}`
       :`🏆 ${prs.length} new PRs this session`;
     showToast(msg,3500);
   }
+  return prs;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -838,7 +873,7 @@ function calcExVolume(exId,data){
   if(!d?.sets)return 0;
   return d.sets.reduce((t,s)=>{
     const w=parseFloat(s.weight)||0,r=parseInt(s.reps)||0;
-    return t+(w*r);
+    return s.pf?t:t+(w*r);
   },0);
 }
 function calcSessionVolume(){
@@ -854,20 +889,19 @@ function fmtDuration(isoStart,isoEnd){const m=Math.round((new Date(isoEnd)-new D
 // ─────────────────────────────────────────────────────────────────
 // COMPARE WITH LAST SESSION
 // ─────────────────────────────────────────────────────────────────
+// Most recent earlier log with this exercise: same session first, else anywhere (one-offs included).
+// Extra exercises get a new id each time, so earlier logs are also matched by exercise name.
 function getLastSessionData(exId){
-  const altId=findExIdByName(findExerciseName(exId)||'',exId);
+  const name=(findExerciseName(exId)||adhocExercises.find(e=>e.id===exId)?.name||'').toLowerCase();
+  const altId=name?findExIdByName(name,exId):null;
+  const has=(l,id)=>id&&l.data[id]?.sets?.some(s=>s.weight||s.reps);
+  const idIn=l=>[exId,altId,...(l.adhocExercises||[]).filter(a=>name&&a.name?.toLowerCase()===name).map(a=>a.id)].find(id=>has(l,id));
   const logs=Object.values(allLogs)
-    .filter(l=>{
-      if(l.date===currentDate&&l.session===currentSession)return false;
-      if(l.data[exId]?.sets?.some(s=>s.weight||s.reps))return true;
-      if(altId&&l.data[altId]?.sets?.some(s=>s.weight||s.reps))return true;
-      return false;
-    })
+    .filter(l=>(l.date<currentDate||(l.date===currentDate&&l.session!==currentSession))&&idIn(l))
     .sort((a,b)=>b.date.localeCompare(a.date));
-  if(!logs[0])return null;
-  const log=logs[0];
-  const data=log.data[exId]||(altId?log.data[altId]:null);
-  return data?{log,data}:null;
+  const log=logs.find(l=>l.session===currentSession)||logs[0];
+  if(!log)return null;
+  return {log,data:log.data[idIn(log)]};
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -929,6 +963,10 @@ function addAdHocExercise(){
   adhocExercises.push({id,name,unit,sets:setsLabel,note:''});
   // pre-fill set data so the card shows with weight/reps already entered
   formData[id]={notes:'',sets:Array.from({length:nSets},()=>({weight,reps}))};
+  if(!weight&&!reps){
+    const last=getLastSessionData(id)?.data.sets.filter(s=>s.weight||s.reps);
+    if(last?.length)formData[id].sets=last.map(s=>({weight:s.weight||'',reps:s.reps||'',pf:true}));
+  }
   adhocShowForm=false;
   renderLog();
 }
@@ -999,6 +1037,7 @@ function setView(v,e){
 // Navigate to log view for a session (called from Sesiones cards)
 function startSession(key){
   currentSession=key;
+  currentDate=today();dateChosenManually=false;
   selectedChartEx=null;adhocExercises=[];adhocShowForm=false;
   loadFormFromLogs();
   currentView='log';
@@ -1044,8 +1083,9 @@ function loadFormFromLogs(){
     adhocExercises=JSON.parse(JSON.stringify(allLogs[key].adhocExercises||[]));
     sessionStartTime=allLogs[key].startTime||null;
     sessionEndTime=allLogs[key].endTime||null;
-    clearDraft();return;
+    clearDraft();applyPrefill();return;
   }
+  // Drafts are no longer written (autosave goes to the log); this restores one left by an older version
   const draft=loadDraft();
   if(draft?.session===currentSession&&draft?.date===currentDate){
     formData=draft.data;
@@ -1055,15 +1095,15 @@ function loadFormFromLogs(){
     return;
   }
   formData={};adhocExercises=[];
-  const _ps=workoutDefs[currentSession];
-  if(_ps?.exercises){
-    for(const _ex of _ps.exercises){
-      const _last=getLastSessionData(_ex.id);
-      if(_last){
-        const _sets=_last.data.sets.filter(s=>s.weight||s.reps);
-        if(_sets.length>0)formData[_ex.id]={sets:_sets.map(s=>({weight:s.weight||'',reps:s.reps||''})),notes:''};
-      }
-    }
+  applyPrefill();
+}
+// Fill exercises with nothing logged yet with last time's sets, marked as suggestions (pf)
+function applyPrefill(){
+  for(const ex of workoutDefs[currentSession]?.exercises||[]){
+    if(formData[ex.id]?.sets?.some(s=>s.weight||s.reps))continue;
+    const last=getLastSessionData(ex.id);
+    const sets=last?.data.sets.filter(s=>s.weight||s.reps);
+    if(sets?.length)formData[ex.id]={sets:sets.map(s=>({weight:s.weight||'',reps:s.reps||'',pf:true})),notes:formData[ex.id]?.notes||''};
   }
 }
 function getExData(exId){
@@ -1072,7 +1112,8 @@ function getExData(exId){
   return formData[exId];
 }
 function updateWeight(exId,idx,val){
-  getExData(exId).sets[idx].weight=val;
+  const set=getExData(exId).sets[idx];set.weight=val;delete set.pf;
+  document.querySelector(`[data-num="${exId}-${idx}"]`)?.closest('.set-row')?.classList.remove('pf');
   document.querySelector(`[data-num="${exId}-${idx}"]`)?.classList.toggle('filled',!!val);
   document.querySelector(`[data-card="${exId}"]`)?.classList.toggle('has-data',hasData(exId));
   updateExVolume(exId);
@@ -1081,7 +1122,8 @@ function updateWeight(exId,idx,val){
   saveDraft();
 }
 function updateReps(exId,idx,val){
-  getExData(exId).sets[idx].reps=val;
+  const set=getExData(exId).sets[idx];set.reps=val;delete set.pf;
+  document.querySelector(`[data-num="${exId}-${idx}"]`)?.closest('.set-row')?.classList.remove('pf');
   updateExVolume(exId);updateSessionVolume();saveDraft();
 }
 function updateNotes(exId,val){getExData(exId).notes=val;saveDraft();}
@@ -1098,7 +1140,7 @@ function removeSet(exId,idx){
   const d=getExData(exId);if(d.sets.length<=1)return;
   d.sets.splice(idx,1);renderSetsFor(exId);updateExVolume(exId);updateSessionVolume();saveDraft();
 }
-function hasData(exId){return formData[exId]?.sets?.some(s=>s.weight||s.reps);}
+function hasData(exId){return formData[exId]?.sets?.some(s=>!s.pf&&(s.weight||s.reps));}
 function updateExVolume(exId){
   const el=document.querySelector(`[data-vol="${exId}"]`);
   if(!el)return;
@@ -1120,19 +1162,29 @@ function updateSessionVolume(){
 // ─────────────────────────────────────────────────────────────────
 // SAVE
 // ─────────────────────────────────────────────────────────────────
+// Save: an explicit checkpoint (autosave already runs); pushes to the cloud immediately
 function saveSession(){
-  const key=logKey();
-  if(!sessionEndTime)sessionEndTime=new Date().toISOString();
-  allLogs[key]={session:currentSession,date:currentDate,data:JSON.parse(JSON.stringify(formData)),adhocExercises:JSON.parse(JSON.stringify(adhocExercises)),startTime:sessionStartTime,endTime:sessionEndTime};
-  saveAll();clearDraft();updateStats();
+  if(!persistLog(true)){showToast('Nothing logged yet');return;}
   detectAndShowPRs();
-  saveToCloud(key);
-
   const btn=document.getElementById('save-btn');
-  btn.textContent='✓ Session saved';btn.style.background='#2ECC9A';
-  setTimeout(()=>{btn.textContent='Save session';btn.style.background=sessColor();},2000);
-  const b=document.getElementById('saved-badge');if(b)b.style.display='inline-block';
-  const db=document.getElementById('draft-badge');if(db)db.style.display='none';
+  btn.textContent='✓ Saved';
+  setTimeout(()=>{btn.textContent='Save';},2000);
+}
+// Finish: records the end time and closes the workout; it can still be edited later
+function finishSession(){
+  const key=logKey();
+  if(!persistLog(false)){showToast('Nothing logged yet');return;}
+  if(!confirm('Finish this session?'))return;
+  if(!sessionEndTime)sessionEndTime=new Date().toISOString();
+  allLogs[key].endTime=sessionEndTime;allLogs[key].finished=true;
+  saveAll();saveToCloud(key);
+  const prs=detectAndShowPRs(true);
+  const log=allLogs[key];
+  const vol=Object.values(log.data).reduce((t,d)=>t+calcExVolume(null,d),0);
+  const nSets=Object.values(log.data).reduce((t,d)=>t+d.sets.filter(s=>s.weight||s.reps).length,0);
+  const mins=log.startTime?Math.round((Date.parse(log.endTime)-Date.parse(log.startTime))/60000):null;
+  showToast(`Session finished · ${nSets} sets${vol?' · '+fmtVol(vol):''}${mins!=null?' · '+mins+' min':''}${prs.length?' · 🏆 '+prs.length+' PR'+(prs.length>1?'s':''):''}`,4500);
+  setView('home',null);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -1141,11 +1193,9 @@ function saveSession(){
 function renderLog(){
   const sess=workoutDefs[currentSession];if(!sess)return;
   const {color,bg}=sess;
-  document.getElementById('save-btn').style.background=color;
+  document.getElementById('finish-btn').style.background=color;
 
-  const isSaved=!!allLogs[logKey()];
-  const draft=loadDraft();
-  const hasDraft=draft?.session===currentSession&&draft?.date===currentDate&&!isSaved;
+  const savedLog=allLogs[logKey()];
   const sessVol=calcSessionVolume();
 
   let html=`
@@ -1162,8 +1212,7 @@ function renderLog(){
     <div class="date-row">
       <label>Date</label>
       <input type="date" class="date-input" value="${currentDate}" onchange="onDateChange(this.value)">
-      <span class="saved-badge" id="saved-badge" style="display:${isSaved?'inline-block':'none'}">✓ Saved</span>
-      <span class="draft-badge" id="draft-badge" style="display:${hasDraft?'inline-block':'none'}">✎ Draft</span>
+      <span class="saved-badge" id="saved-badge" style="display:${savedLog?'inline-block':'none'}">${savedLog?.finished?'✓ Finished':'✓ Saved'}</span>
     </div>
     <div class="session-volume" id="session-vol">
       <span class="sv-label">Session volume</span>
@@ -1299,8 +1348,8 @@ function renderSetRows(exId,sets,color){
     const noteOpen=setNoteOpen[`${exId}-${i}`]||!!s.note;
     const numStyle=s.note?`background:${color};color:#fff;outline:2px solid rgba(0,0,0,.15);`:'';
     return `
-    <div class="set-row">
-      <div class="set-num${s.weight||s.reps?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color};${numStyle}cursor:pointer" onclick="toggleSetNote('${exId}',${i})" title="Add set note">${i+1}</div>
+    <div class="set-row${s.pf?' pf':''}"${s.pf?' title="Last time — edit or tap ▶ to log"':''}>
+      <div class="set-num${!s.pf&&(s.weight||s.reps)?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color};${numStyle}cursor:pointer" onclick="toggleSetNote('${exId}',${i})" title="Add set note">${i+1}</div>
       <button class="set-start-btn${s.t_start?' done':''}" onclick="startSet('${exId}',${i})" title="${s.t_start?'Started: '+fmtTime(s.t_start):'Start set'}">${s.t_start?'●':'▶'}</button>
       <input type="number" step="0.5" class="set-input weight-input" style="--sess-color:${color}"
         value="${s.weight||''}" placeholder="—"
@@ -1336,7 +1385,18 @@ function renderSetsFor(exId){
   if(container)container.innerHTML=renderSetRows(exId,d.sets,SESSIONS_COLOR(exId));
 }
 function SESSIONS_COLOR(exId){return workoutDefs[currentSession]?.color||'#1e3a5f';}
-function onDateChange(val){currentDate=val;loadFormFromLogs();renderLog();}
+function onDateChange(val){currentDate=val;dateChosenManually=true;loadFormFromLogs();renderLog();}
+// The app can sit in the background overnight; without this a morning workout is saved under yesterday
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='visible')return;
+  tickTimer();refreshDateIfStale();
+});
+function refreshDateIfStale(){
+  if(dateChosenManually||currentDate===today())return;
+  const starts=Object.values(formData).flatMap(d=>(d.sets||[]).filter(s=>s.t_start&&!s.pf).map(s=>Date.parse(s.t_start)));
+  if(starts.length&&Date.now()-Math.max(...starts)<3*3600e3)return; // a workout running past midnight keeps its start date
+  currentDate=today();loadFormFromLogs();render();
+}
 
 // ─────────────────────────────────────────────────────────────────
 // RENDER HISTORY
@@ -1534,8 +1594,8 @@ function renderHistory(){
   for(const log of logs){
     const sess=workoutDefs[log.session];if(!sess)continue;
     const {color}=sess;
-    const exWithData=sess.exercises.filter(ex=>log.data[ex.id]?.sets?.some(s=>s.weight||s.reps));
-    const totalVol=exWithData.reduce((t,ex)=>t+calcExVolume(ex.id,log.data[ex.id]),0);
+    const exWithData=Object.keys(log.data).filter(id=>log.data[id]?.sets?.some(s=>s.weight||s.reps));
+    const totalVol=exWithData.reduce((t,id)=>t+calcExVolume(id,log.data[id]),0);
     const logKey=`${log.session}_${log.date}`;
     const isOpen=expandedLog===logKey;
     const sc=log.manualStrain!=null?(log.manualStrain>=18?'#E84040':log.manualStrain>=14?'#F5A623':log.manualStrain>=9?'#F5C842':'#3CE0A0'):'var(--muted)';
@@ -1693,7 +1753,7 @@ function closeFocusModal(){
 function startSet(exId,idx){
   const d=getExData(exId);
   if(!d.sets[idx])return;
-  d.sets[idx].t_start=new Date().toISOString();
+  d.sets[idx].t_start=new Date().toISOString();delete d.sets[idx].pf;
   if(!sessionStartTime)sessionStartTime=d.sets[idx].t_start;
   saveDraft();
   renderSetsFor(exId);
@@ -1990,7 +2050,11 @@ function renderMiniMuscleSVG(exercises,size){
   }
   return`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}<circle cx="${cx}" cy="${cy}" r="${iri-2}" fill="var(--white)"/></svg>`;
 }
+// Segments need ontouchstart for iOS, but a tap also fires onclick; without this the echo closes what the tap opened
+let _lastSegPick=0;
 function pickMuscleSeg(id,type){
+  if(Date.now()-_lastSegPick<600)return;
+  _lastSegPick=Date.now();
   if(id===null||(muscleSel===id&&muscleSelType===type)){muscleSel=null;muscleSelType=null;}
   else{muscleSel=id;muscleSelType=type;}
   renderMuscleFull();
@@ -2142,6 +2206,11 @@ const MUSCLE_CATS=[
   {id:9, name:'Legs',     emoji:'🦵',color:'#7a4b00'},
   {id:10,name:'Core',     emoji:'⚡',color:'#555'},
 ];
+// Category colours are dark (made for the old light theme): mix with white so text on dark cards stays readable
+function textTint(hex){
+  const h=hex.replace('#','').replace(/^(.)(.)(.)$/,'$1$1$2$2$3$3');
+  return '#'+[0,2,4].map(i=>Math.round(parseInt(h.slice(i,i+2),16)*.45+255*.55).toString(16).padStart(2,'0')).join('');
+}
 // ── MUSCLE BODY SVG ──
 function muscleSVG(catId,color){
   const g='#dedad6'; // inactive
@@ -2549,7 +2618,7 @@ function renderLibrary(){
           <div class="lib-info">
             <div class="lib-name">${escHtml(name)}</div>
             <div class="lib-card-meta">
-              <span class="muscle-pill" style="background:${cat.color}22;color:${cat.color}">${cat.emoji} ${cat.name}</span>
+              <span class="muscle-pill" style="background:${cat.color}33;color:${textTint(cat.color)}">${cat.emoji} ${cat.name}</span>
               ${ex.level?`<span class="lib-level" style="background:${lvlColor}22;color:${lvlColor}">${ex.level}</span>`:''}
               ${ex.equipment?`<span class="lib-equip">${escHtml(ex.equipment)}</span>`:''}
             </div>
@@ -2642,7 +2711,7 @@ function filterExDropdown(inputEl,idx){
   if(!matches.length){drop.classList.remove('open');return;}
   drop.innerHTML=matches.map(e=>
     `<div class="ex-drop-item" data-idx="${idx}" data-exname="${escHtml(e.name)}" onclick="selectLibExFromEl(this)">
-      ${escHtml(e.name)}<span class="cat-tag" style="color:${e.catColor}">${e.catName}</span>
+      ${escHtml(e.name)}<span class="cat-tag" style="color:${textTint(e.catColor)}">${e.catName}</span>
     </div>`
   ).join('');
   drop.classList.add('open');
@@ -2722,7 +2791,7 @@ function renderPickerList(){
 
     // Show category header only in "all" mode or when searching across cats
     if(!pickerCat||q){
-      html+=`<div class="picker-cat-hdr" style="color:${mc.color}">${mc.emoji} ${mc.name}</div>`;
+      html+=`<div class="picker-cat-hdr" style="color:${textTint(mc.color)}">${mc.emoji} ${mc.name}</div>`;
     }
 
     const limit=pickerCat&&!q?pool.length:(q?15:5);
@@ -3406,11 +3475,6 @@ function renderHome(){
     const el=document.getElementById('hm-scroll');
     if(el) el.scrollLeft=el.scrollWidth;
   },50);
-}
-
-function startSession(key){
-  currentSession=key;
-  setView('log',null);
 }
 
 function promptHomeWeight(){
