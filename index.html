@@ -3463,6 +3463,11 @@ function renderData(){
       <div class="msg" id="import-msg"></div>
     </div>
     <div class="data-section">
+      <h3>🍎 Import from MyFitnessPal</h3>
+      <p>Bring your MyFitnessPal food diary and weight history into the Food tab.</p>
+      <button class="data-btn import" onclick="ntOpenImport()">Import MyFitnessPal export</button>
+    </div>
+    <div class="data-section">
       <h3>🗑️ Clear all data</h3>
       <p>Permanently delete all local sessions.</p>
       <button class="data-btn danger" onclick="clearAllData()">Clear all data</button>
@@ -3765,13 +3770,23 @@ function ntSave(kind,id=''){
   ntPending.add(kind+'|'+id);
   clearTimeout(ntCloudTimer);ntCloudTimer=setTimeout(ntFlush,1500);
 }
+// Same, for many at once (an import): one local write instead of hundreds
+function ntSaveMany(kind,ids){
+  const now=Date.now();
+  ids.forEach(id=>{const o=ntObj(kind,id);if(o)o.updatedAt=now;ntPending.add(kind+'|'+id);});
+  try{localStorage.setItem(NUTRI_KEY,JSON.stringify(nutri));}catch(e){alert('Error saving: '+e.message);}
+  clearTimeout(ntCloudTimer);ntCloudTimer=setTimeout(ntFlush,1500);
+}
 async function ntFlush(){
   if(!currentUser||!fbDb||!ntPending.size)return;
   const items=[...ntPending];ntPending.clear();
   try{
-    const batch=fbDb.batch();
-    items.forEach(k=>{const [kind,id]=k.split('|');const o=ntObj(kind,id);if(o)batch.set(ntDocRef(kind,id),ntClean(o));});
-    await batch.commit();lastSyncTime=new Date();setCloudStatus('synced');
+    for(let i=0;i<items.length;i+=400){ // Firestore takes at most 500 writes per batch
+      const batch=fbDb.batch();
+      items.slice(i,i+400).forEach(k=>{const [kind,id]=k.split('|');const o=ntObj(kind,id);if(o)batch.set(ntDocRef(kind,id),ntClean(o));});
+      await batch.commit();
+    }
+    lastSyncTime=new Date();setCloudStatus('synced');
   }catch(e){console.error('Nutrition cloud save:',e);items.forEach(k=>ntPending.add(k));setCloudStatus('error');}
 }
 async function syncNutritionFromCloud(){
@@ -4176,6 +4191,7 @@ function ntSaveWeight(remove){
   if(!remove&&(!v||v<20||v>400)){showToast('Enter your weight in kg');return;}
   const day=nutri.days[ntDate]||(nutri.days[ntDate]={date:ntDate,entries:[]});
   if(remove)delete day.weight;else day.weight=Math.round(v*10)/10;
+  delete day.weightMfp;
   ntSave('days',ntDate);ntClose('nt-sheet2');renderNutrition();
 }
 
@@ -4290,7 +4306,160 @@ function ntCalendarHtml(){
     <div class="nt-legend"><span><i style="background:var(--green)"></i>on target (±10%)</span><span><i style="background:var(--gold)"></i>under</span>
       <span><i style="background:var(--danger)"></i>over</span><span style="font-family:'DM Mono',monospace">78.4</span><span>= weight (kg)</span></div>
     <div class="exs-tiles">${tile('Days logged',kcals.length,`of ${n}`)}${tile('Avg kcal',ntR(avg(kcals)),'per logged day')}${tile('Avg protein',ntR(avg(prots)),'g')}
-      ${weights.length>1?tile('Weight',`${weights[weights.length-1]-weights[0]>0?'+':''}${(weights[weights.length-1]-weights[0]).toFixed(1)}`,'kg this month'):''}</div>`;
+      ${weights.length>1?tile('Weight',`${weights[weights.length-1]-weights[0]>0?'+':''}${(weights[weights.length-1]-weights[0]).toFixed(1)}`,'kg this month'):''}</div>
+    <button class="nt-secondary" onclick="ntOpenImport()">⬇️ Import from MyFitnessPal</button>`;
+}
+
+// ── import from MyFitnessPal ──
+// MyFitnessPal Premium exports a zip of CSV files: a nutrition summary (totals per meal and day, sometimes per food)
+// and a measurement summary (weight). Imported meals become quick-add entries marked src:'mfp', so importing again
+// replaces them, and a meal I already logged in this app is never overwritten.
+const JSZIP_LIB='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+let ntImport=null;
+function ntCsv(text){
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+    else if(c==='"')q=true;
+    else if(c===','){row.push(f);f='';}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f='';}
+    else f+=c;
+  }
+  if(f||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(x=>x.trim()));
+}
+function ntLoadScript(src){
+  return new Promise((ok,fail)=>{
+    const s=document.createElement('script');s.src=src;s.onload=ok;
+    s.onerror=()=>fail(new Error('Could not load the zip reader. Check your connection, or unzip the file and pick the CSV files.'));
+    document.head.appendChild(s);
+  });
+}
+async function ntReadFiles(files){
+  const out=[];
+  for(const f of files){
+    if(/\.zip$/i.test(f.name)||/zip/.test(f.type)){
+      if(!window.JSZip)await ntLoadScript(JSZIP_LIB);
+      const z=await JSZip.loadAsync(f);
+      for(const e of Object.values(z.files))if(!e.dir&&/\.csv$/i.test(e.name))out.push({name:e.name,text:await e.async('string')});
+    }else out.push({name:f.name,text:await f.text()});
+  }
+  return out;
+}
+function ntMfpDate(s){
+  s=String(s||'').trim();
+  let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m=s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+  if(!m)return null;
+  const [a,b]=+m[1]>12?[m[2],m[1]]:[m[1],m[2]]; // month first (US) unless the first number can't be a month
+  return`${m[3]}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
+}
+function ntMfpNum(s){
+  s=String(s??'').trim();
+  if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,''); // 1,234 is thousands, not a decimal comma
+  return ntNum(s);
+}
+function ntParseMfp(files){
+  const meals={},weights={};let wLb=null;
+  for(const f of files){
+    const t=ntCsv(f.text.replace(/^﻿/,''));if(t.length<2)continue;
+    const h=t[0].map(x=>ntNorm(x).trim());
+    const col=(...keys)=>h.findIndex(x=>keys.some(k=>x.startsWith(k)));
+    const iDate=col('date');if(iDate<0)continue;
+    const iMeal=col('meal'),iKcal=col('calories','energy'),iW=col('weight'),iFood=col('food');
+    if(iMeal>=0&&iKcal>=0){
+      const c={kcal:iKcal,protein:col('protein'),carbs:col('carbohydrate','carbs'),fat:col('fat'),fiber:col('fiber','fibre'),sugar:col('sugar'),sodium:col('sodium')};
+      for(const r of t.slice(1)){
+        const date=ntMfpDate(r[iDate]),mealRaw=ntNorm(r[iMeal]).trim();
+        if(!date||!mealRaw||mealRaw.includes('total'))continue; // skips blank and Totals rows
+        const meal=NT_MEALS.find(m=>mealRaw.startsWith(m.id.replace(/s$/,'')))?.id||'snacks';
+        const v=k=>c[k]>=0?ntMfpNum(r[c[k]]):null,na=v('sodium');
+        const n={kcal:v('kcal'),protein:v('protein'),carbs:v('carbs'),fat:v('fat'),fiber:v('fiber'),sugar:v('sugar'),salt:na!=null?Math.round(na*2.5)/1000:null};
+        if(n.kcal==null)continue;
+        (meals[date+'|'+meal]||(meals[date+'|'+meal]=[])).push({food:iFood>=0?String(r[iFood]||'').trim():'',n});
+      }
+    }else if(iW>=0){
+      if(/lb/.test(h[iW]))wLb=true;else if(/kg/.test(h[iW]))wLb=false;
+      for(const r of t.slice(1)){const date=ntMfpDate(r[iDate]),w=ntMfpNum(r[iW]);if(date&&w)weights[date]=w;}
+    }
+  }
+  if(wLb==null){const ws=Object.values(weights).sort((a,b)=>a-b);wLb=ws.length?ws[Math.floor(ws.length/2)]>150:false;} // no unit in the header: guess from the numbers
+  return{meals,weights,lb:wLb};
+}
+function ntImportPlan(){
+  const {meals,weights}=ntImport,p={meals:0,skipped:0,weights:0,wSkipped:0,dates:new Set()};
+  for(const key of Object.keys(meals)){
+    const [date,meal]=key.split('|');p.dates.add(date);
+    if(ntDayEntries(date).some(e=>e.meal===meal&&e.src!=='mfp'))p.skipped++;else p.meals++;
+  }
+  for(const date of Object.keys(weights)){
+    const day=nutri.days[date];p.dates.add(date);
+    if(day?.weight!=null&&!day.weightMfp)p.wSkipped++;else p.weights++;
+  }
+  const ds=[...p.dates].sort();p.from=ds[0];p.to=ds[ds.length-1];
+  return p;
+}
+function ntOpenImport(){
+  ntImport=null;
+  ntSheet('nt-sheet2',`${ntHead('Import from MyFitnessPal','Food diary totals and weight','nt-sheet2')}
+    <div class="nt-note" style="padding-top:0">
+      1. On <b>myfitnesspal.com</b> (the website, not the app), find <b>Export Data</b> under Reports or Settings. It needs Premium.<br>
+      2. MyFitnessPal emails you a <b>.zip</b> file. Save it to Files.<br>
+      3. Pick that zip here (or the CSV files inside it).<br><br>
+      Each meal comes in as one entry with its calories and macros, because that's what MyFitnessPal exports. A meal you already logged here is kept and not doubled. Importing again replaces the earlier import.
+    </div>
+    <input type="file" id="nt-imp-file" accept=".zip,.csv,application/zip,text/csv" multiple style="display:none" onchange="ntImportPicked(this.files)">
+    <button class="nt-primary" onclick="document.getElementById('nt-imp-file').click()">Choose file</button>
+    <div id="nt-imp-res"></div>`);
+}
+async function ntImportPicked(files){
+  const el=document.getElementById('nt-imp-res');if(!el||!files?.length)return;
+  el.innerHTML='<div class="nt-note">Reading…</div>';
+  try{
+    ntImport=ntParseMfp(await ntReadFiles([...files]));
+    if(!Object.keys(ntImport.meals).length&&!Object.keys(ntImport.weights).length)
+      throw new Error('No food diary or weight found in this file. Pick the zip from MyFitnessPal, or the Nutrition Summary / Measurement Summary CSV inside it.');
+    ntRenderImportPlan();
+  }catch(e){ntImport=null;el.innerHTML=`<div class="nt-note" style="color:var(--danger)">${escHtml(e.message)}</div>`;}
+}
+function ntRenderImportPlan(){
+  const el=document.getElementById('nt-imp-res');if(!el||!ntImport)return;
+  const p=ntImportPlan(),wCount=Object.keys(ntImport.weights).length;
+  const tile=(lab,val,sub)=>`<div class="exs-tile"><div class="exs-tile-val">${val}</div><div class="exs-tile-lab">${lab}</div>${sub?`<div class="exs-tile-sub">${sub}</div>`:''}</div>`;
+  el.innerHTML=`<div class="nt-sec">Found ${p.from?`${fmtDate(p.from)} – ${fmtDate(p.to)}`:''}</div>
+    <div class="exs-tiles">${tile('Meals',p.meals,p.skipped?`${p.skipped} already here`:'to import')}${tile('Weights',p.weights,p.wSkipped?`${p.wSkipped} already here`:'to import')}</div>
+    ${wCount?`<div class="nt-actions"><span class="nt-note" style="padding:6px 4px 0 0">Weight is in</span>
+      <button class="nt-chip${ntImport.lb?'':' on'}" onclick="ntImport.lb=false;ntRenderImportPlan()">kg</button>
+      <button class="nt-chip${ntImport.lb?' on':''}" onclick="ntImport.lb=true;ntRenderImportPlan()">lb</button></div>`:''}
+    <button class="nt-primary" onclick="ntApplyImport()"${p.meals||p.weights?'':' disabled style="opacity:.4"'}>Import</button>`;
+}
+function ntApplyImport(){
+  if(!ntImport)return;
+  const {meals,weights,lb}=ntImport,touched=new Set(),now=Date.now();
+  const dates=new Set([...Object.keys(meals).map(k=>k.split('|')[0]),...Object.keys(weights)]);
+  dates.forEach(d=>{const day=nutri.days[d];if(day?.entries.some(e=>e.src==='mfp')){day.entries=day.entries.filter(e=>e.src!=='mfp');touched.add(d);}});
+  let nMeals=0,nW=0;
+  for(const [key,items] of Object.entries(meals)){
+    const [date,meal]=key.split('|');
+    if(ntDayEntries(date).some(e=>e.meal===meal))continue; // logged here already: mine wins
+    const day=nutri.days[date]||(nutri.days[date]={date,entries:[]});
+    const perFood=items.every(i=>i.food);
+    const list=perFood?items:[{food:'',n:Object.fromEntries(NT_FIELDS.map(([k])=>{
+      const vs=items.map(i=>i.n[k]).filter(v=>v!=null);return[k,vs.length?vs.reduce((a,b)=>a+b,0):null];}))}];
+    list.forEach(i=>day.entries.push({id:ntId('e'),meal,foodId:null,name:i.food||'MyFitnessPal',brand:perFood?'MyFitnessPal':'',grams:null,per100:null,n:i.n,src:'mfp',t:now}));
+    touched.add(date);nMeals++;
+  }
+  for(const [date,v] of Object.entries(weights)){
+    const day=nutri.days[date]||(nutri.days[date]={date,entries:[]});
+    if(day.weight!=null&&!day.weightMfp)continue;
+    day.weight=Math.round((lb?v*0.45359237:v)*10)/10;day.weightMfp=true;touched.add(date);nW++;
+  }
+  ntSaveMany('days',[...touched]);
+  ntImport=null;ntClose('nt-sheet2');
+  if(currentView==='nutrition')renderNutrition();else if(currentView==='data')renderData();
+  showToast(`✓ Imported ${nMeals} meal${nMeals!==1?'s':''} and ${nW} weight${nW!==1?'s':''}`,3500);
 }
 
 // ── targets ──
