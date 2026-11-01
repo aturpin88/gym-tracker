@@ -1,4 +1,4 @@
-const CACHE = 'gymtracker-v50';
+const CACHE = 'gymtracker-v51';
 const PRECACHE = [
   './index.html',
   './manifest.json',
@@ -23,6 +23,8 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Food lookups must always be live, and only GET requests can be cached
+  if (e.request.method !== 'GET' || new URL(e.request.url).hostname.endsWith('openfoodfacts.org')) return;
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;

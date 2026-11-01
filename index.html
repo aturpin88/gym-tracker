@@ -276,6 +276,65 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .exs-howto summary{font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;}
 .exs-howto[open] summary{margin-bottom:10px;}
 .exs-howto .lib-steps-ordered li{color:var(--ink2);}
+
+/* ── NUTRITION ── */
+.nt-datebar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.nt-datebar button{background:var(--white);border:1px solid var(--line);color:var(--ink);border-radius:8px;width:38px;height:34px;font-size:18px;cursor:pointer;}
+.nt-date{font-size:15px;font-weight:700;color:var(--ink);text-align:center;}
+.nt-date small{display:block;font-size:10px;font-weight:600;color:var(--ink2);}
+.nt-sum{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;}
+.nt-sum-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px;}
+.nt-kcal{font-family:'DM Mono',monospace;font-size:26px;font-weight:600;color:var(--ink);line-height:1;}
+.nt-kcal span{font-size:13px;color:var(--ink2);font-weight:500;}
+.nt-left{font-size:11px;color:var(--ink2);text-align:right;}
+.nt-left b{display:block;font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);}
+.nt-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;}
+.nt-bar i{display:block;height:100%;border-radius:3px;}
+.nt-macros{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;}
+.nt-macro-lab{font-size:9px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.6px;}
+.nt-macro-val{font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);margin:2px 0 4px;}
+.nt-macro-val span{color:var(--ink2);font-size:11px;}
+.nt-gear{background:none;border:none;color:var(--ink2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;margin-top:10px;text-decoration:underline dotted;}
+.nt-meal{background:var(--white);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.nt-meal-head{display:flex;align-items:center;gap:8px;padding:12px 14px;}
+.nt-meal-title{flex:1;font-size:14px;font-weight:700;color:var(--ink);}
+.nt-meal-kcal{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink2);}
+.nt-add{background:var(--accent);color:#fff;border:none;border-radius:8px;width:32px;height:30px;font-size:18px;font-weight:700;cursor:pointer;line-height:1;}
+.nt-entry{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer;}
+.nt-entry-main{flex:1;min-width:0;}
+.nt-entry-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nt-entry-sub{font-size:11px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nt-entry-kcal{font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);text-align:right;}
+.nt-entry-kcal small{display:block;font-size:10px;color:var(--ink2);}
+.nt-meal-foot{display:flex;gap:14px;padding:8px 14px 10px;border-top:1px solid var(--line);}
+.nt-link{background:none;border:none;color:var(--ink2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;}
+.nt-link:hover{color:var(--ink);}
+.nt-sheet2{z-index:1200;}
+.nt-search{display:flex;gap:8px;margin-bottom:10px;}
+.nt-input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:16px;font-family:'DM Sans',sans-serif;}
+.nt-input:focus{outline:none;border-color:var(--ink2);}
+.nt-scan{flex-shrink:0;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0 14px;font-size:18px;cursor:pointer;}
+.nt-actions{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.nt-chip{background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:16px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.nt-chip.on{border-color:var(--accent);color:var(--accent);}
+.nt-sec{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px;}
+.nt-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+.nt-row img{width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#222;}
+.nt-row-x{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px;}
+.nt-note{font-size:12px;color:var(--ink2);padding:10px 0;}
+.nt-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.nt-form label{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;display:block;}
+.nt-form label .nt-input{margin-top:3px;padding:8px 10px;}
+.nt-form .full{grid-column:1/-1;}
+.nt-preview{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0;}
+.nt-primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:6px;}
+.nt-secondary{width:100%;background:none;color:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;}
+.nt-danger{color:var(--danger);border-color:rgba(255,85,85,.3);}
+.nt-scanner{position:fixed;inset:0;z-index:1300;background:#000;display:flex;flex-direction:column;}
+.nt-scanner video{flex:1;width:100%;object-fit:cover;min-height:0;}
+.nt-scan-frame{position:absolute;left:12%;right:12%;top:30%;height:22%;border:2px solid rgba(255,255,255,.8);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);pointer-events:none;}
+.nt-scan-bar{background:#06060C;padding:12px 16px calc(14px + env(safe-area-inset-bottom));}
+.nt-scan-msg{font-size:12px;color:var(--ink2);margin-bottom:8px;text-align:center;}
 .ex-name-link .ex-hist-ico{font-size:11px;opacity:.6;margin-left:4px;}
 .mine-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;font-family:inherit;color:var(--ink);}
 .mine-name{flex:1;min-width:0;font-size:14px;font-weight:600;}
@@ -555,6 +614,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 <div class="content">
   <div class="page active" id="page-home"></div>
   <div class="page" id="page-sesiones"></div>
+  <div class="page" id="page-nutrition"></div>
   <div class="page" id="page-log"></div>
   <div class="page" id="page-history"></div>
   <div class="page" id="page-charts"></div>
@@ -3556,6 +3616,7 @@ async function syncFromCloud(){
       }
     }catch(e){}
     purgeDeletedSessionLogs();
+    try{await syncNutritionFromCloud();}catch(e){console.error('Nutrition sync error:',e);}
 
     updateStats();render();
     lastSyncTime=new Date();setCloudStatus('synced');
@@ -3632,11 +3693,546 @@ function setCloudStatus(status){
 }
 
 // ─────────────────────────────────────────────────────────────────
+// NUTRITION
+// ─────────────────────────────────────────────────────────────────
+// Foods are stored per 100 g. Each day entry keeps its own copy of those values,
+// so fixing a food later only changes the day you fix it on, never older days.
+const NUTRI_KEY='gymtracker_nutrition';
+const NT_MEALS=[{id:'breakfast',label:'Breakfast'},{id:'lunch',label:'Lunch'},{id:'dinner',label:'Dinner'},{id:'snacks',label:'Snacks'}];
+const NT_FIELDS=[['kcal','Energy (kcal)'],['protein','Protein (g)'],['carbs','Carbohydrates (g)'],['fat','Fat (g)'],['fiber','Fibre (g)'],['sugar','of which sugars (g)'],['salt','Salt (g)']];
+const NT_COLORS={kcal:'#E85010',protein:'#2ECC9A',carbs:'#5B9BF0',fat:'#E8A030'};
+const NT_DEFAULT_TARGETS={kcal:2500,protein:160,carbs:280,fat:80,updatedAt:0};
+const NT_COLL={foods:'foods',days:'nutrition',meals:'meals'};
+const OFF_SEARCH='https://world.openfoodfacts.org/cgi/search.pl';
+const OFF_SPAIN='&tagtype_0=countries&tag_contains_0=contains&tag_0=spain'; // only products sold in Spain
+const OFF_PRODUCT='https://world.openfoodfacts.org/api/v2/product/';
+const OFF_FIELDS='code,product_name,product_name_es,brands,nutriments,serving_quantity,serving_quantity_unit,image_front_small_url';
+const BARCODE_LIB='https://cdn.jsdelivr.net/npm/barcode-detector@3.2.2/ponyfill/+esm';
+// Unpackaged food, approximate values per 100 g: name, kcal, protein, carbs, fat, fibre (carbs exclude fibre, as on EU labels)
+const NT_GENERIC=[
+  ['Chicken breast, raw',110,23,0,1.6,0],['Chicken breast, grilled',165,31,0,3.6,0],['Chicken thigh, skinless, raw',121,20,0,4.1,0],
+  ['Turkey breast, raw',114,24,0,1.5,0],['Beef mince 5% fat, raw',137,21,0,5,0],['Beef mince 15% fat, raw',215,19,0,15,0],
+  ['Beef steak, lean, raw',130,22,0,4.5,0],['Pork loin, raw',143,21,0,6,0],['Jamón serrano',250,31,0,14,0],
+  ['Salmon, raw',208,20,0,13,0],['Hake, raw',76,17,0,0.9,0],['Tuna, canned in water, drained',116,26,0,0.8,0],
+  ['Prawns, cooked',99,24,0,0.3,0],['Egg, whole',143,12.6,0.7,9.5,0],['Egg white',52,10.9,0.7,0.2,0],
+  ['White rice, raw',360,6.6,79,0.6,1.3],['White rice, cooked',130,2.7,28,0.3,0.4],['Brown rice, cooked',123,2.7,24,1,1.6],
+  ['Pasta, dry',371,13,72,1.5,3.2],['Pasta, cooked',158,5.8,30,0.9,1.8],['Oats',389,16.9,58,6.9,10.6],
+  ['Quinoa, cooked',120,4.4,18.5,1.9,2.8],['Potato, raw',77,2,15,0.1,2.2],['Sweet potato, raw',86,1.6,17,0.1,3],
+  ['White bread',265,9,47,3.2,2.7],['Wholemeal bread',247,13,34,3.4,7],['Chickpeas, cooked',164,8.9,19.8,2.6,7.6],
+  ['Lentils, cooked',116,9,12.2,0.4,7.9],['Banana',89,1.1,20,0.3,2.6],['Apple',52,0.3,11.4,0.2,2.4],
+  ['Orange',47,0.9,9.4,0.1,2.4],['Strawberries',32,0.7,5.7,0.3,2],['Blueberries',57,0.7,12,0.3,2.4],['Kiwi',61,1.1,11.7,0.5,3],
+  ['Avocado',160,2,1.9,14.7,6.7],['Broccoli',34,2.8,4.4,0.4,2.6],['Spinach',23,2.9,1.4,0.4,2.2],['Tomato',18,0.9,2.7,0.2,1.2],
+  ['Lettuce',15,1.4,1.6,0.2,1.3],['Onion',40,1.1,7.6,0.1,1.7],['Carrot',41,0.9,6.8,0.2,2.8],['Cucumber',15,0.7,3.1,0.1,0.5],
+  ['Red pepper',31,1,4,0.3,2.1],['Courgette',17,1.2,2.1,0.3,1],['Olive oil',884,0,0,100,0],['Butter',717,0.9,0.1,81,0],
+  ['Almonds',579,21,9.5,50,12.5],['Walnuts',654,15,7,65,6.7],['Peanut butter',588,25,14,50,6],
+  ['Milk, whole',64,3.3,4.7,3.6,0],['Milk, semi-skimmed',46,3.4,4.8,1.6,0],['Milk, skimmed',34,3.4,5,0.1,0],
+  ['Greek yogurt, plain',120,3.5,4,10,0],['Yogurt, plain, 0% fat',59,10,3.6,0.4,0],['Cottage cheese',98,11,3.4,4.3,0],['Honey',304,0.3,82,0,0]
+];
+
+let nutri=loadNutri();
+let ntDateManual=false; // false: the page follows today, even if the app stays open past midnight
+let ntDate=ntDay(),ntMeal='breakfast',ntQuery='',ntOnline=null,ntPick={},ntPortion=null,ntEditing=null;
+let ntPending=new Set(),ntCloudTimer=null;
+let ntScanStream=null,ntScanTimer=null,ntDetector=null;
+
+function loadNutri(){
+  try{const r=JSON.parse(localStorage.getItem(NUTRI_KEY)||'null');
+    if(r)return{foods:r.foods||{},days:r.days||{},meals:r.meals||{},targets:r.targets||{...NT_DEFAULT_TARGETS}};}catch(e){}
+  return{foods:{},days:{},meals:{},targets:{...NT_DEFAULT_TARGETS}};
+}
+function ntClean(o){return JSON.parse(JSON.stringify(o));} // Firestore rejects undefined fields
+function ntUserRef(){return fbDb.collection('users').doc(currentUser.uid);}
+function ntDocRef(kind,id){return kind==='targets'?ntUserRef().collection('config').doc('nutrition'):ntUserRef().collection(NT_COLL[kind]).doc(id);}
+function ntObj(kind,id){return kind==='targets'?nutri.targets:nutri[kind][id];}
+// Saves locally now and to the cloud a moment later; whichever copy changed last wins when syncing
+function ntSave(kind,id=''){
+  const o=ntObj(kind,id);if(o)o.updatedAt=Date.now();
+  try{localStorage.setItem(NUTRI_KEY,JSON.stringify(nutri));}catch(e){alert('Error saving: '+e.message);}
+  ntPending.add(kind+'|'+id);
+  clearTimeout(ntCloudTimer);ntCloudTimer=setTimeout(ntFlush,1500);
+}
+async function ntFlush(){
+  if(!currentUser||!fbDb||!ntPending.size)return;
+  const items=[...ntPending];ntPending.clear();
+  try{
+    const batch=fbDb.batch();
+    items.forEach(k=>{const [kind,id]=k.split('|');const o=ntObj(kind,id);if(o)batch.set(ntDocRef(kind,id),ntClean(o));});
+    await batch.commit();lastSyncTime=new Date();setCloudStatus('synced');
+  }catch(e){console.error('Nutrition cloud save:',e);items.forEach(k=>ntPending.add(k));setCloudStatus('error');}
+}
+async function syncNutritionFromCloud(){
+  if(!currentUser||!fbDb)return;
+  const up=[];
+  for(const kind of Object.keys(NT_COLL)){
+    const snap=await ntUserRef().collection(NT_COLL[kind]).get();
+    const cloud={};snap.forEach(d=>{cloud[d.id]=d.data();});
+    for(const [id,c] of Object.entries(cloud)){const l=nutri[kind][id];if(!l||(c.updatedAt||0)>(l.updatedAt||0))nutri[kind][id]=c;}
+    for(const [id,l] of Object.entries(nutri[kind])){const c=cloud[id];if(!c||(l.updatedAt||0)>(c.updatedAt||0))up.push([kind,id]);}
+  }
+  const t=await ntDocRef('targets').get(),ct=t.exists?t.data():null;
+  if(ct&&(ct.updatedAt||0)>(nutri.targets.updatedAt||0))nutri.targets=ct;
+  else if((nutri.targets.updatedAt||0)>(ct?.updatedAt||0))up.push(['targets','']);
+  try{localStorage.setItem(NUTRI_KEY,JSON.stringify(nutri));}catch(e){}
+  for(let i=0;i<up.length;i+=400){
+    const b=fbDb.batch();
+    up.slice(i,i+400).forEach(([k,id])=>b.set(ntDocRef(k,id),ntClean(ntObj(k,id))));
+    await b.commit();
+  }
+  ntPending.clear();
+}
+
+// ── helpers ──
+function ntDay(d=new Date()){return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);} // local date, not UTC
+function ntShift(date,n){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return ntDay(d);}
+function ntNum(v){const n=parseFloat(String(v??'').replace(',','.'));return isFinite(n)?n:null;}
+function ntScale(per100,g){const o={};NT_FIELDS.forEach(([k])=>{o[k]=per100?.[k]!=null?per100[k]*g/100:null;});return o;}
+function ntEntryN(e){return e.n||ntScale(e.per100,e.grams||0);}
+function ntSum(entries){
+  const t={kcal:0,protein:0,carbs:0,fat:0,fiber:0,sugar:0,salt:0};
+  entries.forEach(e=>{const n=ntEntryN(e);for(const k in t)t[k]+=n[k]||0;});
+  return t;
+}
+function ntR(v){return v==null||!isFinite(v)?'—':Math.round(v).toLocaleString('en-US');}
+function ntDayEntries(date){return nutri.days[date]?.entries||[];}
+function ntId(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function ntNorm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
+function ntFoods(){return Object.values(nutri.foods).filter(f=>!f.deleted);}
+function ntGeneric(){
+  return NT_GENERIC.map(([name,kcal,protein,carbs,fat,fiber])=>({id:'g_'+ntNorm(name).replace(/[^a-z0-9]+/g,'_'),name,brand:'Generic',
+    per100:{kcal,protein,carbs,fat,fiber,sugar:null,salt:null},serving:null,source:'generic'}));
+}
+function ntMealLabel(id){return NT_MEALS.find(m=>m.id===id)?.label||id;}
+function ntFromOff(p){
+  const n=p.nutriments||{},v=k=>{const x=ntNum(n[k]);return x==null?null:Math.round(x*10)/10;};
+  let kcal=v('energy-kcal_100g');
+  if(kcal==null&&v('energy-kj_100g')!=null)kcal=Math.round(v('energy-kj_100g')/4.184);
+  const sq=ntNum(p.serving_quantity),unit=String(p.serving_quantity_unit||'g').toLowerCase();
+  const code=String(p.code||'').replace(/\D/g,'');
+  return{id:'off_'+code,barcode:code,name:String(p.product_name_es||p.product_name||'').trim()||'Unnamed product',
+    brand:String(p.brands||'').split(',')[0].trim(),image:p.image_front_small_url||null,source:'off',
+    per100:{kcal,protein:v('proteins_100g'),carbs:v('carbohydrates_100g'),fat:v('fat_100g'),fiber:v('fiber_100g'),sugar:v('sugars_100g'),salt:v('salt_100g')},
+    serving:sq>0&&(unit==='g'||unit==='ml')?Math.round(sq):null};
+}
+async function ntFetch(url){
+  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),15000);
+  let r;
+  try{r=await fetch(url,{signal:ctl.signal});}
+  catch(e){throw new Error(navigator.onLine===false?'You are offline.':'Open Food Facts did not answer. Try again in a moment.');}
+  finally{clearTimeout(timer);}
+  if(r.status===404)return null;
+  if(r.status===429)throw new Error('Too many searches in a row. Wait a minute and try again.');
+  if(!r.ok)throw new Error(`Open Food Facts had a problem (${r.status}). Try again later.`);
+  return r.json();
+}
+
+// ── page ──
+function renderNutrition(){
+  const cont=document.getElementById('page-nutrition');if(!cont)return;
+  if(!ntDateManual)ntDate=ntDay();
+  const entries=ntDayEntries(ntDate),tot=ntSum(entries),tg=nutri.targets;
+  const todayStr=ntDay(),isToday=ntDate===todayStr;
+  const label=isToday?'Today':ntDate===ntShift(todayStr,-1)?'Yesterday':new Date(ntDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'long'});
+  const pct=(v,t)=>t?Math.min(100,v/t*100):0;
+  const left=tg.kcal?tg.kcal-tot.kcal:null;
+  const macro=(k,lab)=>`<div><div class="nt-macro-lab">${lab}</div><div class="nt-macro-val">${ntR(tot[k])}<span> / ${ntR(tg[k])} g</span></div>
+    <div class="nt-bar"><i style="width:${pct(tot[k],tg[k])}%;background:${NT_COLORS[k]}"></i></div></div>`;
+  const yest=ntDayEntries(ntShift(ntDate,-1));
+  const meals=NT_MEALS.map(m=>{
+    const es=entries.filter(e=>e.meal===m.id),yCount=yest.filter(e=>e.meal===m.id).length;
+    const rows=es.map(e=>{
+      const n=ntEntryN(e),sub=[e.brand,e.grams!=null?ntR(e.grams)+' g':''].filter(Boolean).map(escHtml);
+      sub.push(`P ${ntR(n.protein)} · C ${ntR(n.carbs)} · F ${ntR(n.fat)}`);
+      return`<div class="nt-entry" onclick="ntOpenEntry('${e.id}')"><div class="nt-entry-main">
+        <div class="nt-entry-name">${escHtml(e.name)}</div><div class="nt-entry-sub">${sub.join(' · ')}</div></div>
+        <div class="nt-entry-kcal">${ntR(n.kcal)}<small>kcal</small></div></div>`;
+    }).join('');
+    const foot=[];
+    if(!es.length&&yCount)foot.push(`<button class="nt-link" onclick="ntCopyMeal('${m.id}')">↺ Copy yesterday's ${m.label.toLowerCase()} (${yCount})</button>`);
+    if(es.length)foot.push(`<button class="nt-link" onclick="ntSaveMealAs('${m.id}')">☆ Save as meal</button>`);
+    return`<div class="nt-meal"><div class="nt-meal-head"><div class="nt-meal-title">${m.label}</div>
+      <div class="nt-meal-kcal">${es.length?ntR(ntSum(es).kcal)+' kcal':''}</div>
+      <button class="nt-add" onclick="ntOpenAdd('${m.id}')" aria-label="Add to ${m.label}">+</button></div>
+      ${rows}${foot.length?`<div class="nt-meal-foot">${foot.join('')}</div>`:''}</div>`;
+  }).join('');
+  cont.innerHTML=`
+    <div class="nt-datebar">
+      <button onclick="ntGo(-1)" aria-label="Previous day">‹</button>
+      <div class="nt-date"${isToday?'':' onclick="ntGo(0)" style="cursor:pointer"'}>${label}<small>${fmtDate(ntDate)}${isToday?'':' · tap for today'}</small></div>
+      <button onclick="ntGo(1)" aria-label="Next day">›</button>
+    </div>
+    <div class="nt-sum">
+      <div class="nt-sum-top">
+        <div class="nt-kcal">${ntR(tot.kcal)} <span>/ ${ntR(tg.kcal)} kcal</span></div>
+        <div class="nt-left">${left==null?'':`${left>=0?'left':'over'}<b>${ntR(Math.abs(left))}</b>`}</div>
+      </div>
+      <div class="nt-bar"><i style="width:${pct(tot.kcal,tg.kcal)}%;background:${left!=null&&left<-tg.kcal*0.05?'var(--danger)':NT_COLORS.kcal}"></i></div>
+      <div class="nt-macros">${macro('protein','Protein')}${macro('carbs','Carbs')}${macro('fat','Fat')}</div>
+      <button class="nt-gear" onclick="ntOpenTargets()">Edit targets</button>
+    </div>
+    ${meals}
+    <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:14px">Product data from <a href="https://openfoodfacts.org" target="_blank" rel="noopener" style="color:var(--ink2)">Open Food Facts</a>, under the ODbL</div>`;
+}
+function ntGo(n){ntDate=n?ntShift(ntDate,n):ntDay();ntDateManual=ntDate!==ntDay();renderNutrition();}
+
+// ── sheets ──
+function ntSheet(id,html){
+  document.getElementById(id)?.remove();
+  const el=document.createElement('div');
+  el.id=id;el.className='exs-wrap'+(id==='nt-sheet2'?' nt-sheet2':'');
+  el.innerHTML=`<div class="exs-backdrop" onclick="ntClose('${id}')"></div><div class="exs-panel"><div class="exs-grab"></div>${html}</div>`;
+  document.body.appendChild(el);
+}
+function ntClose(id){document.getElementById(id)?.remove();}
+function ntCloseAll(){ntClose('nt-sheet');ntClose('nt-sheet2');ntStopScan();ntPortion=null;}
+function ntHead(title,sub,closeId){
+  return`<div class="exs-head"><div style="flex:1;min-width:0"><div class="exs-title">${title}</div>${sub?`<div class="exs-subtitle">${sub}</div>`:''}</div>
+    <button class="exs-close" onclick="ntClose('${closeId}')" aria-label="Close">×</button></div>`;
+}
+
+// Add to a meal: my foods first (instant), Open Food Facts only when asked (it allows 10 searches a minute)
+function ntOpenAdd(meal){
+  ntMeal=meal;ntQuery='';ntOnline=null;ntPortion=null;
+  ntSheet('nt-sheet',`${ntHead('Add to '+ntMealLabel(meal),fmtDate(ntDate),'nt-sheet')}
+    <div class="nt-search">
+      <input id="nt-q" class="nt-input" type="search" enterkeyhint="search" placeholder="Search foods" autocomplete="off"
+        oninput="ntQuery=this.value;ntOnline=null;ntRenderList()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();ntSearchOnline()}">
+      <button class="nt-scan" onclick="ntStartScan()" aria-label="Scan barcode">📷</button>
+    </div>
+    <div class="nt-actions">
+      <button class="nt-chip" onclick="ntSearchOnline()">🌐 Search online</button>
+      <button class="nt-chip" onclick="ntOpenEditor()">✏️ New food</button>
+      <button class="nt-chip" onclick="ntOpenQuick()">⚡ Quick add</button>
+    </div>
+    <div id="nt-list"></div>`);
+  ntRenderList();
+}
+function ntRenderList(){
+  const el=document.getElementById('nt-list');if(!el)return;
+  ntPick={};
+  const toks=ntNorm(ntQuery).trim().split(/\s+/).filter(Boolean);
+  const hit=(...s)=>{const h=ntNorm(s.join(' '));return toks.every(t=>h.includes(t));};
+  const foodRow=f=>{
+    ntPick[f.id]=f;
+    const p=f.per100||{},sub=[f.brand,`${ntR(p.kcal)} kcal · P ${ntR(p.protein)} · C ${ntR(p.carbs)} · F ${ntR(p.fat)} per 100 g`].filter(Boolean);
+    return`<div class="nt-row" onclick="ntOpenPortion('${f.id}')">${f.image?`<img src="${escHtml(f.image)}" alt="" loading="lazy" onerror="this.remove()">`:''}
+      <div class="nt-entry-main"><div class="nt-entry-name">${escHtml(f.name)}</div><div class="nt-entry-sub">${sub.map(escHtml).join(' · ')}</div></div></div>`;
+  };
+  const mealRow=m=>{
+    const t=ntSum(m.items);
+    return`<div class="nt-row" onclick="ntAddSaved('${m.id}')"><div class="nt-entry-main">
+      <div class="nt-entry-name">☆ ${escHtml(m.name)}</div>
+      <div class="nt-entry-sub">${m.items.length} item${m.items.length!==1?'s':''} · ${ntR(t.kcal)} kcal · P ${ntR(t.protein)}</div></div>
+      <button class="nt-row-x" onclick="event.stopPropagation();ntDeleteSaved('${m.id}')" aria-label="Delete saved meal">×</button></div>`;
+  };
+  let html='';
+  const yest=ntDayEntries(ntShift(ntDate,-1)).filter(e=>e.meal===ntMeal);
+  if(!toks.length&&yest.length&&!ntDayEntries(ntDate).some(e=>e.meal===ntMeal))
+    html+=`<div class="nt-row" onclick="ntCopyMeal('${ntMeal}')"><div class="nt-entry-main">
+      <div class="nt-entry-name">↺ Copy yesterday's ${ntMealLabel(ntMeal).toLowerCase()}</div>
+      <div class="nt-entry-sub">${yest.map(e=>escHtml(e.name)).join(', ')}</div></div></div>`;
+  const saved=Object.values(nutri.meals).filter(m=>!m.deleted&&(!toks.length||hit(m.name)));
+  if(saved.length)html+=`<div class="nt-sec">Saved meals</div>`+saved.map(mealRow).join('');
+  const mine=ntFoods().filter(f=>!toks.length||hit(f.name,f.brand,f.barcode)).sort((a,b)=>(b.lastUsed||0)-(a.lastUsed||0));
+  if(mine.length)html+=`<div class="nt-sec">${toks.length?'My foods':'Recent'}</div>`+mine.slice(0,30).map(foodRow).join('');
+  if(toks.length){
+    const gen=ntGeneric().filter(f=>!nutri.foods[f.id]&&hit(f.name));
+    if(gen.length)html+=`<div class="nt-sec">Generic · approximate</div>`+gen.map(foodRow).join('');
+  }
+  if(ntOnline==='loading')html+=`<div class="nt-sec">Open Food Facts</div><div class="nt-note">Searching…</div>`;
+  else if(ntOnline?.error)html+=`<div class="nt-sec">Open Food Facts</div><div class="nt-note">${escHtml(ntOnline.error)}</div>`;
+  else if(ntOnline?.items)html+=`<div class="nt-sec">Open Food Facts · Spain</div>`+(ntOnline.items.length?ntOnline.items.map(foodRow).join('')
+    :`<div class="nt-note">Nothing found for “${escHtml(ntOnline.q)}”. Try fewer words, scan the barcode, or add it as a new food.</div>`);
+  else if(toks.length)html+=`<button class="nt-secondary" onclick="ntSearchOnline()">🌐 Search Open Food Facts for “${escHtml(ntQuery.trim())}”</button>`;
+  if(!html)html=`<div class="empty" style="padding:28px 0"><div class="empty-icon">🍽️</div><div class="empty-title">Your foods will show up here</div>
+    <div class="empty-sub">Scan a barcode, search, or add a new food</div></div>`;
+  el.innerHTML=html;
+}
+async function ntSearchOnline(){
+  const q=(document.getElementById('nt-q')?.value||ntQuery).trim();
+  if(!q){document.getElementById('nt-q')?.focus();return;}
+  ntQuery=q;ntOnline='loading';ntRenderList();
+  let res;
+  try{
+    const d=await ntFetch(`${OFF_SEARCH}?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=25${OFF_SPAIN}&fields=${OFF_FIELDS}`);
+    // A product already in my foods shows my (possibly corrected) version
+    const items=(d?.products||[]).filter(p=>p.code).map(ntFromOff).filter(f=>f.per100.kcal!=null)
+      .map(f=>nutri.foods[f.id]&&!nutri.foods[f.id].deleted?nutri.foods[f.id]:f);
+    res={q,items};
+  }catch(e){res={q,error:e.message};}
+  if(ntQuery.trim()===q&&ntOnline==='loading'){ntOnline=res;ntRenderList();}
+}
+
+// ── portion: how much of a food ──
+function ntOpenPortion(id){const f=ntPick[id]||nutri.foods[id];if(f)ntShowPortion(f,null);}
+function ntOpenEntry(id){
+  const e=ntDayEntries(ntDate).find(x=>x.id===id);if(!e)return;
+  if(e.n){ntOpenQuick(e);return;}
+  const lib=nutri.foods[e.foodId];
+  ntShowPortion({...(lib&&!lib.deleted?lib:{source:'manual'}),id:e.foodId,name:e.name,brand:e.brand,per100:e.per100},e);
+}
+function ntShowPortion(food,entry){
+  ntPortion={food,entry,meal:entry?.meal||ntMeal};
+  const p=food.per100||{},g=entry?entry.grams:(food.lastGrams||food.serving||100);
+  const chips=[];
+  if(food.serving)chips.push([food.serving,`1 serving · ${food.serving} g`]);
+  if(food.lastGrams&&food.lastGrams!==food.serving)chips.push([food.lastGrams,`Last time · ${food.lastGrams} g`]);
+  if(food.serving!==100&&food.lastGrams!==100)chips.push([100,'100 g']);
+  const mealSel=entry?`<div class="nt-actions">${NT_MEALS.map(m=>`<button class="nt-chip${m.id===entry.meal?' on':''}" onclick="ntPortionMeal(this,'${m.id}')">${m.label}</button>`).join('')}</div>`:'';
+  ntSheet('nt-sheet2',`${ntHead(escHtml(food.name),escHtml([food.brand,`${ntR(p.kcal)} kcal per 100 g`].filter(Boolean).join(' · ')),'nt-sheet2')}
+    ${mealSel}
+    <div class="nt-form"><label class="full">Amount (g)
+      <input id="nt-g" class="nt-input" type="number" inputmode="decimal" min="0" step="any" value="${g??''}" oninput="ntPortionPreview()"
+        onkeydown="if(event.key==='Enter')ntPortionSave()"></label></div>
+    <div class="nt-actions" style="margin-top:8px">${chips.map(([v,l])=>`<button class="nt-chip" onclick="document.getElementById('nt-g').value=${v};ntPortionPreview()">${l}</button>`).join('')}</div>
+    <div class="nt-preview" id="nt-prev"></div>
+    <button class="nt-primary" onclick="ntPortionSave()">${entry?'Save':'Add to '+ntMealLabel(ntMeal)}</button>
+    <button class="nt-secondary" onclick="ntOpenEditor(ntPortion.food)">Fix food values</button>
+    ${entry?`<button class="nt-secondary nt-danger" onclick="ntDeleteEntry()">Remove</button>`:''}`);
+  ntPortionPreview();
+}
+function ntPortionMeal(btn,meal){
+  ntPortion.meal=meal;
+  btn.parentElement.querySelectorAll('.nt-chip').forEach(b=>b.classList.toggle('on',b===btn));
+}
+function ntPortionPreview(){
+  const el=document.getElementById('nt-prev');if(!el||!ntPortion)return;
+  const n=ntScale(ntPortion.food.per100,ntNum(document.getElementById('nt-g').value)||0);
+  el.innerHTML=[['kcal','kcal'],['protein','Protein'],['carbs','Carbs'],['fat','Fat']].map(([k,l])=>
+    `<div class="exs-tile"><div class="exs-tile-val" style="color:${NT_COLORS[k]}">${ntR(n[k])}</div><div class="exs-tile-lab">${l}</div></div>`).join('');
+}
+function ntPortionSave(){
+  const g=ntNum(document.getElementById('nt-g')?.value);
+  if(!g||g<=0){showToast('Enter an amount in grams');return;}
+  const {food,entry,meal}=ntPortion;
+  if(entry){entry.grams=g;entry.meal=meal;}
+  else{ntAddEntry(food,g,ntMeal);ntRemember(food,g);}
+  ntSave('days',ntDate);
+  ntCloseAll();renderNutrition();
+  if(!entry)showToast(`✓ ${food.name} added`);
+}
+function ntAddEntry(food,g,meal){
+  const day=nutri.days[ntDate]||(nutri.days[ntDate]={date:ntDate,entries:[]});
+  day.entries.push({id:ntId('e'),meal,foodId:food.id||null,name:food.name,brand:food.brand||'',grams:g,per100:{...food.per100},t:Date.now()});
+}
+// Every food I log goes into my own library, with the amount I had, so next time it's one tap
+function ntRemember(food,g){
+  if(!food.id)return;
+  const lib=nutri.foods[food.id];
+  const f=lib&&!lib.deleted?lib:{...food};
+  delete f.deleted;
+  f.uses=(f.uses||0)+1;f.lastUsed=Date.now();f.lastGrams=g;
+  nutri.foods[f.id]=f;ntSave('foods',f.id);
+}
+function ntDeleteEntry(){
+  const day=nutri.days[ntDate],e=ntPortion?.entry;if(!day||!e)return;
+  day.entries=day.entries.filter(x=>x.id!==e.id);
+  ntSave('days',ntDate);ntCloseAll();renderNutrition();showToast('Removed');
+}
+
+// ── meals: copy yesterday, saved meals ──
+function ntCloneInto(items,meal){
+  const day=nutri.days[ntDate]||(nutri.days[ntDate]={date:ntDate,entries:[]});
+  items.forEach(i=>{const {id,meal:_m,t,...rest}=i;day.entries.push({...ntClean(rest),id:ntId('e'),meal,t:Date.now()});});
+  ntSave('days',ntDate);
+}
+function ntCopyMeal(meal){
+  const items=ntDayEntries(ntShift(ntDate,-1)).filter(e=>e.meal===meal);if(!items.length)return;
+  ntCloneInto(items,meal);ntCloseAll();renderNutrition();
+  showToast(`✓ Copied ${items.length} item${items.length!==1?'s':''} from yesterday`);
+}
+function ntSaveMealAs(meal){
+  const items=ntDayEntries(ntDate).filter(e=>e.meal===meal);if(!items.length)return;
+  const name=prompt('Name this meal (e.g. "Usual breakfast"):',`My ${ntMealLabel(meal).toLowerCase()}`);
+  if(!name||!name.trim())return;
+  const id=ntId('m');
+  nutri.meals[id]={id,name:name.trim(),items:items.map(({id,meal,t,...rest})=>ntClean(rest))};
+  ntSave('meals',id);showToast(`✓ Saved “${name.trim()}”`);
+}
+function ntAddSaved(id){
+  const m=nutri.meals[id];if(!m||m.deleted)return;
+  ntCloneInto(m.items,ntMeal);ntCloseAll();renderNutrition();showToast(`✓ ${m.name} added`);
+}
+function ntDeleteSaved(id){
+  const m=nutri.meals[id];if(!m||!confirm(`Delete the saved meal “${m.name}”? Days you already logged stay as they are.`))return;
+  nutri.meals[id]={id,deleted:true};ntSave('meals',id);ntRenderList();
+}
+
+// ── quick add: just the numbers ──
+function ntOpenQuick(entry){
+  const n=entry?.n||{};
+  const fld=(k,lab)=>`<label>${lab}<input id="nt-q-${k}" class="nt-input" type="number" inputmode="decimal" min="0" step="any" value="${n[k]??''}"></label>`;
+  ntPortion={entry:entry||null};
+  ntSheet('nt-sheet2',`${ntHead(entry?'Quick add':'Quick add to '+ntMealLabel(ntMeal),'No food needed, just the numbers','nt-sheet2')}
+    <div class="nt-form">
+      <label class="full">Label (optional)<input id="nt-q-name" class="nt-input" value="${entry?escHtml(entry.name):''}" placeholder="e.g. Menú del día" autocomplete="off"></label>
+      ${fld('kcal','Energy (kcal)')}${fld('protein','Protein (g)')}${fld('carbs','Carbs (g)')}${fld('fat','Fat (g)')}
+    </div>
+    <button class="nt-primary" onclick="ntSaveQuick()">${entry?'Save':'Add'}</button>
+    ${entry?`<button class="nt-secondary nt-danger" onclick="ntDeleteEntry()">Remove</button>`:''}`);
+}
+function ntSaveQuick(){
+  const v=k=>ntNum(document.getElementById('nt-q-'+k)?.value);
+  const n={kcal:v('kcal'),protein:v('protein'),carbs:v('carbs'),fat:v('fat'),fiber:null,sugar:null,salt:null};
+  if(n.kcal==null&&(n.protein!=null||n.carbs!=null||n.fat!=null))n.kcal=Math.round(4*(n.protein||0)+4*(n.carbs||0)+9*(n.fat||0));
+  if(n.kcal==null){showToast('Enter the kcal or the macros');return;}
+  const name=document.getElementById('nt-q-name').value.trim()||'Quick add';
+  const entry=ntPortion?.entry;
+  if(entry){entry.n=n;entry.name=name;}
+  else{const day=nutri.days[ntDate]||(nutri.days[ntDate]={date:ntDate,entries:[]});
+    day.entries.push({id:ntId('e'),meal:ntMeal,foodId:null,name,brand:'',grams:null,per100:null,n,t:Date.now()});}
+  ntSave('days',ntDate);ntCloseAll();renderNutrition();
+}
+
+// ── food editor: new food, or fixing a wrong one ──
+function ntOpenEditor(food,note){
+  const f=food||{},p=f.per100||{},inLib=f.id&&nutri.foods[f.id]&&!nutri.foods[f.id].deleted;
+  ntEditing=f;
+  const fld=(k,lab,val,mode='decimal')=>`<label>${lab}<input id="nt-f-${k}" class="nt-input" ${mode==='text'?'':`type="${mode==='numeric'?'text':'number'}" inputmode="${mode}" ${mode==='decimal'?'step="any" min="0"':''}`}
+    value="${val==null?'':escHtml(String(val))}" autocomplete="off"></label>`;
+  ntSheet('nt-sheet2',`${ntHead(inLib?'Fix food':'New food','Values per 100 g, as on the label','nt-sheet2')}
+    ${note?`<div class="nt-note" style="padding-top:0">${escHtml(note)}</div>`:''}
+    <div class="nt-form">
+      <label class="full">Name<input id="nt-f-name" class="nt-input" value="${escHtml(f.name||'')}" autocomplete="off"></label>
+      ${fld('brand','Brand',f.brand,'text')}${fld('barcode','Barcode',f.barcode,'numeric')}
+      ${NT_FIELDS.map(([k,lab])=>fld(k,lab,p[k])).join('')}
+      ${fld('serving','Serving (g)',f.serving)}
+    </div>
+    <button class="nt-primary" onclick="ntSaveEditor()">Save</button>
+    ${inLib?`<button class="nt-secondary nt-danger" onclick="ntDeleteFood()">Remove from my foods</button>`:''}`);
+}
+function ntSaveEditor(){
+  const val=k=>document.getElementById('nt-f-'+k)?.value.trim()||'';
+  const name=val('name');if(!name){showToast('Give the food a name');return;}
+  const per100={};NT_FIELDS.forEach(([k])=>{per100[k]=ntNum(val(k));});
+  if(per100.kcal==null&&(per100.protein!=null||per100.carbs!=null||per100.fat!=null))
+    per100.kcal=Math.round(4*(per100.protein||0)+4*(per100.carbs||0)+9*(per100.fat||0)+2*(per100.fiber||0));
+  if(per100.kcal==null){showToast('Enter at least the kcal or the macros');return;}
+  const barcode=val('barcode').replace(/\D/g,'');
+  const old=ntEditing||{},id=old.id||(barcode?'off_'+barcode:ntId('f'));
+  const lib=nutri.foods[id];
+  const f={...(lib&&!lib.deleted?lib:old),id,name,brand:val('brand'),barcode:barcode||null,per100,serving:ntNum(val('serving'))||null,source:old.source||'manual'};
+  delete f.deleted;
+  nutri.foods[id]=f;ntSave('foods',id);
+  // The fix also corrects that food on the day I'm looking at
+  const day=nutri.days[ntDate];let fixed=false;
+  day?.entries.forEach(e=>{if(e.foodId===id){e.per100={...per100};e.name=name;e.brand=f.brand;fixed=true;}});
+  if(fixed)ntSave('days',ntDate);
+  const entry=ntPortion?.entry&&ntPortion.entry.foodId===id?ntPortion.entry:null;
+  ntShowPortion(f,entry);
+  renderNutrition();ntRenderList();
+}
+function ntDeleteFood(){
+  const f=ntEditing;if(!f?.id||!confirm(`Remove “${f.name}” from your foods? Days you already logged keep it.`))return;
+  nutri.foods[f.id]={id:f.id,deleted:true};ntSave('foods',f.id);
+  ntClose('nt-sheet2');ntPortion=null;ntRenderList();
+}
+
+// ── targets ──
+function ntOpenTargets(){
+  const t=nutri.targets;
+  const fld=(k,lab)=>`<label>${lab}<input id="nt-t-${k}" class="nt-input" type="number" inputmode="decimal" min="0" step="any" value="${t[k]??''}" oninput="ntTargetsHint()"></label>`;
+  ntSheet('nt-sheet2',`${ntHead('Daily targets','The same every day for now','nt-sheet2')}
+    <div class="nt-form">${fld('kcal','Energy (kcal)')}${fld('protein','Protein (g)')}${fld('carbs','Carbs (g)')}${fld('fat','Fat (g)')}</div>
+    <div class="nt-note" id="nt-t-hint"></div>
+    <button class="nt-primary" onclick="ntSaveTargets()">Save</button>`);
+  ntTargetsHint();
+}
+function ntTargetsHint(){
+  const v=k=>ntNum(document.getElementById('nt-t-'+k)?.value)||0,el=document.getElementById('nt-t-hint');
+  if(el)el.textContent=`Your macros add up to ${ntR(4*v('protein')+4*v('carbs')+9*v('fat'))} kcal.`;
+}
+function ntSaveTargets(){
+  const v=k=>ntNum(document.getElementById('nt-t-'+k)?.value);
+  nutri.targets={kcal:v('kcal'),protein:v('protein'),carbs:v('carbs'),fat:v('fat')};
+  ntSave('targets');ntClose('nt-sheet2');renderNutrition();
+}
+
+// ── barcode scanner ──
+async function ntGetDetector(){
+  if(ntDetector)return ntDetector;
+  const formats=['ean_13','ean_8','upc_a','upc_e'];
+  if('BarcodeDetector' in window){
+    try{const ok=await BarcodeDetector.getSupportedFormats();
+      if(ok.includes('ean_13'))return ntDetector=new BarcodeDetector({formats:formats.filter(f=>ok.includes(f))});}catch(e){}
+  }
+  // Safari on iPhone has no built-in barcode reader: load one (ZXing, WebAssembly) the first time
+  const m=await import(BARCODE_LIB);
+  return ntDetector=new m.BarcodeDetector({formats});
+}
+function ntStopCamera(){clearTimeout(ntScanTimer);ntScanStream?.getTracks().forEach(t=>t.stop());ntScanStream=null;}
+function ntStopScan(){ntStopCamera();document.getElementById('nt-scan')?.remove();}
+async function ntStartScan(){
+  ntStopScan();
+  const el=document.createElement('div');el.id='nt-scan';el.className='nt-scanner';
+  el.innerHTML=`<video id="nt-video" playsinline muted autoplay></video><div class="nt-scan-frame"></div>
+    <div class="nt-scan-bar"><div class="nt-scan-msg" id="nt-scan-msg">Starting camera…</div>
+      <div class="nt-search"><input id="nt-code" class="nt-input" inputmode="numeric" placeholder="Or type the barcode" autocomplete="off"
+        onkeydown="if(event.key==='Enter')ntManualCode()"><button class="nt-scan" onclick="ntManualCode()">Go</button></div>
+      <button class="nt-secondary" style="margin-top:0" onclick="ntStopScan()">Cancel</button></div>`;
+  document.body.appendChild(el);
+  const msg=t=>{const m=document.getElementById('nt-scan-msg');if(m)m.textContent=t;};
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});}
+  catch(e){
+    msg(e?.name==='NotAllowedError'?'Camera access is blocked. Allow it in Settings, or type the barcode below.'
+      :e?.name==='NotFoundError'?'No camera found. Type the barcode below.':'Could not start the camera. Type the barcode below.');
+    return;
+  }
+  if(!document.getElementById('nt-scan')){stream.getTracks().forEach(t=>t.stop());return;} // cancelled meanwhile
+  ntScanStream=stream;
+  const v=document.getElementById('nt-video');v.srcObject=stream;v.play().catch(()=>{});
+  let det;
+  try{det=await ntGetDetector();}
+  catch(e){console.error('Barcode reader:',e);ntStopCamera();msg('Could not load the barcode reader. Check your connection, or type the barcode below.');return;}
+  if(!ntScanStream)return;
+  msg('Point the camera at the barcode');
+  const tick=async()=>{
+    if(!ntScanStream)return;
+    if(v.readyState>=2){
+      try{
+        const c=(await det.detect(v)).find(x=>/^\d{8,14}$/.test(x.rawValue));
+        if(c&&ntScanStream){navigator.vibrate?.(60);ntStopScan();ntLookupBarcode(c.rawValue);return;}
+      }catch(e){}
+    }
+    ntScanTimer=setTimeout(tick,180);
+  };
+  tick();
+}
+function ntManualCode(){
+  const code=(document.getElementById('nt-code')?.value||'').replace(/\D/g,'');
+  if(code.length<8){showToast('A barcode has 8 to 14 digits');return;}
+  ntStopScan();ntLookupBarcode(code);
+}
+async function ntLookupBarcode(code){
+  const mine=ntFoods().find(f=>f.barcode===code);
+  if(mine){ntShowPortion(mine,null);return;}
+  ntSheet('nt-sheet2',`${ntHead('Looking it up…',escHtml(code),'nt-sheet2')}<div class="nt-note">Checking Open Food Facts</div>`);
+  let p;
+  try{const d=await ntFetch(`${OFF_PRODUCT}${code}.json?fields=${OFF_FIELDS}`);p=d?.product||null;}
+  catch(e){
+    if(!document.getElementById('nt-sheet2'))return;
+    ntSheet('nt-sheet2',`${ntHead('Could not look it up',escHtml(code),'nt-sheet2')}<div class="nt-note">${escHtml(e.message)}</div>
+      <button class="nt-primary" onclick="ntLookupBarcode('${code}')">Try again</button>
+      <button class="nt-secondary" onclick="ntOpenEditor({barcode:'${code}'})">Enter it from the label</button>`);
+    return;
+  }
+  if(!document.getElementById('nt-sheet2'))return; // closed while waiting
+  if(p){
+    const f=ntFromOff({...p,code:p.code||code});
+    if(f.per100.kcal!=null){ntShowPortion(f,null);return;}
+    ntOpenEditor(f,'Open Food Facts knows this product but has no nutrition values for it. Copy them from the label (per 100 g).');
+    return;
+  }
+  ntOpenEditor({barcode:code},'This product isn\'t in Open Food Facts yet. Enter the values from the label (per 100 g).');
+}
+
+// ─────────────────────────────────────────────────────────────────
 // MAIN RENDER
 // ─────────────────────────────────────────────────────────────────
 function render(){
   if(currentView==='home')renderHome();
   else if(currentView==='sesiones')renderSesiones();
+  else if(currentView==='nutrition')renderNutrition();
   else if(currentView==='log')renderLog();
   else if(currentView==='history')renderHistory();
   else if(currentView==='charts')renderCharts();
@@ -3904,6 +4500,10 @@ setTimeout(async()=>{
   <button class="bnav-btn" id="bnav-sesiones" onclick="setView('sesiones',event)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="3" height="16" rx="1.5"/><rect x="15" y="4" width="3" height="16" rx="1.5"/><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
     <span>Sessions</span>
+  </button>
+  <button class="bnav-btn" id="bnav-nutrition" onclick="setView('nutrition',event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c-1.5-1.6-4-2-5.7-.6C4 8.3 4.3 12.6 6.4 16c1.4 2.3 3.2 4.3 5.6 3.4 2.4.9 4.2-1.1 5.6-3.4 2.1-3.4 2.4-7.7.1-9.6C16 5 13.5 5.4 12 7z"/><path d="M12 7c0-2 1-3.5 3-4"/></svg>
+    <span>Food</span>
   </button>
   <button class="bnav-btn" id="bnav-history" onclick="setView('history',event)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
