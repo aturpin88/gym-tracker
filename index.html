@@ -290,9 +290,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .nt-left b{display:block;font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);}
 .nt-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;}
 .nt-bar i{display:block;height:100%;border-radius:3px;}
-.nt-macros{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;}
+.nt-macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
 .nt-macro-lab{font-size:9px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.6px;}
-.nt-macro-val{font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);margin:2px 0 4px;}
+.nt-macro-val{font-family:'DM Mono',monospace;font-size:12px;white-space:nowrap;color:var(--ink);margin:2px 0 4px;}
 .nt-macro-val span{color:var(--ink2);font-size:11px;}
 .nt-gear{background:none;border:none;color:var(--ink2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;margin-top:10px;text-decoration:underline dotted;}
 .nt-meal{background:var(--white);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;}
@@ -310,6 +310,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .nt-link{background:none;border:none;color:var(--ink2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;}
 .nt-link:hover{color:var(--ink);}
 .nt-sheet2{z-index:1200;}
+.nt-weight{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;}
+.nt-weight-lab{flex:1;font-size:14px;font-weight:700;color:var(--ink);}
+.nt-weight-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:var(--ink);}
+.nt-weight-diff{font-size:11px;color:var(--ink2);}
+.nt-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.nt-cal-h{font-size:9px;font-weight:700;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.5px;padding:2px 0 4px;}
+.nt-cal-d{background:var(--white);border:1px solid var(--line);border-radius:8px;min-height:56px;padding:5px 1px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;}
+.nt-cal-d.today{border-color:var(--accent);}
+.nt-cal-d.future{opacity:.35;cursor:default;}
+.nt-cal-n{font-size:11px;font-weight:700;color:var(--ink2);}
+.nt-cal-k{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;}
+.nt-cal-w{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink2);}
+.nt-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:10px;color:var(--ink2);margin:10px 0 12px;}
+.nt-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;}
 .nt-search{display:flex;gap:8px;margin-bottom:10px;}
 .nt-input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:16px;font-family:'DM Sans',sans-serif;}
 .nt-input:focus{outline:none;border-color:var(--ink2);}
@@ -3700,8 +3714,8 @@ function setCloudStatus(status){
 const NUTRI_KEY='gymtracker_nutrition';
 const NT_MEALS=[{id:'breakfast',label:'Breakfast'},{id:'lunch',label:'Lunch'},{id:'dinner',label:'Dinner'},{id:'snacks',label:'Snacks'}];
 const NT_FIELDS=[['kcal','Energy (kcal)'],['protein','Protein (g)'],['carbs','Carbohydrates (g)'],['fat','Fat (g)'],['fiber','Fibre (g)'],['sugar','of which sugars (g)'],['salt','Salt (g)']];
-const NT_COLORS={kcal:'#E85010',protein:'#2ECC9A',carbs:'#5B9BF0',fat:'#E8A030'};
-const NT_DEFAULT_TARGETS={kcal:2500,protein:160,carbs:280,fat:80,updatedAt:0};
+const NT_COLORS={kcal:'#E85010',protein:'#2ECC9A',carbs:'#5B9BF0',fat:'#E8A030',fiber:'#8FBF4A',weight:'#D8D8DE'};
+const NT_DEFAULT_TARGETS={kcal:2500,protein:160,carbs:280,fat:80,fiber:30,updatedAt:0};
 const NT_COLL={foods:'foods',days:'nutrition',meals:'meals'};
 const OFF_SEARCH='https://world.openfoodfacts.org/cgi/search.pl';
 const OFF_SPAIN='&tagtype_0=countries&tag_contains_0=contains&tag_0=spain'; // only products sold in Spain
@@ -3737,7 +3751,7 @@ let ntScanStream=null,ntScanTimer=null,ntDetector=null;
 
 function loadNutri(){
   try{const r=JSON.parse(localStorage.getItem(NUTRI_KEY)||'null');
-    if(r)return{foods:r.foods||{},days:r.days||{},meals:r.meals||{},targets:r.targets||{...NT_DEFAULT_TARGETS}};}catch(e){}
+    if(r)return{foods:r.foods||{},days:r.days||{},meals:r.meals||{},targets:{...NT_DEFAULT_TARGETS,...r.targets}};}catch(e){}
   return{foods:{},days:{},meals:{},targets:{...NT_DEFAULT_TARGETS}};
 }
 function ntClean(o){return JSON.parse(JSON.stringify(o));} // Firestore rejects undefined fields
@@ -3770,7 +3784,7 @@ async function syncNutritionFromCloud(){
     for(const [id,l] of Object.entries(nutri[kind])){const c=cloud[id];if(!c||(l.updatedAt||0)>(c.updatedAt||0))up.push([kind,id]);}
   }
   const t=await ntDocRef('targets').get(),ct=t.exists?t.data():null;
-  if(ct&&(ct.updatedAt||0)>(nutri.targets.updatedAt||0))nutri.targets=ct;
+  if(ct&&(ct.updatedAt||0)>(nutri.targets.updatedAt||0))nutri.targets={...NT_DEFAULT_TARGETS,...ct};
   else if((nutri.targets.updatedAt||0)>(ct?.updatedAt||0))up.push(['targets','']);
   try{localStorage.setItem(NUTRI_KEY,JSON.stringify(nutri));}catch(e){}
   for(let i=0;i<up.length;i+=400){
@@ -3826,9 +3840,16 @@ async function ntFetch(url){
 }
 
 // ── page ──
+let ntTab='day'; // 'day' | 'trends' | 'calendar'
+function ntSetTab(t){ntTab=t;if(t==='calendar')ntCalMonth=ntDate.slice(0,7);hideTip();renderNutrition();window.scrollTo(0,0);}
 function renderNutrition(){
   const cont=document.getElementById('page-nutrition');if(!cont)return;
   if(!ntDateManual)ntDate=ntDay();
+  const tabs=[['day','🍽️ Day'],['trends','📈 Trends'],['calendar','📅 Calendar']]
+    .map(([k,l])=>`<button class="subtab${ntTab===k?' active':''}" onclick="ntSetTab('${k}')">${l}</button>`).join('');
+  cont.innerHTML=`<div class="sub-tabs">${tabs}</div>`+(ntTab==='trends'?ntTrendsHtml():ntTab==='calendar'?ntCalendarHtml():ntDayHtml());
+}
+function ntDayHtml(){
   const entries=ntDayEntries(ntDate),tot=ntSum(entries),tg=nutri.targets;
   const todayStr=ntDay(),isToday=ntDate===todayStr;
   const label=isToday?'Today':ntDate===ntShift(todayStr,-1)?'Yesterday':new Date(ntDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'long'});
@@ -3854,7 +3875,7 @@ function renderNutrition(){
       <button class="nt-add" onclick="ntOpenAdd('${m.id}')" aria-label="Add to ${m.label}">+</button></div>
       ${rows}${foot.length?`<div class="nt-meal-foot">${foot.join('')}</div>`:''}</div>`;
   }).join('');
-  cont.innerHTML=`
+  return`
     <div class="nt-datebar">
       <button onclick="ntGo(-1)" aria-label="Previous day">‹</button>
       <div class="nt-date"${isToday?'':' onclick="ntGo(0)" style="cursor:pointer"'}>${label}<small>${fmtDate(ntDate)}${isToday?'':' · tap for today'}</small></div>
@@ -3866,9 +3887,10 @@ function renderNutrition(){
         <div class="nt-left">${left==null?'':`${left>=0?'left':'over'}<b>${ntR(Math.abs(left))}</b>`}</div>
       </div>
       <div class="nt-bar"><i style="width:${pct(tot.kcal,tg.kcal)}%;background:${left!=null&&left<-tg.kcal*0.05?'var(--danger)':NT_COLORS.kcal}"></i></div>
-      <div class="nt-macros">${macro('protein','Protein')}${macro('carbs','Carbs')}${macro('fat','Fat')}</div>
+      <div class="nt-macros">${macro('protein','Protein')}${macro('carbs','Carbs')}${macro('fat','Fat')}${macro('fiber','Fibre')}</div>
       <button class="nt-gear" onclick="ntOpenTargets()">Edit targets</button>
     </div>
+    ${ntWeightCard()}
     ${meals}
     <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:14px">Product data from <a href="https://openfoodfacts.org" target="_blank" rel="noopener" style="color:var(--ink2)">Open Food Facts</a>, under the ODbL</div>`;
 }
@@ -4127,12 +4149,156 @@ function ntDeleteFood(){
   ntClose('nt-sheet2');ntPortion=null;ntRenderList();
 }
 
+// ── weight: one number per day, stored on that day ──
+function ntPrevWeight(date){
+  const d=Object.keys(nutri.days).filter(k=>k<date&&nutri.days[k].weight!=null).sort().pop();
+  return d?{date:d,weight:nutri.days[d].weight}:null;
+}
+function ntWeightCard(){
+  const w=nutri.days[ntDate]?.weight,prev=ntPrevWeight(ntDate);
+  const diff=w!=null&&prev?w-prev.weight:null;
+  return`<div class="nt-weight" onclick="ntOpenWeight()">
+    <span class="nt-weight-lab">⚖️ Weight</span>
+    ${diff!=null?`<span class="nt-weight-diff">${diff>0?'+':''}${diff.toFixed(1)} vs ${fmtShort(prev.date)}</span>`:''}
+    <span class="nt-weight-val">${w!=null?w.toFixed(1)+' kg':'<span style="color:var(--accent)">+ Log</span>'}</span></div>`;
+}
+function ntOpenWeight(){
+  const w=nutri.days[ntDate]?.weight,prev=ntPrevWeight(ntDate);
+  ntSheet('nt-sheet2',`${ntHead('Weight',fmtDate(ntDate)+(prev?` · last ${prev.weight.toFixed(1)} kg on ${fmtShort(prev.date)}`:''),'nt-sheet2')}
+    <div class="nt-form"><label class="full">Weight (kg)
+      <input id="nt-w" class="nt-input" type="number" inputmode="decimal" min="0" step="0.1" value="${w??''}" placeholder="${prev?prev.weight.toFixed(1):''}"
+        onkeydown="if(event.key==='Enter')ntSaveWeight()"></label></div>
+    <button class="nt-primary" onclick="ntSaveWeight()">Save</button>
+    ${w!=null?`<button class="nt-secondary nt-danger" onclick="ntSaveWeight(true)">Remove</button>`:''}`);
+}
+function ntSaveWeight(remove){
+  const v=ntNum(document.getElementById('nt-w')?.value);
+  if(!remove&&(!v||v<20||v>400)){showToast('Enter your weight in kg');return;}
+  const day=nutri.days[ntDate]||(nutri.days[ntDate]={date:ntDate,entries:[]});
+  if(remove)delete day.weight;else day.weight=Math.round(v*10)/10;
+  ntSave('days',ntDate);ntClose('nt-sheet2');renderNutrition();
+}
+
+// ── trends: daily intake and weight over time ──
+const NT_TREND=[['kcal','Calories','kcal'],['protein','Protein','g'],['carbs','Carbs','g'],['fat','Fat','g'],['fiber','Fibre','g'],['weight','Weight','kg']];
+let ntTrendMetric='kcal',ntTrendRange=30;
+function ntSetTrend(metric,range){if(metric)ntTrendMetric=metric;if(range)ntTrendRange=range;hideTip();renderNutrition();}
+// One point per day; a day with nothing logged is a gap, not a zero, so it doesn't drag averages down
+function ntSeries(metric,days){
+  const end=ntDay(),pts=[];
+  for(let i=days-1;i>=0;i--){
+    const date=ntShift(end,-i),day=nutri.days[date];
+    const v=metric==='weight'?(day?.weight??null):(day?.entries?.length?ntSum(day.entries)[metric]:null);
+    pts.push({date,v});
+  }
+  pts.forEach((p,i)=>{ // 7-day average of the logged days
+    const win=pts.slice(Math.max(0,i-6),i+1).filter(x=>x.v!=null);
+    p.avg=win.length?win.reduce((s,x)=>s+x.v,0)/win.length:null;
+  });
+  return pts;
+}
+function ntChart(pts,{color,unit,target,bars}){
+  const W=340,H=170,PL=40,PR=8,PT=10,PB=24,cW=W-PL-PR,cH=H-PT-PB;
+  const vals=pts.filter(p=>p.v!=null).map(p=>p.v);
+  let lo,hi;
+  if(bars){lo=0;hi=Math.max(...vals,target||0)*1.1||1;}
+  else{lo=Math.min(...vals)-0.5;hi=Math.max(...vals)+0.5;}
+  const y=v=>PT+cH-(v-lo)/(hi-lo)*cH,slot=cW/pts.length,x=i=>PL+(i+.5)*slot;
+  const fmt=v=>unit==='kg'?v.toFixed(1):ntR(v);
+  let svg=`<svg class="chart-svg" viewBox="0 0 ${W} ${H}" style="height:${H}px">`;
+  [0,.5,1].forEach(t=>{const v=lo+(hi-lo)*t,yy=y(v);
+    svg+=`<line class="chart-grid" x1="${PL}" y1="${yy}" x2="${W-PR}" y2="${yy}"/><text class="chart-label" x="${PL-4}" y="${yy+3}" text-anchor="end">${fmt(v)}</text>`;});
+  const step=Math.max(1,Math.ceil(pts.length/5));
+  pts.forEach((p,i)=>{if((pts.length-1-i)%step===0)svg+=`<text class="chart-label" x="${x(i)}" y="${H-6}" text-anchor="middle">${fmtShort(p.date)}</text>`;});
+  if(target)svg+=`<line x1="${PL}" y1="${y(target)}" x2="${W-PR}" y2="${y(target)}" stroke="var(--ink2)" stroke-dasharray="4 4" stroke-width="1" opacity=".6"/>`;
+  pts.forEach((p,i)=>{
+    if(p.v==null)return;
+    const tip=`${fmtShort(p.date)}: ${fmt(p.v)} ${unit}`;
+    const ev=`onmouseenter="showTip(event,'${tip}')" onmouseleave="hideTip()" ontouchstart="showTip(event,'${tip}')"`;
+    svg+=bars?`<rect x="${x(i)-slot*.35}" y="${y(p.v)}" width="${slot*.7}" height="${Math.max(0,y(0)-y(p.v))}" rx="${Math.min(2,slot*.2)}" fill="${color}" opacity=".55" ${ev}/>`
+      :`<circle cx="${x(i)}" cy="${y(p.v)}" r="${pts.length>60?2.5:3.5}" fill="${color}" opacity=".6" ${ev}/>`;
+  });
+  const avg=pts.map((p,i)=>p.avg!=null?`${x(i)},${y(p.avg)}`:null).filter(Boolean);
+  if(avg.length>1)svg+=`<polyline points="${avg.join(' ')}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  return svg+'</svg>';
+}
+function ntTrendsHtml(){
+  const [m,label,unit]=NT_TREND.find(t=>t[0]===ntTrendMetric),isW=m==='weight';
+  const pts=ntSeries(m,ntTrendRange),logged=pts.filter(p=>p.v!=null);
+  const chips=NT_TREND.map(([k,l])=>`<button class="nt-chip${k===m?' on':''}" onclick="ntSetTrend('${k}')">${l}</button>`).join('');
+  const ranges=[[7,'7 days'],[30,'30 days'],[90,'90 days'],[365,'1 year']].map(([d,l])=>`<button class="nt-chip${d===ntTrendRange?' on':''}" onclick="ntSetTrend(null,${d})">${l}</button>`).join('');
+  const tile=(lab,val,sub)=>`<div class="exs-tile"><div class="exs-tile-val">${val}</div><div class="exs-tile-lab">${lab}</div>${sub?`<div class="exs-tile-sub">${sub}</div>`:''}</div>`;
+  let body;
+  if(!logged.length)body=`<div class="empty" style="padding:28px 0"><div class="empty-icon">${isW?'⚖️':'📈'}</div>
+    <div class="empty-title">Nothing logged in this period</div><div class="empty-sub">${isW?'Log your weight from the Day view':'Log some food and it shows up here'}</div></div>`;
+  else{
+    const target=isW?null:nutri.targets[m];
+    const avg=logged.reduce((s,p)=>s+p.v,0)/logged.length;
+    let tiles;
+    if(isW){
+      const first=logged[0],last=logged[logged.length-1],ch=last.v-first.v;
+      tiles=tile('Latest',last.v.toFixed(1),fmtShort(last.date))+tile('Change',`${ch>0?'+':''}${ch.toFixed(1)}`,`since ${fmtShort(first.date)}`)
+        +tile('7-day avg',pts[pts.length-1].avg!=null?pts[pts.length-1].avg.toFixed(1):'—','kg');
+    }else{
+      tiles=tile('Daily avg',ntR(avg),unit)+(target?tile('Of target',Math.round(avg/target*100)+'%',`${ntR(target)} ${unit}`):'')
+        +tile('Days logged',logged.length,`of ${ntTrendRange}`);
+    }
+    // Averages of every nutrient over the same logged days
+    const all=isW?'':`<div class="nt-sec">Daily averages · ${logged.length} day${logged.length!==1?'s':''} logged</div><div class="exs-tiles">${
+      NT_TREND.filter(t=>t[0]!=='weight').map(([k,l,u])=>{const s=ntSeries(k,ntTrendRange).filter(p=>p.v!=null);
+        return tile(l,ntR(s.reduce((a,p)=>a+p.v,0)/s.length),u);}).join('')}</div>`;
+    body=`<div class="exs-tiles">${tiles}</div>
+      <div class="chart-box"><div class="chart-title">${label} per day${isW?'':' · bars'}, line = 7-day average${target?', dashed = target':''}</div>
+      ${ntChart(pts,{color:NT_COLORS[m],unit,target,bars:!isW})}</div>${all}`;
+  }
+  return`<div class="nt-actions">${chips}</div><div class="nt-actions">${ranges}</div>${body}`;
+}
+
+// ── calendar: every day at a glance; tap one to see what I ate ──
+let ntCalMonth=ntDay().slice(0,7);
+function ntCalNav(n){
+  const [y,mo]=ntCalMonth.split('-').map(Number),d=new Date(y,mo-1+n,1);
+  ntCalMonth=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;renderNutrition();
+}
+function ntCalPick(date){ntDate=date;ntDateManual=date!==ntDay();ntTab='day';renderNutrition();window.scrollTo(0,0);}
+function ntCalendarHtml(){
+  const [y,mo]=ntCalMonth.split('-').map(Number),n=new Date(y,mo,0).getDate(),lead=(new Date(y,mo-1,1).getDay()+6)%7;
+  const todayStr=ntDay(),tg=nutri.targets.kcal;
+  let cells=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="nt-cal-h">${d}</div>`).join('')+'<div></div>'.repeat(lead);
+  const kcals=[],prots=[],weights=[];
+  for(let d=1;d<=n;d++){
+    const date=`${ntCalMonth}-${String(d).padStart(2,'0')}`,day=nutri.days[date],es=day?.entries||[];
+    const future=date>todayStr,t=es.length?ntSum(es):null;
+    if(t){kcals.push(t.kcal);prots.push(t.protein);}
+    if(day?.weight!=null)weights.push(day.weight);
+    const r=t&&tg?t.kcal/tg:null;
+    const col=r==null?'var(--ink2)':r>1.1?'var(--danger)':r>=0.9?'var(--green)':'var(--gold)';
+    cells+=`<div class="nt-cal-d${date===todayStr?' today':''}${future?' future':''}"${future?'':` onclick="ntCalPick('${date}')"`}>
+      <span class="nt-cal-n">${d}</span>
+      ${t?`<span class="nt-cal-k" style="color:${col}">${ntR(t.kcal)}</span>`:''}
+      ${day?.weight!=null?`<span class="nt-cal-w">${day.weight.toFixed(1)}</span>`:''}</div>`;
+  }
+  const avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:null;
+  const tile=(lab,val,sub)=>`<div class="exs-tile"><div class="exs-tile-val">${val}</div><div class="exs-tile-lab">${lab}</div>${sub?`<div class="exs-tile-sub">${sub}</div>`:''}</div>`;
+  const monthName=new Date(y,mo-1,15).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  return`<div class="nt-datebar">
+      <button onclick="ntCalNav(-1)" aria-label="Previous month">‹</button>
+      <div class="nt-date">${monthName}<small>Tap a day to see what you ate</small></div>
+      <button onclick="ntCalNav(1)" aria-label="Next month">›</button>
+    </div>
+    <div class="nt-cal">${cells}</div>
+    <div class="nt-legend"><span><i style="background:var(--green)"></i>on target (±10%)</span><span><i style="background:var(--gold)"></i>under</span>
+      <span><i style="background:var(--danger)"></i>over</span><span style="font-family:'DM Mono',monospace">78.4</span><span>= weight (kg)</span></div>
+    <div class="exs-tiles">${tile('Days logged',kcals.length,`of ${n}`)}${tile('Avg kcal',ntR(avg(kcals)),'per logged day')}${tile('Avg protein',ntR(avg(prots)),'g')}
+      ${weights.length>1?tile('Weight',`${weights[weights.length-1]-weights[0]>0?'+':''}${(weights[weights.length-1]-weights[0]).toFixed(1)}`,'kg this month'):''}</div>`;
+}
+
 // ── targets ──
 function ntOpenTargets(){
   const t=nutri.targets;
   const fld=(k,lab)=>`<label>${lab}<input id="nt-t-${k}" class="nt-input" type="number" inputmode="decimal" min="0" step="any" value="${t[k]??''}" oninput="ntTargetsHint()"></label>`;
   ntSheet('nt-sheet2',`${ntHead('Daily targets','The same every day for now','nt-sheet2')}
-    <div class="nt-form">${fld('kcal','Energy (kcal)')}${fld('protein','Protein (g)')}${fld('carbs','Carbs (g)')}${fld('fat','Fat (g)')}</div>
+    <div class="nt-form">${fld('kcal','Energy (kcal)')}${fld('protein','Protein (g)')}${fld('carbs','Carbs (g)')}${fld('fat','Fat (g)')}${fld('fiber','Fibre (g)')}</div>
     <div class="nt-note" id="nt-t-hint"></div>
     <button class="nt-primary" onclick="ntSaveTargets()">Save</button>`);
   ntTargetsHint();
@@ -4143,7 +4309,7 @@ function ntTargetsHint(){
 }
 function ntSaveTargets(){
   const v=k=>ntNum(document.getElementById('nt-t-'+k)?.value);
-  nutri.targets={kcal:v('kcal'),protein:v('protein'),carbs:v('carbs'),fat:v('fat')};
+  nutri.targets={kcal:v('kcal'),protein:v('protein'),carbs:v('carbs'),fat:v('fat'),fiber:v('fiber')};
   ntSave('targets');ntClose('nt-sheet2');renderNutrition();
 }
 
