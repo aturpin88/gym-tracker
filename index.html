@@ -4362,7 +4362,7 @@ function ntMfpNum(s){
   return ntNum(s);
 }
 function ntParseMfp(files){
-  const meals={},weights={};let wLb=null;
+  const meals={},weights={},bad=[];let wLb=null;
   for(const f of files){
     const t=ntCsv(f.text.replace(/^﻿/,''));if(t.length<2)continue;
     const h=t[0].map(x=>ntNorm(x).trim());
@@ -4378,6 +4378,7 @@ function ntParseMfp(files){
         const v=k=>c[k]>=0?ntMfpNum(r[c[k]]):null,na=v('sodium');
         const n={kcal:v('kcal'),protein:v('protein'),carbs:v('carbs'),fat:v('fat'),fiber:v('fiber'),sugar:v('sugar'),salt:na!=null?Math.round(na*2.5)/1000:null};
         if(n.kcal==null)continue;
+        if(n.kcal>5000){bad.push({date,meal,kcal:n.kcal});continue;} // one meal can't be that much: a wrong serving in MyFitnessPal
         (meals[date+'|'+meal]||(meals[date+'|'+meal]=[])).push({food:iFood>=0?String(r[iFood]||'').trim():'',n});
       }
     }else if(iW>=0){
@@ -4386,7 +4387,7 @@ function ntParseMfp(files){
     }
   }
   if(wLb==null){const ws=Object.values(weights).sort((a,b)=>a-b);wLb=ws.length?ws[Math.floor(ws.length/2)]>150:false;} // no unit in the header: guess from the numbers
-  return{meals,weights,lb:wLb};
+  return{meals,weights,lb:wLb,bad};
 }
 function ntImportPlan(){
   const {meals,weights}=ntImport,p={meals:0,skipped:0,weights:0,wSkipped:0,dates:new Set()};
@@ -4430,6 +4431,7 @@ function ntRenderImportPlan(){
   const tile=(lab,val,sub)=>`<div class="exs-tile"><div class="exs-tile-val">${val}</div><div class="exs-tile-lab">${lab}</div>${sub?`<div class="exs-tile-sub">${sub}</div>`:''}</div>`;
   el.innerHTML=`<div class="nt-sec">Found ${p.from?`${fmtDate(p.from)} – ${fmtDate(p.to)}`:''}</div>
     <div class="exs-tiles">${tile('Meals',p.meals,p.skipped?`${p.skipped} already here`:'to import')}${tile('Weights',p.weights,p.wSkipped?`${p.wSkipped} already here`:'to import')}</div>
+    ${ntImport.bad.length?`<div class="nt-note">Left out because they look wrong in MyFitnessPal: ${ntImport.bad.map(b=>`${ntMealLabel(b.meal).toLowerCase()} on ${fmtDate(b.date)} (${ntR(b.kcal)} kcal)`).map(escHtml).join(', ')}.</div>`:''}
     ${wCount?`<div class="nt-actions"><span class="nt-note" style="padding:6px 4px 0 0">Weight is in</span>
       <button class="nt-chip${ntImport.lb?'':' on'}" onclick="ntImport.lb=false;ntRenderImportPlan()">kg</button>
       <button class="nt-chip${ntImport.lb?' on':''}" onclick="ntImport.lb=true;ntRenderImportPlan()">lb</button></div>`:''}
