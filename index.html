@@ -4505,14 +4505,21 @@ async function ntStartScan(){
     <div class="nt-scan-bar"><div class="nt-scan-msg" id="nt-scan-msg">Starting camera…</div>
       <div class="nt-search"><input id="nt-code" class="nt-input" inputmode="numeric" placeholder="Or type the barcode" autocomplete="off"
         onkeydown="if(event.key==='Enter')ntManualCode()"><button class="nt-scan" onclick="ntManualCode()">Go</button></div>
-      <button class="nt-secondary" style="margin-top:0" onclick="ntStopScan()">Cancel</button></div>`;
+      <input type="file" id="nt-photo" accept="image/*" capture="environment" style="display:none" onchange="ntScanPhoto(this.files[0]);this.value=''">
+      <button class="nt-secondary" id="nt-photo-btn" style="margin-top:0" onclick="document.getElementById('nt-photo').click()">📸 Take a photo of the barcode</button>
+      <button class="nt-secondary" onclick="ntStopScan()">Cancel</button></div>`;
   document.body.appendChild(el);
   const msg=t=>{const m=document.getElementById('nt-scan-msg');if(m)m.textContent=t;};
+  // If the live camera can't start (some iPhone home-screen setups refuse it), a photo always works
+  const photoFirst=t=>{msg(t);const b=document.getElementById('nt-photo-btn');if(b)b.className='nt-primary';};
+  if(!navigator.mediaDevices?.getUserMedia){photoFirst('Live scanning isn\'t available here. Take a photo of the barcode instead, or type it.');return;}
   let stream;
   try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});}
   catch(e){
-    msg(e?.name==='NotAllowedError'?'Camera access is blocked. Allow it in Settings, or type the barcode below.'
-      :e?.name==='NotFoundError'?'No camera found. Type the barcode below.':'Could not start the camera. Type the barcode below.');
+    console.error('Camera:',e);
+    photoFirst((e?.name==='NotAllowedError'?'The app isn\'t allowed to use the camera (iPhone Settings → Safari → Camera).'
+      :e?.name==='NotFoundError'?'No camera found.':'The live camera didn\'t start.')
+      +` Take a photo of the barcode instead, or type it. [${e?.name||'error'}${e?.message?': '+e.message:''}]`);
     return;
   }
   if(!document.getElementById('nt-scan')){stream.getTracks().forEach(t=>t.stop());return;} // cancelled meanwhile
@@ -4534,6 +4541,23 @@ async function ntStartScan(){
     ntScanTimer=setTimeout(tick,180);
   };
   tick();
+}
+// Reads the barcode from a photo (shrunk first: a full-size iPhone photo is slow to scan)
+async function ntScanPhoto(file){
+  if(!file)return;
+  const msg=t=>{const m=document.getElementById('nt-scan-msg');if(m)m.textContent=t;};
+  msg('Reading the photo…');
+  try{
+    const det=await ntGetDetector();
+    const url=URL.createObjectURL(file),img=new Image();
+    await new Promise((ok,fail)=>{img.onload=ok;img.onerror=()=>fail(new Error('Could not open the photo'));img.src=url;});
+    const k=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');
+    c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+    const hit=(await det.detect(c)).find(x=>/^\d{8,14}$/.test(x.rawValue));
+    if(hit){ntStopScan();ntLookupBarcode(hit.rawValue);return;}
+    msg('No barcode found in that photo. Try again closer, with the barcode flat and sharp, or type the number.');
+  }catch(e){console.error('Photo scan:',e);msg('Could not read the photo. Check your connection, or type the barcode below.');}
 }
 function ntManualCode(){
   const code=(document.getElementById('nt-code')?.value||'').replace(/\D/g,'');
