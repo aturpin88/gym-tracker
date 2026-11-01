@@ -3817,7 +3817,7 @@ async function ntFetch(url){
   const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),15000);
   let r;
   try{r=await fetch(url,{signal:ctl.signal});}
-  catch(e){throw new Error(navigator.onLine===false?'You are offline.':'Open Food Facts did not answer. Try again in a moment.');}
+  catch(e){throw new Error(navigator.onLine===false?'You are offline.':'Open Food Facts did not answer. It allows about 10 searches a minute, so wait a minute and try again.');}
   finally{clearTimeout(timer);}
   if(r.status===404)return null;
   if(r.status===429)throw new Error('Too many searches in a row. Wait a minute and try again.');
