@@ -1168,7 +1168,7 @@ function addAdHocExercise(){
   if(!name){showToast('Enter a name');return;}
   const unit=document.getElementById('adhoc-unit-select')?.value||'kg';
   const nSets=Math.max(1,parseInt(document.getElementById('adhoc-sets-input')?.value)||1);
-  const weight=document.getElementById('adhoc-weight-input')?.value||'';
+  const weight=(document.getElementById('adhoc-weight-input')?.value||'').replace(',','.');
   const reps=document.getElementById('adhoc-reps-input')?.value||'';
   const setsLabel=weight||reps?`${nSets}×${reps||'?'}`+(weight?` ${weight}${unit}`:''):`${nSets} sets`;
   const id='adhoc_'+Date.now();
@@ -1339,6 +1339,7 @@ function getExData(exId){
   return formData[exId];
 }
 function updateWeight(exId,idx,val){
+  val=String(val).replace(',','.'); // a Spanish keyboard types 22,5
   const set=getExData(exId).sets[idx];set.weight=val;delete set.pf;
   document.querySelector(`[data-num="${exId}-${idx}"]`)?.closest('.set-row')?.classList.remove('pf');
   document.querySelector(`[data-num="${exId}-${idx}"]`)?.classList.toggle('filled',!!val);
@@ -1487,7 +1488,7 @@ function renderLog(){
         </div>
         <div style="text-align:center">
           <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Weight</div>
-          <input class="adhoc-input" id="adhoc-weight-input" type="number" step="0.5" placeholder="—" style="text-align:center">
+          <input class="adhoc-input" id="adhoc-weight-input" type="text" inputmode="decimal" autocomplete="off" placeholder="—" style="text-align:center">
         </div>
         <div style="text-align:center">
           <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Reps</div>
@@ -1577,7 +1578,7 @@ function renderSetRows(exId,sets,color){
     <div class="set-row${s.pf?' pf':''}"${s.pf?' title="Last time — edit or tap ▶ to log"':''}>
       <div class="set-num${!s.pf&&(s.weight||s.reps)?' filled':''}" data-num="${exId}-${i}" style="--sess-color:${color};${numStyle}cursor:pointer" onclick="toggleSetNote('${exId}',${i})" title="Add set note">${i+1}</div>
       <button class="set-start-btn${s.t_start?' done':''}" onclick="startSet('${exId}',${i})" title="${s.t_start?'Started: '+fmtTime(s.t_start):'Start set'}">${s.t_start?'●':'▶'}</button>
-      <input type="number" step="0.5" class="set-input weight-input" style="--sess-color:${color}"
+      <input type="text" inputmode="decimal" autocomplete="off" class="set-input weight-input" style="--sess-color:${color}"
         value="${s.weight||''}" placeholder="—"
         onfocus="onSetFocus('${exId}',${i})"
         oninput="updateWeight('${exId}',${i},this.value)"
@@ -2094,7 +2095,7 @@ function showFocusModal(exId,idx){
   const rows=d.sets.map((s,i)=>`
     <div class="focus-row${i===idx?' on':''}${s.pf?' pf':''}">
       <span class="focus-num">${i+1}</span>
-      <input type="number" inputmode="decimal" step="0.5" class="focus-in" value="${s.weight||''}" placeholder="${unit}"
+      <input type="text" inputmode="decimal" autocomplete="off" class="focus-in" value="${s.weight||''}" placeholder="${unit}"
         oninput="updateWeight('${exId}',${i},this.value);this.closest('.focus-row').classList.remove('pf')">
       <span class="focus-times">×</span>
       <input type="number" inputmode="numeric" class="focus-in" value="${s.reps||''}" placeholder="reps"
