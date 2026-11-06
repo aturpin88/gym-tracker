@@ -310,6 +310,47 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .nt-link{background:none;border:none;color:var(--ink2);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;}
 .nt-link:hover{color:var(--ink);}
 .nt-sheet2{z-index:1200;}
+#subnav{overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 8px;}
+#subnav::-webkit-scrollbar{display:none;}
+#subnav .stab{padding:10px 12px;}
+.bo-greet{margin-bottom:14px;}
+.bo-date{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.bo-hello{font-size:32px;font-weight:800;color:var(--ink);line-height:1.05;}
+.bo-trend{font-size:12px;color:var(--ink2);margin-top:6px;}
+.bo-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
+.bo-tile{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:10px 4px;text-align:center;cursor:pointer;}
+.bo-tile-v{font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--ink);line-height:1.1;}
+.bo-tile-v.unset{color:var(--accent);}
+.bo-tile-l{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:4px;}
+.bo-card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;}
+.bo-card-h{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px;}
+.bo-nudge{font-size:12px;color:var(--accent);font-weight:600;}
+.bo-energy{display:flex;align-items:flex-start;justify-content:space-between;gap:4px;text-align:center;}
+.bo-energy b{display:block;font-family:'DM Mono',monospace;font-size:19px;color:var(--ink);}
+.bo-energy span{font-size:9.5px;color:var(--ink2);}
+.bo-op{font-size:16px;color:var(--muted);padding-top:2px;}
+.bo-sub{font-size:11px;color:var(--ink2);margin-top:8px;line-height:1.45;}
+.bo-table-wrap{overflow-x:auto;margin:0 -14px;padding:0 14px;}
+.bo-table{border-collapse:collapse;width:100%;font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap;}
+.bo-table th{font-family:'DM Sans',sans-serif;font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right;padding:0 6px 6px;}
+.bo-table td{text-align:right;padding:7px 6px;border-top:1px solid var(--line);color:var(--ink);}
+.bo-table th:first-child,.bo-table td:first-child{text-align:left;padding-left:0;}
+.ci-ms{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11px;color:var(--ink2);margin-bottom:8px;}
+.ci-m b{font-family:'DM Mono',monospace;color:var(--ink);}
+.ci-m i{font-style:normal;font-family:'DM Mono',monospace;font-size:10px;}
+.ci-phs,.ci-strip{display:flex;gap:6px;overflow-x:auto;}
+.ci-ph{position:relative;width:70px;height:94px;border-radius:8px;overflow:hidden;background:#1c1c1c;flex-shrink:0;}
+.ci-ph.big{width:120px;height:160px;cursor:pointer;}
+.ci-ph img{width:100%;height:100%;object-fit:cover;}
+.ci-ph span{position:absolute;left:0;right:0;bottom:0;font-size:9px;font-weight:700;text-transform:uppercase;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:10px 4px 3px;text-align:center;}
+.ci-ph.missing img{display:none;}
+.ci-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.ci-slot{position:relative;aspect-ratio:3/4;border:1px dashed var(--muted);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;color:var(--ink2);font-size:22px;}
+.ci-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.ci-slot em{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-style:normal;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000;}
+.ci-x{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:15px;cursor:pointer;}
+.ci-viewer{position:fixed;inset:0;z-index:1400;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--ink2);font-size:12px;}
+.ci-viewer img{max-width:100%;max-height:88vh;object-fit:contain;}
 .nt-weight{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;}
 .nt-weight-lab{flex:1;font-size:14px;font-weight:700;color:var(--ink);}
 .nt-weight-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:var(--ink);}
@@ -622,11 +663,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
       <button class="sync-chip" id="sync-chip" onclick="handleSyncChip()">☁️ Sign in</button>
     </div>
   </div>
+  <div class="session-tabs" id="subnav"></div>
 </div>
 
 
 <div class="content">
-  <div class="page active" id="page-home"></div>
+  <div class="page active" id="page-overview"></div>
+  <div class="page" id="page-dashboard"></div>
+  <div class="page" id="page-checkins"></div>
   <div class="page" id="page-sesiones"></div>
   <div class="page" id="page-nutrition"></div>
   <div class="page" id="page-log"></div>
@@ -733,7 +777,7 @@ function fmtRestTime(s){
 // ─────────────────────────────────────────────────────────────────
 let workoutDefs = {};         // mutable, loaded from localStorage
 let currentSession='A';
-let currentView='home';
+let currentView='overview';
 let currentDate=today();
 let dateChosenManually=false;
 let formData={};
@@ -1202,12 +1246,14 @@ function setSession(s){
   loadFormFromLogs();render();
 }
 function setNavActive(v){
-  document.querySelectorAll('.vtab,.bnav-btn').forEach(t=>t.classList.remove('active'));
-  const b=document.getElementById('bnav-'+v);
-  if(b)b.classList.add('active');
+  const sec=sectionOf(v);
+  document.querySelectorAll('.vtab,.bnav-btn').forEach(t=>t.classList.toggle('active',t.id==='bnav-'+sec));
+  renderSubnav(v);
 }
 function setView(v,e){
   currentView=v;
+  if(v!=='log')lastViewOf[sectionOf(v)]=v;
+  window.scrollTo(0,0);
   setNavActive(v);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=document.getElementById('page-'+v);
@@ -1365,7 +1411,7 @@ function finishSession(){
   const nSets=Object.values(log.data).reduce((t,d)=>t+d.sets.filter(s=>s.weight||s.reps).length,0);
   const mins=log.startTime?Math.round((Date.parse(log.endTime)-Date.parse(log.startTime))/60000):null;
   showToast(`Session finished · ${nSets} sets${vol?' · '+fmtVol(vol):''}${mins!=null?' · '+mins+' min':''}${prs.length?' · 🏆 '+prs.length+' PR'+(prs.length>1?'s':''):''}`,4500);
-  setView('home',null);
+  setView('sesiones',null);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -2159,7 +2205,6 @@ function promptStrain(session,date){
   if(val===null)return;
   editLogStrain(session,date,val);
   renderHistory();
-  if(currentView==='home')renderHome();
 }
 async function updateAdHocSearch(val){
   adhocSearchQuery=val;
@@ -3635,7 +3680,7 @@ async function syncFromCloud(){
       }
     }catch(e){}
     purgeDeletedSessionLogs();
-    try{await syncNutritionFromCloud();}catch(e){console.error('Nutrition sync error:',e);}
+    try{await syncNutritionFromCloud();await flushPhotoQueue();}catch(e){console.error('Nutrition sync error:',e);}
 
     updateStats();render();
     lastSyncTime=new Date();setCloudStatus('synced');
@@ -3721,7 +3766,7 @@ const NT_MEALS=[{id:'breakfast',label:'Breakfast'},{id:'lunch',label:'Lunch'},{i
 const NT_FIELDS=[['kcal','Energy (kcal)'],['protein','Protein (g)'],['carbs','Carbohydrates (g)'],['fat','Fat (g)'],['fiber','Fibre (g)'],['sugar','of which sugars (g)'],['salt','Salt (g)']];
 const NT_COLORS={kcal:'#E85010',protein:'#2ECC9A',carbs:'#5B9BF0',fat:'#E8A030',fiber:'#8FBF4A',weight:'#D8D8DE'};
 const NT_DEFAULT_TARGETS={kcal:2500,protein:160,carbs:280,fat:80,fiber:30,updatedAt:0};
-const NT_COLL={foods:'foods',days:'nutrition',meals:'meals'};
+const NT_COLL={foods:'foods',days:'nutrition',meals:'meals',checkins:'checkins'};
 const OFF_SEARCH='https://world.openfoodfacts.org/cgi/search.pl';
 const OFF_SPAIN='&tagtype_0=countries&tag_contains_0=contains&tag_0=spain'; // only products sold in Spain
 const OFF_PRODUCT='https://world.openfoodfacts.org/api/v2/product/';
@@ -3756,8 +3801,8 @@ let ntScanStream=null,ntScanTimer=null,ntDetector=null;
 
 function loadNutri(){
   try{const r=JSON.parse(localStorage.getItem(NUTRI_KEY)||'null');
-    if(r)return{foods:r.foods||{},days:r.days||{},meals:r.meals||{},targets:{...NT_DEFAULT_TARGETS,...r.targets}};}catch(e){}
-  return{foods:{},days:{},meals:{},targets:{...NT_DEFAULT_TARGETS}};
+    if(r)return{foods:r.foods||{},days:r.days||{},meals:r.meals||{},checkins:r.checkins||{},targets:{...NT_DEFAULT_TARGETS,...r.targets}};}catch(e){}
+  return{foods:{},days:{},meals:{},checkins:{},targets:{...NT_DEFAULT_TARGETS}};
 }
 function ntClean(o){return JSON.parse(JSON.stringify(o));} // Firestore rejects undefined fields
 function ntUserRef(){return fbDb.collection('users').doc(currentUser.uid);}
@@ -3855,14 +3900,14 @@ async function ntFetch(url){
 }
 
 // ── page ──
-let ntTab='day'; // 'day' | 'trends' | 'calendar'
+let ntTab='day'; // 'day' | 'calendar' | 'recipes'
 function ntSetTab(t){ntTab=t;if(t==='calendar')ntCalMonth=ntDate.slice(0,7);hideTip();renderNutrition();window.scrollTo(0,0);}
 function renderNutrition(){
   const cont=document.getElementById('page-nutrition');if(!cont)return;
   if(!ntDateManual)ntDate=ntDay();
-  const tabs=[['day','🍽️ Day'],['trends','📈 Trends'],['calendar','📅 Calendar']]
+  const tabs=[['day','🍽️ Day'],['calendar','📅 Calendar'],['recipes','🥘 Recipes']]
     .map(([k,l])=>`<button class="subtab${ntTab===k?' active':''}" onclick="ntSetTab('${k}')">${l}</button>`).join('');
-  cont.innerHTML=`<div class="sub-tabs">${tabs}</div>`+(ntTab==='trends'?ntTrendsHtml():ntTab==='calendar'?ntCalendarHtml():ntDayHtml());
+  cont.innerHTML=`<div class="sub-tabs">${tabs}</div>`+(ntTab==='recipes'?ntRecipesHtml():ntTab==='calendar'?ntCalendarHtml():ntDayHtml());
 }
 function ntDayHtml(){
   const entries=ntDayEntries(ntDate),tot=ntSum(entries),tg=nutri.targets;
@@ -3928,8 +3973,10 @@ function ntHead(title,sub,closeId){
 
 // Add to a meal: my foods first (instant), Open Food Facts only when asked (it allows 10 searches a minute)
 function ntOpenAdd(meal){
-  ntMeal=meal;ntQuery='';ntOnline=null;ntPortion=null;
-  ntSheet('nt-sheet',`${ntHead('Add to '+ntMealLabel(meal),fmtDate(ntDate),'nt-sheet')}
+  if(meal){ntMeal=meal;ntMode='day';}
+  ntQuery='';ntOnline=null;ntPortion=null;
+  const rec=ntMode==='recipe';
+  ntSheet('nt-sheet',`${ntHead(rec?'Add ingredient':'Add to '+ntMealLabel(meal),rec?escHtml(ntRecipe.name||'New recipe'):fmtDate(ntDate),'nt-sheet')}
     <div class="nt-search">
       <input id="nt-q" class="nt-input" type="search" enterkeyhint="search" placeholder="Search foods" autocomplete="off"
         oninput="ntQuery=this.value;ntOnline=null;ntRenderList()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();ntSearchOnline()}">
@@ -3938,7 +3985,7 @@ function ntOpenAdd(meal){
     <div class="nt-actions">
       <button class="nt-chip" onclick="ntSearchOnline()">🌐 Search online</button>
       <button class="nt-chip" onclick="ntOpenEditor()">✏️ New food</button>
-      <button class="nt-chip" onclick="ntOpenQuick()">⚡ Quick add</button>
+      ${rec?'':'<button class="nt-chip" onclick="ntOpenQuick()">⚡ Quick add</button>'}
     </div>
     <div id="nt-list"></div>`);
   ntRenderList();
@@ -3963,13 +4010,14 @@ function ntRenderList(){
   };
   let html='';
   const yest=ntDayEntries(ntShift(ntDate,-1)).filter(e=>e.meal===ntMeal);
-  if(!toks.length&&yest.length&&!ntDayEntries(ntDate).some(e=>e.meal===ntMeal))
+  const rec=ntMode==='recipe';
+  if(!rec&&!toks.length&&yest.length&&!ntDayEntries(ntDate).some(e=>e.meal===ntMeal))
     html+=`<div class="nt-row" onclick="ntCopyMeal('${ntMeal}')"><div class="nt-entry-main">
       <div class="nt-entry-name">↺ Copy yesterday's ${ntMealLabel(ntMeal).toLowerCase()}</div>
       <div class="nt-entry-sub">${yest.map(e=>escHtml(e.name)).join(', ')}</div></div></div>`;
-  const saved=Object.values(nutri.meals).filter(m=>!m.deleted&&(!toks.length||hit(m.name)));
+  const saved=rec?[]:Object.values(nutri.meals).filter(m=>!m.deleted&&(!toks.length||hit(m.name)));
   if(saved.length)html+=`<div class="nt-sec">Saved meals</div>`+saved.map(mealRow).join('');
-  const mine=ntFoods().filter(f=>!toks.length||hit(f.name,f.brand,f.barcode)).sort((a,b)=>(b.lastUsed||0)-(a.lastUsed||0));
+  const mine=ntFoods().filter(f=>!(rec&&f.source==='recipe')&&(!toks.length||hit(f.name,f.brand,f.barcode))).sort((a,b)=>(b.lastUsed||0)-(a.lastUsed||0));
   if(mine.length)html+=`<div class="nt-sec">${toks.length?'My foods':'Recent'}</div>`+mine.slice(0,30).map(foodRow).join('');
   if(toks.length){
     const gen=ntGeneric().filter(f=>!nutri.foods[f.id]&&hit(f.name));
@@ -4018,11 +4066,11 @@ function ntShowPortion(food,entry){
   ntSheet('nt-sheet2',`${ntHead(escHtml(food.name),escHtml([food.brand,`${ntR(p.kcal)} kcal per 100 g`].filter(Boolean).join(' · ')),'nt-sheet2')}
     ${mealSel}
     <div class="nt-form"><label class="full">Amount (g)
-      <input id="nt-g" class="nt-input" type="number" inputmode="decimal" min="0" step="any" value="${g??''}" oninput="ntPortionPreview()"
+      <input id="nt-g" class="nt-input" type="text" inputmode="decimal" value="${g??''}" oninput="ntPortionPreview()"
         onkeydown="if(event.key==='Enter')ntPortionSave()"></label></div>
     <div class="nt-actions" style="margin-top:8px">${chips.map(([v,l])=>`<button class="nt-chip" onclick="document.getElementById('nt-g').value=${v};ntPortionPreview()">${l}</button>`).join('')}</div>
     <div class="nt-preview" id="nt-prev"></div>
-    <button class="nt-primary" onclick="ntPortionSave()">${entry?'Save':'Add to '+ntMealLabel(ntMeal)}</button>
+    <button class="nt-primary" onclick="ntPortionSave()">${entry?'Save':ntMode==='recipe'?'Add to recipe':'Add to '+ntMealLabel(ntMeal)}</button>
     <button class="nt-secondary" onclick="ntOpenEditor(ntPortion.food)">Fix food values</button>
     ${entry?`<button class="nt-secondary nt-danger" onclick="ntDeleteEntry()">Remove</button>`:''}`);
   ntPortionPreview();
@@ -4041,6 +4089,11 @@ function ntPortionSave(){
   const g=ntNum(document.getElementById('nt-g')?.value);
   if(!g||g<=0){showToast('Enter an amount in grams');return;}
   const {food,entry,meal}=ntPortion;
+  if(!entry&&ntMode==='recipe'){
+    ntRecipe.items.push({foodId:food.id||null,name:food.name,brand:food.brand||'',grams:g,per100:{...food.per100}});
+    if(food.id&&!nutri.foods[food.id]&&food.source!=='generic'){nutri.foods[food.id]={...food};ntSave('foods',food.id);} // keep scanned products for next time
+    ntCloseAll();ntMode='day';renderRecipeSheet();return;
+  }
   if(entry){entry.grams=g;entry.meal=meal;}
   else{ntAddEntry(food,g,ntMeal);ntRemember(food,g);}
   ntSave('days',ntDate);
@@ -4097,7 +4150,7 @@ function ntDeleteSaved(id){
 // ── quick add: just the numbers ──
 function ntOpenQuick(entry){
   const n=entry?.n||{};
-  const fld=(k,lab)=>`<label>${lab}<input id="nt-q-${k}" class="nt-input" type="number" inputmode="decimal" min="0" step="any" value="${n[k]??''}"></label>`;
+  const fld=(k,lab)=>`<label>${lab}<input id="nt-q-${k}" class="nt-input" type="text" inputmode="decimal" value="${n[k]??''}"></label>`;
   ntPortion={entry:entry||null};
   ntSheet('nt-sheet2',`${ntHead(entry?'Quick add':'Quick add to '+ntMealLabel(ntMeal),'No food needed, just the numbers','nt-sheet2')}
     <div class="nt-form">
@@ -4124,7 +4177,7 @@ function ntSaveQuick(){
 function ntOpenEditor(food,note){
   const f=food||{},p=f.per100||{},inLib=f.id&&nutri.foods[f.id]&&!nutri.foods[f.id].deleted;
   ntEditing=f;
-  const fld=(k,lab,val,mode='decimal')=>`<label>${lab}<input id="nt-f-${k}" class="nt-input" ${mode==='text'?'':`type="${mode==='numeric'?'text':'number'}" inputmode="${mode}" ${mode==='decimal'?'step="any" min="0"':''}`}
+  const fld=(k,lab,val,mode='decimal')=>`<label>${lab}<input id="nt-f-${k}" class="nt-input" ${mode==='text'?'':`type="text" inputmode="${mode}"`}
     value="${val==null?'':escHtml(String(val))}" autocomplete="off"></label>`;
   ntSheet('nt-sheet2',`${ntHead(inLib?'Fix food':'New food','Values per 100 g, as on the label','nt-sheet2')}
     ${note?`<div class="nt-note" style="padding-top:0">${escHtml(note)}</div>`:''}
@@ -4172,102 +4225,39 @@ function ntPrevWeight(date){
 function ntWeightCard(){
   const w=nutri.days[ntDate]?.weight,prev=ntPrevWeight(ntDate);
   const diff=w!=null&&prev?w-prev.weight:null;
-  return`<div class="nt-weight" onclick="ntOpenWeight()">
+  return`<div class="nt-weight" onclick="openMetric('weight','${ntDate}')">
     <span class="nt-weight-lab">⚖️ Weight</span>
     ${diff!=null?`<span class="nt-weight-diff">${diff>0?'+':''}${diff.toFixed(1)} vs ${fmtShort(prev.date)}</span>`:''}
     <span class="nt-weight-val">${w!=null?w.toFixed(1)+' kg':'<span style="color:var(--accent)">+ Log</span>'}</span></div>`;
 }
-function ntOpenWeight(){
-  const w=nutri.days[ntDate]?.weight,prev=ntPrevWeight(ntDate);
-  ntSheet('nt-sheet2',`${ntHead('Weight',fmtDate(ntDate)+(prev?` · last ${prev.weight.toFixed(1)} kg on ${fmtShort(prev.date)}`:''),'nt-sheet2')}
-    <div class="nt-form"><label class="full">Weight (kg)
-      <input id="nt-w" class="nt-input" type="number" inputmode="decimal" min="0" step="0.1" value="${w??''}" placeholder="${prev?prev.weight.toFixed(1):''}"
-        onkeydown="if(event.key==='Enter')ntSaveWeight()"></label></div>
-    <button class="nt-primary" onclick="ntSaveWeight()">Save</button>
-    ${w!=null?`<button class="nt-secondary nt-danger" onclick="ntSaveWeight(true)">Remove</button>`:''}`);
-}
-function ntSaveWeight(remove){
-  const v=ntNum(document.getElementById('nt-w')?.value);
-  if(!remove&&(!v||v<20||v>400)){showToast('Enter your weight in kg');return;}
-  const day=nutri.days[ntDate]||(nutri.days[ntDate]={date:ntDate,entries:[]});
-  if(remove)delete day.weight;else day.weight=Math.round(v*10)/10;
-  delete day.weightMfp;
-  ntSave('days',ntDate);ntClose('nt-sheet2');renderNutrition();
-}
-
-// ── trends: daily intake and weight over time ──
-const NT_TREND=[['kcal','Calories','kcal'],['protein','Protein','g'],['carbs','Carbs','g'],['fat','Fat','g'],['fiber','Fibre','g'],['weight','Weight','kg']];
-let ntTrendMetric='kcal',ntTrendRange=30;
-function ntSetTrend(metric,range){if(metric)ntTrendMetric=metric;if(range)ntTrendRange=range;hideTip();renderNutrition();}
-// One point per day; a day with nothing logged is a gap, not a zero, so it doesn't drag averages down
-function ntSeries(metric,days){
-  const end=ntDay(),pts=[];
-  for(let i=days-1;i>=0;i--){
-    const date=ntShift(end,-i),day=nutri.days[date];
-    const v=metric==='weight'?(day?.weight??null):(day?.entries?.length?ntSum(day.entries)[metric]:null);
-    pts.push({date,v});
-  }
-  pts.forEach((p,i)=>{ // 7-day average of the logged days
-    const win=pts.slice(Math.max(0,i-6),i+1).filter(x=>x.v!=null);
-    p.avg=win.length?win.reduce((s,x)=>s+x.v,0)/win.length:null;
-  });
-  return pts;
-}
-function ntChart(pts,{color,unit,target,bars}){
+function ntChart(pts,{color,unit,target,bars,overlay,noAvg,fmt}){
   const W=340,H=170,PL=40,PR=8,PT=10,PB=24,cW=W-PL-PR,cH=H-PT-PB;
-  const vals=pts.filter(p=>p.v!=null).map(p=>p.v);
+  const vals=[...pts,...(overlay||[])].filter(p=>p.v!=null).map(p=>p.v);
   let lo,hi;
-  if(bars){lo=0;hi=Math.max(...vals,target||0)*1.1||1;}
-  else{lo=Math.min(...vals)-0.5;hi=Math.max(...vals)+0.5;}
+  if(bars){lo=Math.min(0,...vals)*1.1;hi=Math.max(0,...vals,target||0)*1.1||1;}
+  else{const pad=Math.max(0.5,(Math.max(...vals)-Math.min(...vals))*0.1);lo=Math.min(...vals)-pad;hi=Math.max(...vals)+pad;}
   const y=v=>PT+cH-(v-lo)/(hi-lo)*cH,slot=cW/pts.length,x=i=>PL+(i+.5)*slot;
-  const fmt=v=>unit==='kg'?v.toFixed(1):ntR(v);
+  fmt=fmt||(v=>unit==='kg'?v.toFixed(1):ntR(v));
   let svg=`<svg class="chart-svg" viewBox="0 0 ${W} ${H}" style="height:${H}px">`;
   [0,.5,1].forEach(t=>{const v=lo+(hi-lo)*t,yy=y(v);
     svg+=`<line class="chart-grid" x1="${PL}" y1="${yy}" x2="${W-PR}" y2="${yy}"/><text class="chart-label" x="${PL-4}" y="${yy+3}" text-anchor="end">${fmt(v)}</text>`;});
   const step=Math.max(1,Math.ceil(pts.length/5));
   pts.forEach((p,i)=>{if((pts.length-1-i)%step===0)svg+=`<text class="chart-label" x="${x(i)}" y="${H-6}" text-anchor="middle">${fmtShort(p.date)}</text>`;});
   if(target)svg+=`<line x1="${PL}" y1="${y(target)}" x2="${W-PR}" y2="${y(target)}" stroke="var(--ink2)" stroke-dasharray="4 4" stroke-width="1" opacity=".6"/>`;
+  if(bars&&lo<0)svg+=`<line x1="${PL}" y1="${y(0)}" x2="${W-PR}" y2="${y(0)}" stroke="var(--ink2)" stroke-width="1" opacity=".5"/>`;
   pts.forEach((p,i)=>{
     if(p.v==null)return;
     const tip=`${fmtShort(p.date)}: ${fmt(p.v)} ${unit}`;
     const ev=`onmouseenter="showTip(event,'${tip}')" onmouseleave="hideTip()" ontouchstart="showTip(event,'${tip}')"`;
-    svg+=bars?`<rect x="${x(i)-slot*.35}" y="${y(p.v)}" width="${slot*.7}" height="${Math.max(0,y(0)-y(p.v))}" rx="${Math.min(2,slot*.2)}" fill="${color}" opacity=".55" ${ev}/>`
-      :`<circle cx="${x(i)}" cy="${y(p.v)}" r="${pts.length>60?2.5:3.5}" fill="${color}" opacity=".6" ${ev}/>`;
+    svg+=bars?`<rect x="${x(i)-slot*.35}" y="${Math.min(y(p.v),y(0))}" width="${slot*.7}" height="${Math.abs(y(0)-y(p.v))}" rx="${Math.min(2,slot*.2)}" fill="${color}" opacity=".55" ${ev}/>`
+      :`<circle cx="${x(i)}" cy="${y(p.v)}" r="${pts.length>60?2.5:3.5}" fill="${color}" opacity="${noAvg?1:.6}" ${ev}/>`;
   });
-  const avg=pts.map((p,i)=>p.avg!=null?`${x(i)},${y(p.avg)}`:null).filter(Boolean);
-  if(avg.length>1)svg+=`<polyline points="${avg.join(' ')}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const line=(arr,col,w)=>{const ps=arr.map((p,i)=>p!=null?`${x(i)},${y(p)}`:null).filter(Boolean);
+    return ps.length>1?`<polyline points="${ps.join(' ')}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`:'';};
+  if(overlay)svg+=line(overlay.map(o=>o.v),'#5B9BF0',2)+overlay.map((o,i)=>o.v==null?'':`<circle cx="${x(i)}" cy="${y(o.v)}" r="2.2" fill="#5B9BF0"/>`).join('');
+  else if(!noAvg)svg+=line(pts.map(p=>p.avg),color,2.2);
+  else if(!bars)svg+=line(pts.map(p=>p.v),color,1.6);
   return svg+'</svg>';
-}
-function ntTrendsHtml(){
-  const [m,label,unit]=NT_TREND.find(t=>t[0]===ntTrendMetric),isW=m==='weight';
-  const pts=ntSeries(m,ntTrendRange),logged=pts.filter(p=>p.v!=null);
-  const chips=NT_TREND.map(([k,l])=>`<button class="nt-chip${k===m?' on':''}" onclick="ntSetTrend('${k}')">${l}</button>`).join('');
-  const ranges=[[7,'7 days'],[30,'30 days'],[90,'90 days'],[365,'1 year']].map(([d,l])=>`<button class="nt-chip${d===ntTrendRange?' on':''}" onclick="ntSetTrend(null,${d})">${l}</button>`).join('');
-  const tile=(lab,val,sub)=>`<div class="exs-tile"><div class="exs-tile-val">${val}</div><div class="exs-tile-lab">${lab}</div>${sub?`<div class="exs-tile-sub">${sub}</div>`:''}</div>`;
-  let body;
-  if(!logged.length)body=`<div class="empty" style="padding:28px 0"><div class="empty-icon">${isW?'⚖️':'📈'}</div>
-    <div class="empty-title">Nothing logged in this period</div><div class="empty-sub">${isW?'Log your weight from the Day view':'Log some food and it shows up here'}</div></div>`;
-  else{
-    const target=isW?null:nutri.targets[m];
-    const avg=logged.reduce((s,p)=>s+p.v,0)/logged.length;
-    let tiles;
-    if(isW){
-      const first=logged[0],last=logged[logged.length-1],ch=last.v-first.v;
-      tiles=tile('Latest',last.v.toFixed(1),fmtShort(last.date))+tile('Change',`${ch>0?'+':''}${ch.toFixed(1)}`,`since ${fmtShort(first.date)}`)
-        +tile('7-day avg',pts[pts.length-1].avg!=null?pts[pts.length-1].avg.toFixed(1):'—','kg');
-    }else{
-      tiles=tile('Daily avg',ntR(avg),unit)+(target?tile('Of target',Math.round(avg/target*100)+'%',`${ntR(target)} ${unit}`):'')
-        +tile('Days logged',logged.length,`of ${ntTrendRange}`);
-    }
-    // Averages of every nutrient over the same logged days
-    const all=isW?'':`<div class="nt-sec">Daily averages · ${logged.length} day${logged.length!==1?'s':''} logged</div><div class="exs-tiles">${
-      NT_TREND.filter(t=>t[0]!=='weight').map(([k,l,u])=>{const s=ntSeries(k,ntTrendRange).filter(p=>p.v!=null);
-        return tile(l,ntR(s.reduce((a,p)=>a+p.v,0)/s.length),u);}).join('')}</div>`;
-    body=`<div class="exs-tiles">${tiles}</div>
-      <div class="chart-box"><div class="chart-title">${label} per day${isW?'':' · bars'}, line = 7-day average${target?', dashed = target':''}</div>
-      ${ntChart(pts,{color:NT_COLORS[m],unit,target,bars:!isW})}</div>${all}`;
-  }
-  return`<div class="nt-actions">${chips}</div><div class="nt-actions">${ranges}</div>${body}`;
 }
 
 // ── calendar: every day at a glance; tap one to see what I ate ──
@@ -4467,7 +4457,7 @@ function ntApplyImport(){
 // ── targets ──
 function ntOpenTargets(){
   const t=nutri.targets;
-  const fld=(k,lab)=>`<label>${lab}<input id="nt-t-${k}" class="nt-input" type="number" inputmode="decimal" min="0" step="any" value="${t[k]??''}" oninput="ntTargetsHint()"></label>`;
+  const fld=(k,lab)=>`<label>${lab}<input id="nt-t-${k}" class="nt-input" type="text" inputmode="decimal" value="${t[k]??''}" oninput="ntTargetsHint()"></label>`;
   ntSheet('nt-sheet2',`${ntHead('Daily targets','The same every day for now','nt-sheet2')}
     <div class="nt-form">${fld('kcal','Energy (kcal)')}${fld('protein','Protein (g)')}${fld('carbs','Carbs (g)')}${fld('fat','Fat (g)')}${fld('fiber','Fibre (g)')}</div>
     <div class="nt-note" id="nt-t-hint"></div>
@@ -4588,10 +4578,488 @@ async function ntLookupBarcode(code){
 }
 
 // ─────────────────────────────────────────────────────────────────
+// NAVIGATION: three sections in the bottom bar, each with its own sub-tabs under the header
+// ─────────────────────────────────────────────────────────────────
+const NAV={
+  training:{views:[['sesiones','Sessions'],['history','History'],['charts','Progress'],['ejercicios','Exercises']]},
+  body:{views:[['overview','Overview'],['nutrition','Nutrition'],['dashboard','Dashboard'],['checkins','Check-ins']]},
+  data:{views:[['data','Data']]}
+};
+let lastViewOf={training:'sesiones',body:'overview',data:'data'};
+function sectionOf(v){return !v||v==='log'?'training':Object.keys(NAV).find(s=>NAV[s].views.some(x=>x[0]===v))||'body';}
+function goSection(s){setView(lastViewOf[s]);}
+function renderSubnav(v){
+  const el=document.getElementById('subnav');if(!el)return;
+  const views=NAV[sectionOf(v)].views;
+  el.innerHTML=views.length>1?views.map(([k,l])=>`<button class="stab${k===v?' active':''}" onclick="setView('${k}')">${l}</button>`).join(''):'';
+  el.style.display=views.length>1?'flex':'none';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BODY: daily metrics, energy balance, overview, dashboard, check-ins
+// ─────────────────────────────────────────────────────────────────
+// Every daily number lives on that day's record (nutri.days[date]), next to the food, so it all syncs together.
+const BODY_METRICS={
+  weight:{label:'Weight',unit:'kg',dec:1,min:20,max:400},
+  steps:{label:'Steps',unit:'',dec:0,min:0,max:200000},
+  active:{label:'Active kcal',unit:'kcal',dec:0,min:0,max:10000,
+    hint:'Active calories only: Apple Watch\'s red ring, or what your training burned. Your BMR is added on top automatically.'},
+  sleep:{label:'Sleep',unit:'h',dec:2,min:0,max:24,hint:'Hours, e.g. 7.5 or 7h30.'},
+  recovery:{label:'Recovery',unit:'%',dec:0,min:0,max:100},
+  strain:{label:'Day strain',unit:'',dec:1,min:0,max:21},
+  hrv:{label:'HRV',unit:'ms',dec:0,min:0,max:300},
+  rhr:{label:'Resting HR',unit:'bpm',dec:0,min:20,max:150}
+};
+const MEASURES=[['chest','Chest'],['waist','Waist'],['hips','Hips'],['neck','Neck'],['thigh','Leg (thigh)']];
+const KCAL_PER_KG=7700; // energy in 1 kg of body fat, the usual rule of thumb
+
+function bodyDay(date){return nutri.days[date]||(nutri.days[date]={date,entries:[]});}
+function parseSleep(v){
+  const s=String(v??'').trim().toLowerCase();if(!s)return null;
+  const m=s.match(/^(\d{1,2})\s*[h:]\s*(\d{1,2})?\s*m?$/);
+  if(m)return(+m[1])+(+(m[2]||0))/60;
+  return ntNum(s);
+}
+function fmtSleep(h){if(h==null)return null;const t=Math.round(h*60);return`${Math.floor(t/60)}h${String(t%60).padStart(2,'0')}`;}
+function fmtMetric(k,v){
+  if(v==null)return'—';
+  if(k==='sleep')return fmtSleep(v);
+  const d=BODY_METRICS[k]?.dec??1;
+  return d?Number(v).toFixed(d):Math.round(v).toLocaleString('en-US');
+}
+// Recovery, sleep and strain used to be saved on this phone only: copy them into the synced day records once
+function migrateDailyMetrics(){
+  if(localStorage.getItem('gymtracker_dm_migrated'))return;
+  const ids=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);if(!k?.startsWith('dailymetrics_'))continue;
+    const date=k.slice(13);let dm={};try{dm=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    const day=bodyDay(date);let changed=false;
+    if(dm.recovery!=null&&day.recovery==null){day.recovery=dm.recovery;changed=true;}
+    if(dm.strain!=null&&day.strain==null){day.strain=dm.strain;changed=true;}
+    if(dm.sleep&&day.sleep==null){const h=parseSleep(dm.sleep);if(h!=null){day.sleep=h;changed=true;}}
+    if(changed)ids.push(date);
+  }
+  if(ids.length)ntSaveMany('days',ids);
+  localStorage.setItem('gymtracker_dm_migrated','1');
+}
+
+// ── logging one number for one day ──
+let bmEditing=null;
+function openMetric(k,date=ntDay()){
+  const def=BODY_METRICS[k],day=nutri.days[date],v=day?.[k];
+  bmEditing={k,date};
+  const prev=Object.keys(nutri.days).filter(d=>d<date&&nutri.days[d][k]!=null).sort().pop();
+  const shown=v==null?'':k==='sleep'?fmtSleep(v):String(v);
+  ntSheet('nt-sheet2',`${ntHead(def.label,fmtDate(date)+(prev?` · last ${fmtMetric(k,nutri.days[prev][k])}${def.unit&&k!=='sleep'?' '+def.unit:''} on ${fmtShort(prev)}`:''),'nt-sheet2')}
+    ${def.hint?`<div class="nt-note" style="padding-top:0">${def.hint}</div>`:''}
+    <div class="nt-form"><label class="full">${def.label}${def.unit&&k!=='sleep'?` (${def.unit})`:''}
+      <input id="bm-v" class="nt-input" type="text" inputmode="${k==='sleep'?'text':'decimal'}" autocomplete="off" value="${escHtml(shown)}"
+        onkeydown="if(event.key==='Enter')saveMetric()"></label></div>
+    <button class="nt-primary" onclick="saveMetric()">Save</button>
+    ${v!=null?`<button class="nt-secondary nt-danger" onclick="saveMetric(true)">Remove</button>`:''}`);
+  setTimeout(()=>document.getElementById('bm-v')?.focus(),60);
+}
+function saveMetric(remove){
+  const {k,date}=bmEditing,def=BODY_METRICS[k];
+  const raw=document.getElementById('bm-v')?.value;
+  const v=k==='sleep'?parseSleep(raw):ntNum(raw);
+  if(!remove&&(v==null||v<def.min||v>def.max)){showToast(`Enter a ${def.label.toLowerCase()} between ${def.min} and ${def.max}`);return;}
+  const day=bodyDay(date);
+  if(remove)delete day[k];else day[k]=Math.round(v*10**def.dec)/10**def.dec;
+  if(k==='weight')delete day.weightMfp;
+  ntSave('days',date);ntClose('nt-sheet2');render();
+}
+// Old code paths (History tab) still read and write recovery/sleep/strain through these two
+function getDailyMetrics(date){const d=nutri.days[date]||{};return{recovery:d.recovery??null,sleep:fmtSleep(d.sleep??null),strain:d.strain??null};}
+function saveDailyMetrics(date,patch){
+  const day=bodyDay(date);
+  for(const [k,v] of Object.entries(patch)){
+    const val=k==='sleep'?parseSleep(v):v;
+    if(val==null)delete day[k];else day[k]=val;
+  }
+  ntSave('days',date);
+}
+
+// ── energy balance ──
+// BMR from the Mifflin-St Jeor equation; needs sex, birth year and height (Edit profile)
+function latestWeight(date){
+  const d=Object.keys(nutri.days).filter(x=>x<=date&&nutri.days[x].weight!=null).sort().pop()
+    ||Object.keys(nutri.days).filter(x=>nutri.days[x].weight!=null).sort()[0];
+  return d?nutri.days[d].weight:null;
+}
+function bmrOn(date){
+  const p=nutri.targets,w=latestWeight(date);
+  if(!p.sex||!p.birthYear||!p.height||!w)return null;
+  const age=+date.slice(0,4)-p.birthYear;
+  return Math.round(10*w+6.25*p.height-5*age+(p.sex==='f'?-161:5));
+}
+function energyOn(date){
+  const day=nutri.days[date],bmr=bmrOn(date),active=day?.active??null;
+  const eaten=day?.entries?.length?ntSum(day.entries).kcal:null;
+  const burned=bmr!=null?bmr+(active||0):null;
+  return{eaten,bmr,active,burned,balance:eaten!=null&&burned!=null?eaten-burned:null};
+}
+function openProfile(){
+  const p=nutri.targets;
+  ntSheet('nt-sheet2',`${ntHead('Your profile','Used to estimate your BMR (calories burned at rest)','nt-sheet2')}
+    <div class="nt-actions">${[['m','Male'],['f','Female']].map(([k,l])=>`<button class="nt-chip${p.sex===k?' on':''}" onclick="nutri.targets.sex='${k}';this.parentElement.querySelectorAll('.nt-chip').forEach(b=>b.classList.toggle('on',b===this))">${l}</button>`).join('')}</div>
+    <div class="nt-form">
+      <label>Birth year<input id="pf-by" class="nt-input" type="text" inputmode="numeric" value="${p.birthYear??''}" placeholder="1988"></label>
+      <label>Height (cm)<input id="pf-h" class="nt-input" type="text" inputmode="decimal" value="${p.height??''}" placeholder="178"></label>
+    </div>
+    <div class="nt-note">BMR = 10 × weight + 6.25 × height − 5 × age ${p.sex==='f'?'− 161':'+ 5'} (Mifflin-St Jeor), using your latest weight.</div>
+    <button class="nt-primary" onclick="saveProfile()">Save</button>`);
+}
+function saveProfile(){
+  const by=ntNum(document.getElementById('pf-by').value),h=ntNum(document.getElementById('pf-h').value);
+  if(!nutri.targets.sex){showToast('Choose male or female');return;}
+  if(!by||by<1920||by>2020||!h||h<120||h>230){showToast('Check birth year and height');return;}
+  nutri.targets.birthYear=Math.round(by);nutri.targets.height=h;
+  ntSave('targets');ntClose('nt-sheet2');render();
+}
+
+// ── weeks (Monday to Sunday) ──
+function weekStart(date){const d=new Date(date+'T12:00:00');return ntShift(date,-((d.getDay()+6)%7));}
+function weekStats(start){
+  const days=[...Array(7)].map((_,i)=>ntShift(start,i)).filter(d=>d<=ntDay());
+  const avg=a=>{const v=a.filter(x=>x!=null);return v.length?v.reduce((s,x)=>s+x,0)/v.length:null;};
+  const en=days.map(energyOn);
+  return{start,days:days.length,
+    weight:avg(days.map(d=>nutri.days[d]?.weight??null)),
+    eaten:avg(en.map(e=>e.eaten)),burned:avg(en.filter(e=>e.eaten!=null).map(e=>e.burned)),
+    balance:avg(en.map(e=>e.balance)),logged:en.filter(e=>e.eaten!=null).length,
+    steps:avg(days.map(d=>nutri.days[d]?.steps??null)),
+    sessions:Object.values(allLogs).filter(l=>l.date>=start&&l.date<=ntShift(start,6)).length};
+}
+
+// ── overview: the first screen ──
+function renderOverview(){
+  const cont=document.getElementById('page-overview');if(!cont)return;
+  const t=ntDay(),day=nutri.days[t]||{},e=energyOn(t),p=nutri.targets;
+  const now=new Date(),hr=now.getHours();
+  const tile=k=>{const v=day[k],def=BODY_METRICS[k];
+    return`<div class="bo-tile" onclick="openMetric('${k}')"><div class="bo-tile-v${v==null?' unset':''}">${v==null?'+':fmtMetric(k,v)}</div>
+      <div class="bo-tile-l">${def.label}${def.unit&&v!=null&&k!=='sleep'&&k!=='steps'?` · ${def.unit}`:''}</div></div>`;};
+  // Weight trend: this week's average against last week's
+  const wk=weekStats(weekStart(t)),prevWk=weekStats(ntShift(weekStart(t),-7));
+  const wTrend=wk.weight!=null&&prevWk.weight!=null?wk.weight-prevWk.weight:null;
+  const prot=day.entries?.length?ntSum(day.entries).protein:0;
+  const energy=`<div class="bo-card" onclick="setView('nutrition')">
+    <div class="bo-card-h">Today's energy</div>
+    <div class="bo-energy">
+      <div><b>${ntR(e.eaten??0)}</b><span>eaten</span></div>
+      <div class="bo-op">−</div>
+      <div><b>${e.burned!=null?ntR(e.burned):'?'}</b><span>burned${e.bmr!=null?` (BMR ${ntR(e.bmr)}${e.active!=null?` + ${ntR(e.active)}`:''})`:''}</span></div>
+      <div class="bo-op">=</div>
+      <div><b style="color:${e.balance==null?'var(--ink2)':e.balance<=0?'var(--green)':'var(--danger)'}">${e.balance==null?'—':(e.balance>0?'+':'')+ntR(e.balance)}</b><span>${e.balance==null?'balance':e.balance<=0?'deficit':'surplus'}</span></div>
+    </div>
+    <div class="nt-bar" style="margin-top:10px"><i style="width:${p.protein?Math.min(100,prot/p.protein*100):0}%;background:${NT_COLORS.protein}"></i></div>
+    <div class="bo-sub">Protein ${ntR(prot)} / ${ntR(p.protein)} g${e.active==null?' · active kcal not logged yet':''}</div>
+  </div>`;
+  const profileNudge=bmrOn(t)==null?`<div class="bo-card bo-nudge" onclick="${p.sex&&p.birthYear&&p.height?"openMetric('weight')":'openProfile()'}">
+    ${p.sex&&p.birthYear&&p.height?'Log your weight to calculate how much you burn at rest (BMR).':'Add your height, birth year and sex to calculate how much you burn at rest (BMR).'} →</div>`:'';
+  // Weekly table: real change of the average weight vs what the calorie balance predicts
+  const rows=[];
+  for(let i=0;i<8;i++){
+    const s=ntShift(weekStart(t),-7*i),w=weekStats(s),pw=weekStats(ntShift(s,-7));
+    const real=w.weight!=null&&pw.weight!=null?w.weight-pw.weight:null;
+    const exp=w.balance!=null?w.balance*7/KCAL_PER_KG:null;
+    if(w.weight==null&&w.eaten==null&&!w.sessions)continue;
+    const sg=v=>v==null?'—':(v>0?'+':'')+v.toFixed(2);
+    rows.push(`<tr><td>${fmtShort(s)}</td><td>${w.weight!=null?w.weight.toFixed(1):'—'}</td>
+      <td style="color:${real==null?'':real<=0?'var(--green)':'var(--danger)'}">${sg(real)}</td><td>${sg(exp)}</td>
+      <td>${ntR(w.eaten)}</td><td>${ntR(w.burned)}</td><td>${ntR(w.steps)}</td><td>${w.sessions||'—'}</td></tr>`);
+  }
+  const table=`<div class="bo-card"><div class="bo-card-h">Week by week</div>
+    ${rows.length?`<div class="bo-table-wrap"><table class="bo-table">
+      <thead><tr><th>Week of</th><th>Avg kg</th><th>Real Δ</th><th>Expected Δ</th><th>Eaten</th><th>Burned</th><th>Steps</th><th>Train</th></tr></thead>
+      <tbody>${rows.join('')}</tbody></table></div>
+      <div class="bo-sub">Real Δ: change in your average weight vs the week before. Expected Δ: what your average daily calorie balance predicts (balance × 7 ÷ ${KCAL_PER_KG.toLocaleString('en-US')} kcal per kg). Eaten and burned are daily averages over the days you logged food.</div>`
+      :`<div class="bo-sub">Log your weight and food for a week and your progress shows up here.</div>`}</div>`;
+  cont.innerHTML=`
+    <div class="bo-greet"><div class="bo-date">${now.toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'short'})}</div>
+      <div class="bo-hello">Good ${hr<12?'morning':hr<18?'afternoon':'evening'}.</div>
+      ${wTrend!=null?`<div class="bo-trend">Weight this week ${wk.weight.toFixed(1)} kg · <b style="color:${wTrend<=0?'var(--green)':'var(--danger)'}">${wTrend>0?'+':''}${wTrend.toFixed(1)} kg</b> vs last week</div>`:''}
+    </div>
+    <div class="bo-tiles">${['weight','steps','active','sleep','recovery','strain','hrv','rhr'].map(tile).join('')}</div>
+    ${profileNudge}${energy}${table}
+    <div class="bo-card" onclick="goSection('training')"><div class="bo-card-h">Training this week</div>
+      <div class="bo-sub" style="margin-top:0">${wk.sessions} session${wk.sessions!==1?'s':''} since Monday${prevWk.sessions?` · ${prevWk.sessions} last week`:''} →</div></div>
+    <button class="nt-gear" onclick="openProfile()">Edit profile (for BMR)</button>`;
+}
+
+// ── dashboard: any metric over time ──
+const DASH=[
+  ['Body',[['weight','Weight','kg'],...MEASURES.map(([k,l])=>['m_'+k,l,'cm'])]],
+  ['Energy',[['energy','Eaten vs burned','kcal'],['balance','Balance','kcal'],['eaten','Eaten','kcal'],['burned','Burned','kcal'],['active','Active','kcal'],['steps','Steps','']]],
+  ['Nutrition',[['protein','Protein','g'],['carbs','Carbs','g'],['fat','Fat','g'],['fiber','Fibre','g']]],
+  ['Recovery',[['recovery','Recovery','%'],['sleep','Sleep','h'],['strain','Day strain',''],['hrv','HRV','ms'],['rhr','Resting HR','bpm']]]
+];
+const DASH_BARS=new Set(['balance','eaten','burned','active','steps','protein','carbs','fat','fiber','energy']);
+const DASH_COLORS={weight:'#D8D8DE',energy:'#E85010',balance:'#E8A030',eaten:'#E85010',burned:'#5B9BF0',active:'#5B9BF0',steps:'#2ECC9A',
+  recovery:'#2ECC9A',sleep:'#7FA7E8',strain:'#E8A030',hrv:'#2ECC9A',rhr:'#E85010',...NT_COLORS};
+let dashMetric='weight',dashRange=90;
+function dashValue(m,date){
+  const day=nutri.days[date];
+  if(m.startsWith('m_'))return nutri.checkins[date]?.m?.[m.slice(2)]??null;
+  if(['eaten','burned','balance','energy'].includes(m)){const e=energyOn(date);return m==='energy'?e.eaten:e[m];}
+  if(['protein','carbs','fat','fiber'].includes(m))return day?.entries?.length?ntSum(day.entries)[m]:null;
+  return day?.[m]??null;
+}
+function dashSeries(m,days){
+  const end=ntDay(),pts=[];
+  for(let i=days-1;i>=0;i--){const date=ntShift(end,-i);pts.push({date,v:dashValue(m,date)});}
+  pts.forEach((p,i)=>{const win=pts.slice(Math.max(0,i-6),i+1).filter(x=>x.v!=null);p.avg=win.length?win.reduce((s,x)=>s+x.v,0)/win.length:null;});
+  return pts;
+}
+function setDash(m,r){if(m)dashMetric=m;if(r)dashRange=r;hideTip();renderDashboard();}
+function renderDashboard(){
+  const cont=document.getElementById('page-dashboard');if(!cont)return;
+  const all=DASH.flatMap(g=>g[1]),[m,label,unit]=all.find(x=>x[0]===dashMetric)||all[0];
+  const pts=dashSeries(m,dashRange),logged=pts.filter(p=>p.v!=null),isMeasure=m.startsWith('m_');
+  const fmt=v=>v==null?'—':m==='sleep'?fmtSleep(v):unit==='kg'||unit==='cm'?v.toFixed(1):ntR(v);
+  const tile=(lab,val,sub)=>`<div class="exs-tile"><div class="exs-tile-val">${val}</div><div class="exs-tile-lab">${lab}</div>${sub?`<div class="exs-tile-sub">${sub}</div>`:''}</div>`;
+  let body;
+  if(!logged.length)body=`<div class="empty" style="padding:28px 0"><div class="empty-icon">📈</div><div class="empty-title">Nothing logged in this period</div>
+    <div class="empty-sub">${isMeasure?'Add measurements in Check-ins':m==='weight'||BODY_METRICS[m]?'Log it from the Overview':'Log your food in Nutrition'}</div></div>`;
+  else{
+    const avg=logged.reduce((s,p)=>s+p.v,0)/logged.length,first=logged[0],last=logged[logged.length-1];
+    const trendy=m==='weight'||isMeasure;
+    const tiles=trendy
+      ?tile('Latest',fmt(last.v),fmtShort(last.date))+tile('Change',`${last.v-first.v>0?'+':''}${fmt(last.v-first.v)}`,`since ${fmtShort(first.date)}`)+tile('Entries',logged.length,'')
+      :tile('Daily avg',fmt(avg),unit)+tile('Highest',fmt(Math.max(...logged.map(p=>p.v))),'')+tile('Days logged',logged.length,`of ${dashRange}`);
+    const target=['protein','carbs','fat','fiber'].includes(m)?nutri.targets[m]:m==='eaten'?nutri.targets.kcal:null;
+    const overlay=m==='energy'?pts.map(p=>({date:p.date,v:energyOn(p.date).burned})):null;
+    const color=DASH_COLORS[m]||'#E85010';
+    body=`<div class="exs-tiles">${tiles}</div>
+      <div class="chart-box"><div class="chart-title">${m==='energy'?'Bars = eaten, blue line = burned (BMR + active)':`${label} per day${DASH_BARS.has(m)?' · bars':''}, line = 7-day average${target?', dashed = target':''}`}</div>
+      ${ntChart(pts,{color,unit,target,bars:DASH_BARS.has(m),overlay,noAvg:m==='energy'||isMeasure,fmt})}</div>
+      ${m==='energy'||m==='balance'?'<div class="bo-sub">Burned needs your profile (Overview → Edit profile) and works best with active kcal logged each day.</div>':''}`;
+  }
+  cont.innerHTML=DASH.map(([g,items])=>`<div class="nt-sec">${g}</div><div class="nt-actions">${items.map(([k,l])=>`<button class="nt-chip${k===m?' on':''}" onclick="setDash('${k}')">${l}</button>`).join('')}</div>`).join('')
+    +`<div class="nt-actions" style="margin-top:6px">${[[30,'30 days'],[90,'90 days'],[180,'6 months'],[365,'1 year'],[730,'2 years']].map(([d,l])=>`<button class="nt-chip${d===dashRange?' on':''}" onclick="setDash(null,${d})">${l}</button>`).join('')}</div>`+body;
+}
+
+// ── check-ins: weekly photos and measurements ──
+// Photos are shrunk to ~1080 px JPEG (~150 KB), kept on the phone in IndexedDB and copied to the account (users/{uid}/photos)
+const POSES=[['front','Front'],['side','Side'],['back','Back']];
+let photoDb=null,photoCache={},ciEditing=null;
+function openPhotoDb(){
+  if(photoDb)return Promise.resolve(photoDb);
+  return new Promise((ok,fail)=>{
+    const r=indexedDB.open('gymtracker',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('photos',{keyPath:'id'});
+    r.onsuccess=()=>ok(photoDb=r.result);r.onerror=()=>fail(r.error);
+  });
+}
+async function idbPhoto(op,arg){
+  const db=await openPhotoDb();
+  return new Promise((ok,fail)=>{
+    const st=db.transaction('photos',op==='get'?'readonly':'readwrite').objectStore('photos');
+    const r=op==='get'?st.get(arg):op==='put'?st.put(arg):st.delete(arg);
+    r.onsuccess=()=>ok(r.result);r.onerror=()=>fail(r.error);
+  });
+}
+function photoRef(id){return ntUserRef().collection('photos').doc(id);}
+// Returns a photo's image, from memory, the phone, or the account (and keeps a copy on the phone)
+async function getPhoto(id){
+  if(photoCache[id])return photoCache[id];
+  let p=await idbPhoto('get',id).catch(()=>null);
+  if(!p&&currentUser&&fbDb){const s=await photoRef(id).get().catch(()=>null);if(s?.exists){p=s.data();idbPhoto('put',p).catch(()=>{});}}
+  if(p)photoCache[id]=p.data;
+  return p?.data||null;
+}
+function fillPhotos(root=document){
+  root.querySelectorAll('img[data-photo]').forEach(async img=>{
+    if(img.dataset.loaded)return;img.dataset.loaded='1';
+    const d=await getPhoto(img.dataset.photo);
+    if(d)img.src=d;else img.closest('.ci-ph')?.classList.add('missing');
+  });
+}
+async function shrinkPhoto(file){
+  const url=URL.createObjectURL(file),img=new Image();
+  await new Promise((ok,fail)=>{img.onload=ok;img.onerror=()=>fail(new Error('Could not open the photo'));img.src=url;});
+  const k=Math.min(1,1080/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');
+  c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+  return c.toDataURL('image/jpeg',0.78);
+}
+async function savePhoto(date,pose,data){
+  const p={id:ntId('p'),date,pose,data,updatedAt:Date.now()};
+  await idbPhoto('put',p);photoCache[p.id]=data;
+  if(currentUser&&fbDb)photoRef(p.id).set(p).catch(e=>{console.error('Photo upload:',e);showToast('Photo saved on this phone; it will upload when you sync.');queuePhoto(p.id);});
+  else queuePhoto(p.id);
+  return p.id;
+}
+function queuePhoto(id){try{const q=JSON.parse(localStorage.getItem('gymtracker_photo_queue')||'[]');if(!q.includes(id))q.push(id);localStorage.setItem('gymtracker_photo_queue',JSON.stringify(q));}catch(e){}}
+async function flushPhotoQueue(){
+  if(!currentUser||!fbDb)return;
+  let q=[];try{q=JSON.parse(localStorage.getItem('gymtracker_photo_queue')||'[]');}catch(e){}
+  const left=[];
+  for(const id of q){const p=await idbPhoto('get',id).catch(()=>null);if(!p)continue;try{await photoRef(id).set(p);}catch(e){left.push(id);}}
+  localStorage.setItem('gymtracker_photo_queue',JSON.stringify(left));
+}
+async function deletePhoto(id){
+  await idbPhoto('delete',id).catch(()=>{});delete photoCache[id];
+  if(currentUser&&fbDb)photoRef(id).delete().catch(()=>{});
+}
+let ciCompare='front';
+function renderCheckins(){
+  const cont=document.getElementById('page-checkins');if(!cont)return;
+  const list=Object.values(nutri.checkins).filter(c=>!c.deleted).sort((a,b)=>b.date.localeCompare(a.date));
+  const cards=list.map((c,i)=>{
+    const prev=list[i+1],w=nutri.days[c.date]?.weight??null;
+    const ms=MEASURES.filter(([k])=>c.m?.[k]!=null).map(([k,l])=>{
+      const d=prev?.m?.[k]!=null?c.m[k]-prev.m[k]:null;
+      return`<span class="ci-m">${l} <b>${c.m[k].toFixed(1)}</b>${d!=null&&d!==0?` <i style="color:${d<0?'var(--green)':'var(--danger)'}">${d>0?'+':''}${d.toFixed(1)}</i>`:''}</span>`;}).join('');
+    const ph=(c.photos||[]).map(p=>`<div class="ci-ph"><img data-photo="${p.id}" alt="${p.pose}"><span>${p.pose}</span></div>`).join('');
+    return`<div class="bo-card" onclick="openCheckin('${c.date}')">
+      <div class="bo-card-h" style="display:flex;justify-content:space-between"><span>${fmtDate(c.date)}</span><span style="color:var(--ink2);font-weight:600">${w!=null?w.toFixed(1)+' kg':''}</span></div>
+      ${ms?`<div class="ci-ms">${ms}</div>`:''}${ph?`<div class="ci-phs">${ph}</div>`:''}</div>`;
+  }).join('');
+  const withPose=list.filter(c=>(c.photos||[]).some(p=>p.pose===ciCompare)).reverse();
+  const compare=withPose.length>1?`<div class="nt-sec">Compare photos</div>
+    <div class="nt-actions">${POSES.map(([k,l])=>`<button class="nt-chip${k===ciCompare?' on':''}" onclick="ciCompare='${k}';renderCheckins()">${l}</button>`).join('')}</div>
+    <div class="ci-strip">${withPose.map(c=>{const p=c.photos.find(x=>x.pose===ciCompare);
+      return`<div class="ci-ph big" onclick="viewPhoto('${p.id}','${c.date}')"><img data-photo="${p.id}" alt=""><span>${fmtShort(c.date)}</span></div>`;}).join('')}</div>`:'';
+  cont.innerHTML=`<button class="nt-primary" style="margin:0 0 14px" onclick="openCheckin()">＋ New check-in</button>
+    <div class="bo-sub" style="margin:-6px 0 14px">Once a week, same time and light: photos (front, side, back) and your measurements in cm. Your weight comes from that day's log.</div>
+    ${compare}${cards||'<div class="empty" style="padding:28px 0"><div class="empty-icon">📸</div><div class="empty-title">No check-ins yet</div></div>'}`;
+  fillPhotos(cont);
+}
+function openCheckin(date){
+  const c=date?nutri.checkins[date]:null;
+  ciEditing={orig:date||null,date:date||ntDay(),m:{...(c?.m||{})},photos:[...(c?.photos||[])],removed:[]};
+  renderCheckinSheet();
+}
+function renderCheckinSheet(){
+  const e=ciEditing;
+  const slots=POSES.map(([k,l])=>{const p=e.photos.find(x=>x.pose===k);
+    return`<div class="ci-slot" onclick="pickCheckinPhoto('${k}')">${p?`<img data-photo="${p.id}" alt=""><button class="ci-x" onclick="event.stopPropagation();removeCheckinPhoto('${p.id}')">×</button>`:'<span>＋</span>'}<em>${l}</em></div>`;}).join('');
+  ntSheet('nt-sheet2',`${ntHead(e.orig?'Check-in':'New check-in','Photos and measurements','nt-sheet2')}
+    <div class="nt-form"><label class="full">Date<input id="ci-date" class="nt-input" type="date" value="${e.date}" max="${ntDay()}" onchange="ciEditing.date=this.value"></label></div>
+    <div class="nt-sec">Photos</div><div class="ci-slots">${slots}</div>
+    <input type="file" id="ci-file" accept="image/*" style="display:none" onchange="addCheckinPhoto(this.files[0]);this.value=''">
+    <div class="nt-sec">Measurements (cm)</div>
+    <div class="nt-form">${MEASURES.map(([k,l])=>`<label>${l}<input id="ci-${k}" class="nt-input" type="text" inputmode="decimal" autocomplete="off" value="${e.m[k]??''}"></label>`).join('')}</div>
+    <button class="nt-primary" onclick="saveCheckin()">Save</button>
+    ${e.orig?`<button class="nt-secondary nt-danger" onclick="deleteCheckin()">Delete check-in</button>`:''}`);
+  fillPhotos(document.getElementById('nt-sheet2'));
+}
+let ciPose='front';
+function readCheckinFields(){MEASURES.forEach(([k])=>{const v=ntNum(document.getElementById('ci-'+k)?.value);if(v==null)delete ciEditing.m[k];else ciEditing.m[k]=Math.round(v*10)/10;});}
+function pickCheckinPhoto(pose){ciPose=pose;readCheckinFields();document.getElementById('ci-file').click();}
+async function addCheckinPhoto(file){
+  if(!file)return;
+  showToast('Adding photo…');
+  try{
+    const data=await shrinkPhoto(file),id=await savePhoto(ciEditing.date,ciPose,data);
+    const old=ciEditing.photos.find(p=>p.pose===ciPose);
+    if(old){ciEditing.removed.push(old.id);ciEditing.photos=ciEditing.photos.filter(p=>p!==old);}
+    ciEditing.photos.push({id,pose:ciPose});renderCheckinSheet();
+  }catch(e){console.error(e);showToast('Could not add that photo');}
+}
+function removeCheckinPhoto(id){readCheckinFields();ciEditing.photos=ciEditing.photos.filter(p=>p.id!==id);ciEditing.removed.push(id);renderCheckinSheet();}
+function saveCheckin(){
+  readCheckinFields();
+  const e=ciEditing,date=document.getElementById('ci-date').value||e.date;
+  if(!Object.keys(e.m).length&&!e.photos.length){showToast('Add a photo or a measurement');return;}
+  if(e.orig&&e.orig!==date){nutri.checkins[e.orig]={date:e.orig,deleted:true};ntSave('checkins',e.orig);}
+  nutri.checkins[date]={date,m:e.m,photos:e.photos};ntSave('checkins',date);
+  e.removed.forEach(deletePhoto);
+  ntClose('nt-sheet2');render();showToast('✓ Check-in saved');
+}
+function deleteCheckin(){
+  const e=ciEditing;if(!e.orig||!confirm(`Delete the check-in of ${fmtDate(e.orig)} and its photos?`))return;
+  [...e.photos,...(nutri.checkins[e.orig]?.photos||[])].forEach(p=>deletePhoto(p.id));
+  nutri.checkins[e.orig]={date:e.orig,deleted:true};ntSave('checkins',e.orig);
+  ntClose('nt-sheet2');render();
+}
+function viewPhoto(id,date){
+  const el=document.createElement('div');el.className='ci-viewer';el.onclick=()=>el.remove();
+  el.innerHTML=`<img data-photo="${id}" alt=""><div>${fmtDate(date)} · tap to close</div>`;
+  document.body.appendChild(el);fillPhotos(el);
+}
+
+// ── recipes: a food made of other foods ──
+// Saved as a food (source 'recipe') with its ingredients; values per 100 g of the cooked dish, so it logs like any other food
+let ntMode='day',ntRecipe=null;
+function ntRecipes(){return ntFoods().filter(f=>f.source==='recipe').sort((a,b)=>a.name.localeCompare(b.name));}
+function ntRecipesHtml(){
+  const list=ntRecipes();
+  return`<button class="nt-primary" style="margin:0 0 12px" onclick="openRecipe()">＋ New recipe</button>
+    ${list.length?list.map(r=>{const s=ntScale(r.per100,r.serving||100);
+      return`<div class="nt-entry nt-meal" style="border-top:1px solid var(--line)" onclick="openRecipe('${r.id}')"><div class="nt-entry-main">
+        <div class="nt-entry-name">${escHtml(r.name)}</div>
+        <div class="nt-entry-sub">${r.servings} serving${r.servings!==1?'s':''} · per serving ${ntR(s.kcal)} kcal · P ${ntR(s.protein)} · C ${ntR(s.carbs)} · F ${ntR(s.fat)}</div></div>
+        <div class="nt-entry-kcal">${ntR(r.serving)}<small>g / serving</small></div></div>`;}).join('')
+    :'<div class="empty" style="padding:28px 0"><div class="empty-icon">🥘</div><div class="empty-title">No recipes yet</div><div class="empty-sub">Add the ingredients once, then log a serving in one tap</div></div>'}`;
+}
+function openRecipe(id){
+  const r=id?nutri.foods[id]:null;
+  ntRecipe={id:id||null,name:r?.name||'',servings:r?.servings||1,cooked:r?.cooked||null,items:ntClean(r?.items||[])};
+  renderRecipeSheet();
+}
+function recipeTotals(){
+  const t=ntSum(ntRecipe.items),raw=ntRecipe.items.reduce((s,i)=>s+(i.grams||0),0);
+  return{t,raw,weight:ntRecipe.cooked||raw};
+}
+function readRecipeFields(){
+  const v=id=>document.getElementById(id)?.value;
+  if(v('rc-name')!=null)ntRecipe.name=v('rc-name').trim();
+  const s=ntNum(v('rc-serv')),c=ntNum(v('rc-cooked'));
+  if(s)ntRecipe.servings=s;ntRecipe.cooked=c||null;
+}
+function renderRecipeSheet(){
+  const r=ntRecipe,{t,raw,weight}=recipeTotals(),per=r.servings?ntScale({kcal:t.kcal,protein:t.protein,carbs:t.carbs,fat:t.fat},100/r.servings):null;
+  const items=r.items.map((i,n)=>{const x=ntEntryN(i);
+    return`<div class="nt-row" onclick="editRecipeItem(${n})"><div class="nt-entry-main"><div class="nt-entry-name">${escHtml(i.name)}</div>
+      <div class="nt-entry-sub">${ntR(i.grams)} g · ${ntR(x.kcal)} kcal · P ${ntR(x.protein)}</div></div>
+      <button class="nt-row-x" onclick="event.stopPropagation();ntRecipe.items.splice(${n},1);readRecipeFields();renderRecipeSheet()" aria-label="Remove">×</button></div>`;}).join('');
+  ntSheet('nt-sheet0',`${ntHead(r.id?'Edit recipe':'New recipe','Add each ingredient raw, as you put it in','nt-sheet0')}
+    <div class="nt-form">
+      <label class="full">Name<input id="rc-name" class="nt-input" value="${escHtml(r.name)}" placeholder="e.g. Lentejas de mamá" autocomplete="off"></label>
+      <label>Servings<input id="rc-serv" class="nt-input" type="text" inputmode="decimal" value="${r.servings}"></label>
+      <label>Cooked weight (g)<input id="rc-cooked" class="nt-input" type="text" inputmode="decimal" value="${r.cooked??''}" placeholder="${raw?ntR(raw):'optional'}"></label>
+    </div>
+    <div class="nt-note">Weigh the whole pot after cooking if you can, so a gram of the dish is counted right. Leave it empty to use the ingredients' weight.</div>
+    <div class="nt-sec">Ingredients</div>${items||'<div class="nt-note">No ingredients yet.</div>'}
+    <button class="nt-secondary" onclick="readRecipeFields();ntMode='recipe';ntOpenAdd(null)">＋ Add ingredient</button>
+    ${r.items.length?`<div class="nt-sec">Per serving (${ntR(weight/r.servings)} g)</div><div class="nt-preview">${[['kcal','kcal'],['protein','Protein'],['carbs','Carbs'],['fat','Fat']].map(([k,l])=>
+      `<div class="exs-tile"><div class="exs-tile-val" style="color:${NT_COLORS[k]}">${ntR(per[k])}</div><div class="exs-tile-lab">${l}</div></div>`).join('')}</div>`:''}
+    <button class="nt-primary" onclick="saveRecipe()">Save recipe</button>
+    ${r.id?`<button class="nt-secondary nt-danger" onclick="deleteRecipe()">Delete recipe</button>`:''}`);
+}
+function editRecipeItem(n){
+  readRecipeFields();
+  const i=ntRecipe.items[n],g=ntNum(prompt(`Grams of ${i.name}:`,i.grams));
+  if(g&&g>0){i.grams=g;renderRecipeSheet();}
+}
+function saveRecipe(){
+  readRecipeFields();
+  const r=ntRecipe,{t,weight}=recipeTotals();
+  if(!r.name){showToast('Give the recipe a name');return;}
+  if(!r.items.length||!weight){showToast('Add at least one ingredient');return;}
+  const per100={};NT_FIELDS.forEach(([k])=>{per100[k]=t[k]!=null?Math.round(t[k]/weight*1000)/10:null;});
+  const id=r.id||ntId('r'),old=nutri.foods[id]||{};
+  nutri.foods[id]={...old,id,name:r.name,brand:'Recipe',source:'recipe',barcode:null,items:r.items,servings:r.servings,cooked:r.cooked,
+    per100,serving:Math.round(weight/r.servings)};
+  delete nutri.foods[id].deleted;
+  ntSave('foods',id);ntClose('nt-sheet0');ntRecipe=null;renderNutrition();showToast('✓ Recipe saved');
+}
+function deleteRecipe(){
+  const r=ntRecipe;if(!r?.id||!confirm(`Delete the recipe “${r.name}”? Days you already logged keep it.`))return;
+  nutri.foods[r.id]={id:r.id,deleted:true};ntSave('foods',r.id);ntClose('nt-sheet0');ntRecipe=null;renderNutrition();
+}
+
+// ─────────────────────────────────────────────────────────────────
 // MAIN RENDER
 // ─────────────────────────────────────────────────────────────────
 function render(){
-  if(currentView==='home')renderHome();
+  if(currentView==='overview')renderOverview();
+  else if(currentView==='dashboard')renderDashboard();
+  else if(currentView==='checkins')renderCheckins();
   else if(currentView==='sesiones')renderSesiones();
   else if(currentView==='nutrition')renderNutrition();
   else if(currentView==='log')renderLog();
@@ -4644,124 +5112,13 @@ function renderSesiones(){
   html+=`</div>
   <button class="sess-new-btn" onclick="addNewSession()">＋ New session</button>`;
 
-  cont.innerHTML=html;
-}
-
-// ─────────────────────────────────────────────────────────────────
-// HOME PAGE
-// ─────────────────────────────────────────────────────────────────
-function renderHome(){
-  // ── Daily metrics (manual entry) ─────────────────────────────
-  const dm=getDailyMetrics(today());
-  const rClr=recoveryColor(dm.recovery);
-  const sClr=dm.strain==null?'var(--muted)':dm.strain>=18?'#E84040':dm.strain>=14?'#F5A623':dm.strain>=9?'#F5C842':'#3CE0A0';
-
-  // ── Greeting ──────────────────────────────────────────────────
-  const now=new Date();
-  const hr=now.getHours();
-  const greetWord=hr<12?'morning':hr<18?'afternoon':'evening';
-  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateLabel=`${days[now.getDay()]}, ${months[now.getMonth()].toUpperCase()} ${now.getDate()}`;
-  const greeting=`
-    <div style="margin-bottom:20px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">${dateLabel}</div>
-      <div style="font-family:'DM Sans',sans-serif;font-size:40px;font-weight:800;color:var(--ink);line-height:1.05">Good ${greetWord}.</div>
-    </div>`;
-
-  // ── Daily metrics tiles (tap to edit) ────────────────────────
-  const statTiles=`
-    <div class="home-stat-tiles">
-      <div class="home-stat-tile" onclick="editDailyMetric('recovery')" style="cursor:pointer">
-        <div class="hst-val" style="color:${dm.recovery!=null?rClr:'var(--muted)'}">${dm.recovery!=null?dm.recovery:'—'}</div>
-        <div class="hst-lbl">Recovery</div>
-      </div>
-      <div class="home-stat-tile" onclick="editDailyMetric('sleep')" style="cursor:pointer">
-        <div class="hst-val">${dm.sleep||'—'}</div>
-        <div class="hst-lbl">Sleep</div>
-      </div>
-      <div class="home-stat-tile" onclick="editDailyMetric('strain')" style="cursor:pointer">
-        <div class="hst-val" style="color:${dm.strain!=null?sClr:'var(--muted)'}">${dm.strain!=null?dm.strain.toFixed(1):'—'}</div>
-        <div class="hst-lbl">Strain</div>
-      </div>
-    </div>`;
-
-  // ── Session cards (all non-archived) ─────────────────────────
-  const restSec=getRestGoal().rest;
-  // Mirror Sessions tab filter exactly: skip _deleted and _archived
-  const nonArchivedSessions=Object.entries(workoutDefs).filter(([,s])=>!s._deleted&&!s._archived);
-  const sessCards=nonArchivedSessions.map(([key,sess])=>{
-    const logs=Object.values(allLogs).filter(l=>l.session===key).sort((a,b)=>b.date.localeCompare(a.date));
-    const lastLog=logs[0];
-    const daysAgo=lastLog?Math.round((Date.now()-new Date(lastLog.date+'T12:00').getTime())/86400000):null;
-    const lastLabel=daysAgo===0?'Today':daysAgo===1?'Yesterday':daysAgo!=null?daysAgo+'d ago':'Never';
-    // Average strain from per-session manualStrain
-    const strainLogs=logs.filter(l=>l.manualStrain!=null);
-    const avgStrain=strainLogs.length?(strainLogs.reduce((t,l)=>t+l.manualStrain,0)/strainLogs.length):null;
-    // Average session duration from timed logs
-    const timedLogs=logs.filter(l=>l.startTime&&l.endTime);
-    const avgMin=timedLogs.length?Math.round(timedLogs.reduce((t,l)=>t+(new Date(l.endTime)-new Date(l.startTime))/60000,0)/timedLogs.length):null;
-    // Fallback estimate
-    const exCount=(sess.exercises||[]).length;
-    const estMin=!avgMin&&exCount>0?Math.round(exCount*3*(35+restSec)/60):null;
-    const timeLabel=avgMin?`~${avgMin} min`:estMin?`~${estMin} min est.`:null;
-    const strainColor=avgStrain!=null?(avgStrain>=18?'#E84040':avgStrain>=14?'#F5A623':avgStrain>=9?'#F5C842':'#3CE0A0'):'var(--muted)';
-    return`<div class="home-sess-card" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-        <div style="min-width:0;flex:1">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
-            <span style="font-size:10px;font-weight:800;color:#fff;background:var(--accent);padding:2px 7px;border-radius:4px;flex-shrink:0">${key}</span>
-            <span style="font-size:17px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(sess.label)}</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${escHtml(sess.sub)}</div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap">
-            <div style="font-size:10px;color:var(--muted)">Last: <b style="color:var(--ink)">${lastLabel}</b></div>
-            <div style="font-size:10px;color:var(--muted)">Avg strain: <b style="font-family:'DM Mono',monospace;color:${strainColor}">${avgStrain!=null?avgStrain.toFixed(1):'—'}</b></div>
-            ${timeLabel?`<div style="font-size:10px;color:var(--muted)">Avg time: <b style="color:var(--ink)">${timeLabel}</b></div>`:''}
-          </div>
-        </div>
-        <button onclick="startSession('${key}')" style="background:var(--accent);border:none;border-radius:12px;width:46px;height:46px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><polygon points="5,3 19,12 5,21"/></svg>
-        </button>
-      </div>
-    </div>`;
-  }).join('');
-
-  const sessSection=nonArchivedSessions.length
-    ?`<div style="margin-bottom:16px">${sessCards}</div>`
-    :`<div class="home-sess-card"><div style="color:var(--muted);font-size:13px;text-align:center;padding:8px 0">No sessions yet — create one in Sessions</div></div>`;
-
-  // ── GitHub activity heatmap ───────────────────────────────────
-  const heatmap=renderHeatmap();
-
-  document.getElementById('page-home').innerHTML=greeting+statTiles+sessSection+heatmap;
-
-  setTimeout(()=>{
-    const el=document.getElementById('hm-scroll');
-    if(el) el.scrollLeft=el.scrollWidth;
-  },50);
-}
-
-function promptHomeWeight(){
-  const cur=localStorage.getItem('home_weight')||'';
-  const val=prompt('Enter your weight (kg):', cur);
-  if(val===null) return;
-  const n=parseFloat(val.replace(',','.'));
-  if(isNaN(n)||n<20||n>300){ showToast('Invalid weight'); return; }
-  localStorage.setItem('home_weight', n.toFixed(1));
-  renderHome();
+  cont.innerHTML=html+renderHeatmap();
+  setTimeout(()=>{const el=document.getElementById('hm-scroll');if(el)el.scrollLeft=el.scrollWidth;},50);
 }
 
 // ─────────────────────────────────────────────────────────────────
 // DAILY METRICS — manual entry (Recovery 0-100, Sleep, Strain 0-21)
 // ─────────────────────────────────────────────────────────────────
-function getDailyMetrics(date){
-  try{return JSON.parse(localStorage.getItem('dailymetrics_'+date)||'{}');}catch(e){return{};}
-}
-function saveDailyMetrics(date,patch){
-  const cur=getDailyMetrics(date);
-  try{localStorage.setItem('dailymetrics_'+date,JSON.stringify({...cur,...patch}));}catch(e){}
-}
 function editDailyMetric(field, date){
   date=date||today();
   const dm=getDailyMetrics(date);
@@ -4778,14 +5135,13 @@ function editDailyMetric(field, date){
   }else{
     saveDailyMetrics(date,{sleep:val.trim()||null});
   }
-  if(date===today())renderHome();
-  renderHistory();
+  render();
 }
 function editDailyMetricInline(field,date,val){
   const n=parseFloat(val);
   if(field==='strain') saveDailyMetrics(date,{strain:val===''||isNaN(n)?null:Math.min(21,Math.max(0,n))});
   if(field==='recovery') saveDailyMetrics(date,{recovery:val===''||isNaN(n)?null:Math.min(100,Math.max(0,n))});
-  if(date===today())renderHome();
+  render();
 }
 function renderHistDailyMetrics(date, sessKey){
   const dm=getDailyMetrics(date);
@@ -4830,7 +5186,9 @@ splitCopies();
 purgeDeletedSessionLogs();
 loadExPhotos();
 loadFormFromLogs();
+migrateDailyMetrics();
 updateStats();
+setNavActive(currentView);
 render();
 document.getElementById('save-bar').style.display=currentView==='log'?'block':'none';
 maybeShowInstallBanner();
@@ -4854,31 +5212,15 @@ setTimeout(async()=>{
 </script>
 
 <nav class="bottom-nav">
-  <button class="bnav-btn active" id="bnav-home" onclick="setView('home',event)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 4l9 8"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
-    <span>Home</span>
-  </button>
-  <button class="bnav-btn" id="bnav-sesiones" onclick="setView('sesiones',event)">
+  <button class="bnav-btn" id="bnav-training" onclick="goSection('training')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="3" height="16" rx="1.5"/><rect x="15" y="4" width="3" height="16" rx="1.5"/><rect x="2" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
-    <span>Sessions</span>
+    <span>Training</span>
   </button>
-  <button class="bnav-btn" id="bnav-nutrition" onclick="setView('nutrition',event)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c-1.5-1.6-4-2-5.7-.6C4 8.3 4.3 12.6 6.4 16c1.4 2.3 3.2 4.3 5.6 3.4 2.4.9 4.2-1.1 5.6-3.4 2.1-3.4 2.4-7.7.1-9.6C16 5 13.5 5.4 12 7z"/><path d="M12 7c0-2 1-3.5 3-4"/></svg>
-    <span>Food</span>
+  <button class="bnav-btn active" id="bnav-body" onclick="goSection('body')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+    <span>Body</span>
   </button>
-  <button class="bnav-btn" id="bnav-history" onclick="setView('history',event)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
-    <span>History</span>
-  </button>
-  <button class="bnav-btn" id="bnav-charts" onclick="setView('charts',event)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="20" x2="21" y2="20"/><rect x="5" y="14" width="3" height="6"/><rect x="10" y="8" width="4" height="12"/><rect x="17" y="4" width="3" height="16"/></svg>
-    <span>Progress</span>
-  </button>
-  <button class="bnav-btn" id="bnav-ejercicios" onclick="setView('ejercicios',event)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="5" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="5" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
-    <span>Exercises</span>
-  </button>
-  <button class="bnav-btn" id="bnav-data" onclick="setView('data',event)">
+  <button class="bnav-btn" id="bnav-data" onclick="goSection('data')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
     <span>Data</span>
   </button>
